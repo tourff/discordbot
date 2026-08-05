@@ -1,13 +1,14 @@
 // src/events/guildMemberAdd.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Fires when a new member joins the server.
-//   1. Assigns the default member role (env: DEFAULT_MEMBER_ROLE_ID).
+//   1. Assigns the default member role (set via /setup member-role).
 //   2. Sends a rich embed welcome message to the welcome channel.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
+const { getWelcomeChannelId, getDefaultMemberRoleId } = require('../modules/settings');
 
 module.exports = {
   name: 'guildMemberAdd',
@@ -19,7 +20,7 @@ module.exports = {
     const { guild } = member;
 
     // ── 1. Assign default member role ────────────────────────────────────────
-    const roleId = process.env.DEFAULT_MEMBER_ROLE_ID;
+    const roleId = await getDefaultMemberRoleId(guild.id);
     if (roleId) {
       const role = guild.roles.cache.get(roleId);
       if (role) {
@@ -32,7 +33,7 @@ module.exports = {
     }
 
     // ── 2. Send welcome embed ─────────────────────────────────────────────────
-    const channelId = process.env.WELCOME_CHANNEL_ID;
+    const channelId = await getWelcomeChannelId(guild.id);
     if (!channelId) return;
 
     const channel = guild.channels.cache.get(channelId);

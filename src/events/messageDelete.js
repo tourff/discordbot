@@ -6,6 +6,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
+const { getServerLogsChannelId } = require('../modules/settings');
 
 module.exports = {
   name: 'messageDelete',
@@ -17,7 +18,7 @@ module.exports = {
     // Skip partial messages with no content and bot messages
     if (!message.guild || message.author?.bot) return;
 
-    const channelId = process.env.SERVER_LOGS_CHANNEL_ID;
+    const channelId = await getServerLogsChannelId(message.guild.id);
     if (!channelId) return;
 
     const logChannel = message.guild.channels.cache.get(channelId);

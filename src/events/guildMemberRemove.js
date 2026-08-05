@@ -7,6 +7,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
+const { getServerLogsChannelId } = require('../modules/settings');
 
 module.exports = {
   name: 'guildMemberRemove',
@@ -15,7 +16,7 @@ module.exports = {
    * @param {import('discord.js').GuildMember | import('discord.js').PartialGuildMember} member
    */
   async execute(member) {
-    const channelId = process.env.SERVER_LOGS_CHANNEL_ID;
+    const channelId = await getServerLogsChannelId(member.guild.id);
     if (!channelId) return;
 
     const channel = member.guild.channels.cache.get(channelId);

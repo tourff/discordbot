@@ -6,6 +6,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
+const { getServerLogsChannelId } = require('../modules/settings');
 
 module.exports = {
   name: 'messageUpdate',
@@ -20,7 +21,7 @@ module.exports = {
     // Skip embed-only changes (link previews being added)
     if (oldMessage.content === newMessage.content) return;
 
-    const channelId = process.env.SERVER_LOGS_CHANNEL_ID;
+    const channelId = await getServerLogsChannelId(newMessage.guild.id);
     if (!channelId) return;
 
     const logChannel = newMessage.guild.channels.cache.get(channelId);

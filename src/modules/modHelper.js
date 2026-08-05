@@ -9,6 +9,7 @@
 
 const { EmbedBuilder } = require('discord.js');
 const supabase         = require('../config/supabase');
+const { getModLogsChannelId } = require('./settings');
 
 /** Map action names to embed colors */
 const ACTION_COLORS = {
@@ -59,7 +60,7 @@ async function createModCase({ guildId, userId, moderatorId, action, reason }) {
  * @param {import('discord.js').User} moderatorUser
  */
 async function logModAction(guild, modCase, targetUser, moderatorUser) {
-  const channelId = process.env.MOD_LOGS_CHANNEL_ID;
+  const channelId = await getModLogsChannelId(guild.id);
   if (!channelId) return;
 
   const logChannel = guild.channels.cache.get(channelId);

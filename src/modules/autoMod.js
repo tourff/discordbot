@@ -11,6 +11,7 @@
 'use strict';
 
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { getModLogsChannelId } = require('./settings');
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ async function warnUser(message, reason) {
 
   await message.author.send({ embeds: [dmEmbed] }).catch(() => null);
 
-  const logChannelId = process.env.MOD_LOGS_CHANNEL_ID;
+  const logChannelId = await getModLogsChannelId(message.guild.id);
   if (!logChannelId) return;
   const logChannel = message.guild.channels.cache.get(logChannelId);
   if (!logChannel) return;
@@ -134,7 +135,7 @@ async function autoMod(message, _client) {
 
     await message.author.send({ embeds: [dmEmbed] }).catch(() => null);
 
-    const logChannel = message.guild.channels.cache.get(process.env.MOD_LOGS_CHANNEL_ID);
+    const logChannel = message.guild.channels.cache.get(await getModLogsChannelId(message.guild.id));
     if (logChannel) {
       const logEmbed = new EmbedBuilder()
         .setColor(0xffa500)
