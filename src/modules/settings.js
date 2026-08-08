@@ -98,22 +98,66 @@ function invalidateCache(guildId) {
   cache.delete(guildId);
 }
 
+/**
+ * Delete a setting for a guild.
+ * @param {string} guildId
+ * @param {string} key
+ * @returns {Promise<boolean>} true on success
+ */
+async function deleteSetting(guildId, key) {
+  const { error } = await supabase
+    .from('bot_settings')
+    .delete()
+    .eq('guild_id', guildId)
+    .eq('key', key);
+
+  if (error) {
+    console.error(`[settings] deleteSetting error (${key}):`, error);
+    return false;
+  }
+
+  if (cache.has(guildId)) cache.get(guildId).delete(key);
+  cacheTimestamps.delete(`${guildId}:${key}`);
+
+  return true;
+}
+
 // ── Convenience getters ───────────────────────────────────────────────────────
 
 /** @param {string} guildId */
 const getWelcomeChannelId      = (guildId) => getSetting(guildId, 'WELCOME_CHANNEL_ID');
+const getWelcomeMessage        = (guildId) => getSetting(guildId, 'WELCOME_MESSAGE');
+const getGoodbyeChannelId      = (guildId) => getSetting(guildId, 'GOODBYE_CHANNEL_ID');
+const getGoodbyeMessage        = (guildId) => getSetting(guildId, 'GOODBYE_MESSAGE');
 const getModLogsChannelId      = (guildId) => getSetting(guildId, 'MOD_LOGS_CHANNEL_ID');
 const getServerLogsChannelId   = (guildId) => getSetting(guildId, 'SERVER_LOGS_CHANNEL_ID');
-const getSocialChannelId       = (guildId) => getSetting(guildId, 'SOCIAL_NOTIF_CHANNEL_ID');
 const getDefaultMemberRoleId   = (guildId) => getSetting(guildId, 'DEFAULT_MEMBER_ROLE_ID');
+
+/**
+ * Gets the social config (url, channelId, message) for a specific platform.
+ * @param {string} guildId
+ * @param {string} platform ('YOUTUBE', 'FACEBOOK', 'TIKTOK', 'INSTAGRAM')
+ */
+async function getSocialPlatformConfig(guildId, platform) {
+  const [url, channelId, message] = await Promise.all([
+    getSetting(guildId, `${platform}_URL`),
+    getSetting(guildId, `${platform}_CHANNEL_ID`),
+    getSetting(guildId, `${platform}_MESSAGE`),
+  ]);
+  return { url, channelId, message };
+}
 
 module.exports = {
   getSetting,
   setSetting,
+  deleteSetting,
   invalidateCache,
   getWelcomeChannelId,
+  getWelcomeMessage,
+  getGoodbyeChannelId,
+  getGoodbyeMessage,
   getModLogsChannelId,
   getServerLogsChannelId,
-  getSocialChannelId,
   getDefaultMemberRoleId,
+  getSocialPlatformConfig,
 };

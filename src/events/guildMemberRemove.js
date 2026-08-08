@@ -7,7 +7,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
-const { getServerLogsChannelId } = require('../modules/settings');
+const { getServerLogsChannelId, getGoodbyeChannelId, getGoodbyeMessage } = require('../modules/settings');
 
 module.exports = {
   name: 'guildMemberRemove',
@@ -16,32 +16,55 @@ module.exports = {
    * @param {import('discord.js').GuildMember | import('discord.js').PartialGuildMember} member
    */
   async execute(member) {
+    // ── 1. Send Server Logs (if configured) ──────────────────────────────────
     const channelId = await getServerLogsChannelId(member.guild.id);
-    if (!channelId) return;
+    if (channelId) {
+      const channel = member.guild.channels.cache.get(channelId);
+      if (channel) {
+        const roles = member.roles?.cache
+          .filter(r => r.id !== member.guild.id) // exclude @everyone
+          .map(r => r.toString())
+          .join(', ') || 'None';
 
-    const channel = member.guild.channels.cache.get(channelId);
-    if (!channel) return;
+        const embed = new EmbedBuilder()
+          .setColor(0xed4245) // Red
+          .setTitle('👋 Member Left')
+          .setThumbnail(member.user?.displayAvatarURL({ dynamic: true }) ?? null)
+          .addFields(
+            { name: '👤 User',  value: member.user?.tag ?? 'Unknown',  inline: true },
+            { name: '🆔 ID',    value: member.id,                       inline: true },
+            { name: '📅 Joined', value: member.joinedAt
+                ? `<t:${Math.floor(member.joinedAt.getTime() / 1000)}:R>`
+                : 'Unknown',                                              inline: true },
+            { name: '🎭 Roles', value: roles.slice(0, 1024) }
+          )
+          .setFooter({ text: 'Server Logs' })
+          .setTimestamp();
 
-    const roles = member.roles?.cache
-      .filter(r => r.id !== member.guild.id) // exclude @everyone
-      .map(r => r.toString())
-      .join(', ') || 'None';
+        await channel.send({ embeds: [embed] }).catch(console.error);
+      }
+    }
 
-    const embed = new EmbedBuilder()
-      .setColor(0xed4245) // Red
-      .setTitle('👋 Member Left')
-      .setThumbnail(member.user?.displayAvatarURL({ dynamic: true }) ?? null)
-      .addFields(
-        { name: '👤 User',  value: member.user?.tag ?? 'Unknown',  inline: true },
-        { name: '🆔 ID',    value: member.id,                       inline: true },
-        { name: '📅 Joined', value: member.joinedAt
-            ? `<t:${Math.floor(member.joinedAt.getTime() / 1000)}:R>`
-            : 'Unknown',                                              inline: true },
-        { name: '🎭 Roles', value: roles.slice(0, 1024) }
-      )
-      .setFooter({ text: 'Server Logs' })
-      .setTimestamp();
+    // ── 2. Send Goodbye message (if configured) ──────────────────────────────
+    const goodbyeChannelId = await getGoodbyeChannelId(member.guild.id);
+    if (goodbyeChannelId) {
+      const goodbyeChannel = member.guild.channels.cache.get(goodbyeChannelId);
+      if (goodbyeChannel) {
+        const customMessage = await getGoodbyeMessage(member.guild.id);
+        const description = customMessage 
+          ? customMessage.replace(/{user}/g, `**${member.user.tag}**`).replace(/{server}/g, member.guild.name)
+          : `**${member.user.tag}** left the server.`;
 
-    await channel.send({ embeds: [embed] }).catch(console.error);
+        const goodbyeEmbed = new EmbedBuilder()
+          .setColor(0xed4245)
+          .setTitle(`😢 Goodbye!`)
+          .setDescription(description)
+          .setThumbnail(member.user?.displayAvatarURL({ dynamic: true, size: 256 }) ?? null)
+          .setFooter({ text: `${member.guild.name} • Member left`, iconURL: member.guild.iconURL() })
+          .setTimestamp();
+
+        await goodbyeChannel.send({ embeds: [goodbyeEmbed] }).catch(console.error);
+      }
+    }
   },
 };

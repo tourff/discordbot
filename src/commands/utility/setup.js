@@ -28,16 +28,6 @@ module.exports = {
     .setDescription('Configure bot settings for this server.')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
-    // ── /setup welcome-channel ──────────────────────────────────────────────
-    .addSubcommand(sub =>
-      sub
-        .setName('welcome-channel')
-        .setDescription('Set the channel where welcome messages are sent.')
-        .addChannelOption(opt =>
-          opt.setName('channel').setDescription('Select a channel.').setRequired(true)
-        )
-    )
-
     // ── /setup mod-logs ─────────────────────────────────────────────────────
     .addSubcommand(sub =>
       sub
@@ -53,16 +43,6 @@ module.exports = {
       sub
         .setName('server-logs')
         .setDescription('Set the channel for server event logs (edits, deletes, joins).')
-        .addChannelOption(opt =>
-          opt.setName('channel').setDescription('Select a channel.').setRequired(true)
-        )
-    )
-
-    // ── /setup social-channel ───────────────────────────────────────────────
-    .addSubcommand(sub =>
-      sub
-        .setName('social-channel')
-        .setDescription('Set the channel for social media (YouTube, TikTok, etc.) notifications.')
         .addChannelOption(opt =>
           opt.setName('channel').setDescription('Select a channel.').setRequired(true)
         )
@@ -112,10 +92,8 @@ module.exports = {
         .setTitle('⚙️ Bot Configuration')
         .setDescription('Use `/setup <subcommand>` to change any setting.')
         .addFields(
-          { name: '👋 Welcome Channel',  value: fmt(welcome),     inline: true },
           { name: '🔨 Mod Logs',         value: fmt(modLogs),     inline: true },
           { name: '📋 Server Logs',      value: fmt(serverLogs),  inline: true },
-          { name: '📢 Social Channel',   value: fmt(social),      inline: true },
           { name: '🎭 Default Role',     value: fmt(memberRole, 'role'), inline: true },
         )
         .setFooter({ text: 'Settings are saved in the database — no restart needed.' })
@@ -126,10 +104,8 @@ module.exports = {
 
     // ── Channel / role setters ───────────────────────────────────────────────
     const settingMap = {
-      'welcome-channel': { key: 'WELCOME_CHANNEL_ID',    label: '👋 Welcome Channel',  type: 'channel' },
       'mod-logs':        { key: 'MOD_LOGS_CHANNEL_ID',   label: '🔨 Mod Logs',          type: 'channel' },
       'server-logs':     { key: 'SERVER_LOGS_CHANNEL_ID',label: '📋 Server Logs',       type: 'channel' },
-      'social-channel':  { key: 'SOCIAL_NOTIF_CHANNEL_ID',label:'📢 Social Channel',    type: 'channel' },
       'member-role':     { key: 'DEFAULT_MEMBER_ROLE_ID', label: '🎭 Default Role',      type: 'role'    },
     };
 

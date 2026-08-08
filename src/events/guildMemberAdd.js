@@ -8,7 +8,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
-const { getWelcomeChannelId, getDefaultMemberRoleId } = require('../modules/settings');
+const { getWelcomeChannelId, getWelcomeMessage, getDefaultMemberRoleId } = require('../modules/settings');
 
 module.exports = {
   name: 'guildMemberAdd',
@@ -41,20 +41,16 @@ module.exports = {
 
     const memberCount = guild.memberCount;
 
+    const customMessage = await getWelcomeMessage(guild.id);
+    const description = customMessage 
+      ? customMessage.replace(/{user}/g, `${member}`).replace(/{server}/g, guild.name)
+      : `Hey ${member}, glad you joined us!\n\n📋 Please read the rules before chatting.\n🎭 Head over to the roles channel to grab your roles.`;
+
     const embed = new EmbedBuilder()
       .setColor(0x5865f2) // Discord Blurple
       .setTitle(`👋 Welcome to ${guild.name}!`)
-      .setDescription(
-        `Hey ${member}, glad you joined us!\n\n` +
-        `📋 Please read the rules before chatting.\n` +
-        `🎭 Head over to the roles channel to grab your roles.`
-      )
+      .setDescription(description)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .addFields(
-        { name: '👤 User', value: `${member.user.tag}`, inline: true },
-        { name: '🆔 ID',   value: member.id,            inline: true },
-        { name: '👥 Members', value: `You are member #${memberCount}!`, inline: true }
-      )
       .setImage(guild.bannerURL({ size: 1024 }) ?? null)
       .setFooter({ text: `${guild.name} • Member joined`, iconURL: guild.iconURL() })
       .setTimestamp();

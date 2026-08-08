@@ -3,14 +3,14 @@
 // Polls social media RSS feeds every 5 minutes and sends Discord embed
 // notifications for any new posts since the last check.
 //
-// Supported platforms (configure RSS URLs in .env):
+// Supported platforms:
 //   • YouTube  — native Atom feed
 //   • Facebook — public page RSS (limited, consider a scraper service)
 //   • Instagram — third-party RSS bridge (e.g. rsshub.app/instagram/user/)
 //   • TikTok   — third-party RSS bridge (e.g. rsshub.app/tiktok/user/)
 //
-// Last-seen post IDs are stored in Supabase `social_config` table so
-// duplicate notifications are never sent across restarts.
+// Last-seen post IDs are stored in Supabase `social_config` table using a 
+// composite key (platform_guildId) so duplicate notifications are never sent.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use strict';
@@ -31,35 +31,11 @@ const parser = new Parser({
 
 // ── Platform config ───────────────────────────────────────────────────────────
 const PLATFORMS = [
-  {
-    key:   'youtube',
-    label: 'YouTube',
-    emoji: '▶️',
-    color: 0xff0000,
-    url:   process.env.YOUTUBE_RSS_URL,
-  },
-  {
-    key:   'facebook',
-    label: 'Facebook',
-    emoji: '📘',
-    color: 0x1877f2,
-    url:   process.env.FACEBOOK_RSS_URL,
-  },
-  {
-    key:   'instagram',
-    label: 'Instagram',
-    emoji: '📸',
-    color: 0xe1306c,
-    url:   process.env.INSTAGRAM_RSS_URL,
-  },
-  {
-    key:   'tiktok',
-    label: 'TikTok',
-    emoji: '🎵',
-    color: 0x010101,
-    url:   process.env.TIKTOK_RSS_URL,
-  },
-].filter(p => p.url); // Only include platforms with a configured URL
+  { key: 'youtube',   label: 'YouTube',   emoji: '▶️',  color: 0xff0000 },
+  { key: 'facebook',  label: 'Facebook',  emoji: '📘',  color: 0x1877f2 },
+  { key: 'instagram', label: 'Instagram', emoji: '📸',  color: 0xe1306c },
+  { key: 'tiktok',    label: 'TikTok',    emoji: '🎵',  color: 0x010101 },
+];
 
 // ── Supabase helpers ──────────────────────────────────────────────────────────
 
@@ -96,22 +72,20 @@ async function saveLastId(platform, postId) {
   }
 }
 
-// ── Notification sender ───────────────────────────────────────────────────────
-
 /**
  * Sends a Discord embed notification for a new post.
  * @param {import('discord.js').Client} client
+ * @param {string} channelId
+ * @param {string} customMessage
  * @param {object} platform
  * @param {object} item     - Parsed RSS item
  */
-async function sendNotification(client, platform, item) {
-  const channelId = process.env.SOCIAL_NOTIF_CHANNEL_ID;
+async function sendNotification(client, channelId, customMessage, platform, item) {
   if (!channelId) return;
 
   const channel = client.channels.cache.get(channelId);
   if (!channel) return;
 
-  // Try to extract a thumbnail from various RSS formats
   let thumbnail = null;
   if (item.mediaThumbnail?.$ ?.url)    thumbnail = item.mediaThumbnail.$.url;
   if (item.mediaGroup?.['media:thumbnail']?.[0]?.$.url) {
@@ -119,11 +93,13 @@ async function sendNotification(client, platform, item) {
   }
   if (item.enclosure?.url)             thumbnail = item.enclosure.url;
 
+  const url = item.link ?? item.guid;
+
   const embed = new EmbedBuilder()
     .setColor(platform.color)
     .setAuthor({ name: `${platform.emoji} New ${platform.label} Post!` })
     .setTitle(item.title?.slice(0, 256) ?? 'New post')
-    .setURL(item.link ?? item.guid)
+    .setURL(url)
     .setDescription(
       item.contentSnippet
         ? item.contentSnippet.slice(0, 300) + (item.contentSnippet.length > 300 ? '…' : '')
@@ -135,8 +111,9 @@ async function sendNotification(client, platform, item) {
   if (thumbnail) embed.setImage(thumbnail);
 
   const ping = process.env.SOCIAL_PING_EVERYONE === 'true' ? '@everyone ' : '';
+  const textMsg = customMessage ? customMessage : `New post on ${platform.label}! ${url}`;
 
-  await channel.send({ content: ping || undefined, embeds: [embed] }).catch(console.error);
+  await channel.send({ content: `${ping}${textMsg}`, embeds: [embed] }).catch(console.error);
 }
 
 // ── Main poll function ────────────────────────────────────────────────────────
@@ -146,44 +123,53 @@ async function sendNotification(client, platform, item) {
  * @param {import('discord.js').Client} client
  */
 async function pollFeeds(client) {
-  for (const platform of PLATFORMS) {
-    try {
-      const feed    = await parser.parseURL(platform.url);
-      const items   = feed.items;
-      if (!items || items.length === 0) continue;
+  const { getSocialPlatformConfig } = require('../modules/settings');
 
-      const latestItem = items[0];
-      const latestId   = latestItem.guid ?? latestItem.link ?? latestItem.id;
-      if (!latestId) continue;
+  for (const guild of client.guilds.cache.values()) {
+    for (const platform of PLATFORMS) {
+      try {
+        const config = await getSocialPlatformConfig(guild.id, platform.key.toUpperCase());
+        
+        if (!config.url || !config.channelId) continue; // Not configured for this guild
 
-      const lastId = await getLastId(platform.key);
+        const feed    = await parser.parseURL(config.url);
+        const items   = feed.items;
+        if (!items || items.length === 0) continue;
 
-      if (lastId === latestId) continue; // No new posts
+        const latestItem = items[0];
+        const latestId   = latestItem.guid ?? latestItem.link ?? latestItem.id;
+        if (!latestId) continue;
 
-      // First-run bootstrap: just store the current ID without sending
-      if (lastId === null) {
-        await saveLastId(platform.key, latestId);
-        console.log(`[socialNotifier] Bootstrapped ${platform.label} with ID: ${latestId}`);
-        continue;
+        const dbPlatformKey = `${platform.key}_${guild.id}`;
+        const lastId = await getLastId(dbPlatformKey);
+
+        if (lastId === latestId) continue; // No new posts
+
+        // First-run bootstrap: just store the current ID without sending
+        if (lastId === null) {
+          await saveLastId(dbPlatformKey, latestId);
+          console.log(`[socialNotifier] Bootstrapped ${platform.label} for ${guild.name} with ID: ${latestId}`);
+          continue;
+        }
+
+        // Collect all items newer than the last seen ID
+        const newItems = [];
+        for (const item of items) {
+          const itemId = item.guid ?? item.link ?? item.id;
+          if (itemId === lastId) break;
+          newItems.push(item);
+        }
+
+        // Send newest-first but in reverse so Discord shows them chronologically
+        for (const item of newItems.reverse()) {
+          await sendNotification(client, config.channelId, config.message, platform, item);
+        }
+
+        await saveLastId(dbPlatformKey, latestId);
+        console.log(`[socialNotifier] ${platform.label} (${guild.name}): sent ${newItems.length} notification(s).`);
+      } catch (err) {
+        console.error(`[socialNotifier] Error polling ${platform.label} for ${guild.name}:`, err.message);
       }
-
-      // Collect all items newer than the last seen ID
-      const newItems = [];
-      for (const item of items) {
-        const itemId = item.guid ?? item.link ?? item.id;
-        if (itemId === lastId) break;
-        newItems.push(item);
-      }
-
-      // Send newest-first but in reverse so Discord shows them chronologically
-      for (const item of newItems.reverse()) {
-        await sendNotification(client, platform, item);
-      }
-
-      await saveLastId(platform.key, latestId);
-      console.log(`[socialNotifier] ${platform.label}: sent ${newItems.length} notification(s).`);
-    } catch (err) {
-      console.error(`[socialNotifier] Error polling ${platform.label}:`, err.message);
     }
   }
 }
@@ -196,12 +182,7 @@ async function pollFeeds(client) {
  * @param {import('discord.js').Client} client
  */
 function startSocialCron(client) {
-  if (PLATFORMS.length === 0) {
-    console.log('[socialNotifier] No social RSS URLs configured — cron not started.');
-    return;
-  }
-
-  console.log(`[socialNotifier] Starting RSS poll cron for: ${PLATFORMS.map(p => p.label).join(', ')}`);
+  console.log(`[socialNotifier] Starting dynamic RSS poll cron for all guilds.`);
 
   // Run immediately on startup, then every 5 minutes
   pollFeeds(client).catch(console.error);

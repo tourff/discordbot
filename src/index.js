@@ -10,10 +10,18 @@ require('dotenv').config();
 
 const express  = require('express');
 const path     = require('path');
-const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
+const ffmpegPath = require('ffmpeg-static');
+process.env.FFMPEG_PATH = ffmpegPath;
 
-const loadCommands   = require('./handlers/commandHandler');
-const loadEvents     = require('./handlers/eventHandler');
+const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
+const { DisTube } = require('distube');
+const { SpotifyPlugin } = require('@distube/spotify');
+const { SoundCloudPlugin } = require('@distube/soundcloud');
+const { YtDlpPlugin } = require('@distube/yt-dlp');
+
+const loadCommands    = require('./handlers/commandHandler');
+const loadEvents      = require('./handlers/eventHandler');
+const loadDisTube     = require('./handlers/distubeHandler');
 const startSocialCron = require('./jobs/socialNotifier');
 
 // ── 1. Express web server ─────────────────────────────────────────────────────
@@ -31,6 +39,7 @@ app.listen(PORT, () => {
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
@@ -51,6 +60,18 @@ client.commands = new Collection();
 // ── 3. Load handlers ──────────────────────────────────────────────────────────
 loadCommands(client);
 loadEvents(client);
+
+// ── 3.5 Setup DisTube ────────────────────────────────────────────────────────
+client.distube = new DisTube(client, {
+  ffmpeg: { path: ffmpegPath },
+  plugins: [
+    new SpotifyPlugin(),
+    new SoundCloudPlugin(),
+    new YtDlpPlugin(),
+  ],
+});
+
+loadDisTube(client);
 
 // ── 4. Start background cron jobs ─────────────────────────────────────────────
 // Delay startup slightly so the client is ready before the first poll
