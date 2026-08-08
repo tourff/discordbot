@@ -8,8 +8,29 @@ module.exports = {
       option.setName('query')
         .setDescription('The name or URL of the song/playlist.')
         .setRequired(true)
+        .setAutocomplete(true)
     ),
   
+  async autocomplete(interaction) {
+    const focusedValue = interaction.options.getFocused();
+    if (!focusedValue) return await interaction.respond([]);
+
+    try {
+      // DisTube's search method finds YouTube results
+      const results = await interaction.client.distube.search(focusedValue, { limit: 10 });
+      const choices = results.map(song => {
+        return {
+          name: `${song.name} - ${song.formattedDuration}`.slice(0, 100), // Discord limit is 100 chars
+          value: song.url
+        };
+      });
+      await interaction.respond(choices);
+    } catch (e) {
+      // Ignore errors from empty/invalid searches
+      await interaction.respond([]);
+    }
+  },
+
   async execute(interaction) {
     const query = interaction.options.getString('query');
     const voiceChannel = interaction.member.voice.channel;

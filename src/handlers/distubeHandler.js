@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = (client) => {
   const distube = client.distube;
@@ -6,26 +6,56 @@ module.exports = (client) => {
   // ── 1. Play Song ────────────────────────────────────────────────────────────
   distube.on('playSong', (queue, song) => {
     const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
-      .setTitle('🎶 Now Playing')
-      .setDescription(`[${song.name}](${song.url})`)
+      .setColor(0xff00a6) // Diva Pink
+      .setTitle('Now Playing')
+      .setDescription(`[**${song.name}**](${song.url})\n\n**Duration:** \`${song.formattedDuration}\`\n**Requested by:** ${song.user}`)
       .setThumbnail(song.thumbnail)
-      .addFields(
-        { name: 'Duration', value: song.formattedDuration, inline: true },
-        { name: 'Requested by', value: `${song.user}`, inline: true }
-      )
       .setFooter({ text: `Volume: ${queue.volume}% | Loop: ${queue.repeatMode ? (queue.repeatMode === 2 ? 'Queue' : 'Song') : 'Off'}` });
 
-    queue.textChannel.send({ embeds: [embed] }).catch(console.error);
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('music_pause')
+        .setLabel('Pause / Play')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('⏸️'),
+      new ButtonBuilder()
+        .setCustomId('music_skip')
+        .setLabel('Skip')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('⏭️'),
+      new ButtonBuilder()
+        .setCustomId('music_stop')
+        .setLabel('Stop')
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji('⏹️'),
+      new ButtonBuilder()
+        .setCustomId('music_loop')
+        .setLabel('Loop')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('🔁')
+    );
+
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('music_rewind')
+        .setLabel('-15s')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('⏪'),
+      new ButtonBuilder()
+        .setCustomId('music_forward')
+        .setLabel('+15s')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('⏩')
+    );
+
+    queue.textChannel.send({ embeds: [embed], components: [row, row2] }).catch(console.error);
   });
 
   // ── 2. Add Song ─────────────────────────────────────────────────────────────
   distube.on('addSong', (queue, song) => {
     const embed = new EmbedBuilder()
-      .setColor(0x57f287)
-      .setTitle('✅ Added to Queue')
-      .setDescription(`[${song.name}](${song.url}) - \`${song.formattedDuration}\``)
-      .setThumbnail(song.thumbnail)
+      .setColor(0x2f3136) // Dark grey
+      .setDescription(`✅ **Track queued - Position #${queue.songs.length}**\n\nAdded [**${song.name}**](${song.url}) (\`${song.formattedDuration}\`) to the queue`)
       .setFooter({ text: `Requested by ${song.user.tag}`, iconURL: song.user.displayAvatarURL() });
 
     queue.textChannel.send({ embeds: [embed] }).catch(console.error);
@@ -64,13 +94,14 @@ module.exports = (client) => {
   });
 
   // ── 6. Error Handling ───────────────────────────────────────────────────────
-  distube.on('error', (channel, error) => {
+  distube.on('error', (error, queue, song) => {
     console.error('[DisTube]', error);
+    const channel = queue?.textChannel || song?.metadata?.textChannel;
     if (channel) {
       const embed = new EmbedBuilder()
         .setColor(0xed4245)
         .setTitle('❌ An error occurred')
-        .setDescription(`\`\`\`js\n${error.message.slice(0, 2000)}\n\`\`\``);
+        .setDescription(`\`\`\`js\n${String(error).slice(0, 2000)}\n\`\`\``);
       channel.send({ embeds: [embed] }).catch(console.error);
     }
   });

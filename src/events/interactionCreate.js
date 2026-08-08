@@ -36,6 +36,18 @@ module.exports = {
       }
     }
 
+    // ── Autocomplete ────────────────────────────────────────────────────────
+    if (interaction.isAutocomplete()) {
+      const command = client.commands.get(interaction.commandName);
+      if (!command || !command.autocomplete) return;
+
+      try {
+        await command.autocomplete(interaction, client);
+      } catch (err) {
+        console.error(`[interactionCreate] Error executing autocomplete for /${interaction.commandName}:`, err);
+      }
+    }
+
     // ── Button interactions ─────────────────────────────────────────────────
     if (interaction.isButton()) {
       if (interaction.customId.startsWith('role_')) {
@@ -101,6 +113,57 @@ module.exports = {
         const { getSubDashboard } = require('../commands/utility/setupsocial');
         const subDash = await getSubDashboard(interaction.guild.id, platform);
         await interaction.update(subDash);
+      } else if (interaction.customId.startsWith('music_')) {
+        const queue = client.distube.getQueue(interaction);
+        if (!queue) return interaction.reply({ content: '❌ There is no music playing right now!', ephemeral: true });
+
+        const memberVoice = interaction.member.voice.channel;
+        if (!memberVoice || memberVoice.id !== queue.voice.channel.id) {
+          return interaction.reply({ content: '❌ You must be in the same voice channel to use these buttons!', ephemeral: true });
+        }
+
+        switch (interaction.customId) {
+          case 'music_pause':
+            if (queue.paused) {
+              queue.resume();
+              await interaction.reply({ content: '▶️ Music resumed.', ephemeral: true });
+            } else {
+              queue.pause();
+              await interaction.reply({ content: '⏸️ Music paused.', ephemeral: true });
+            }
+            break;
+          case 'music_skip':
+            if (queue.songs.length === 1 && !queue.autoplay) {
+              queue.stop();
+              await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.', ephemeral: true });
+            } else {
+              await queue.skip();
+              await interaction.reply({ content: '⏭️ Skipped to the next song.', ephemeral: true });
+            }
+            break;
+          case 'music_stop':
+            queue.stop();
+            await interaction.reply({ content: '⏹️ Music stopped.', ephemeral: true });
+            break;
+          case 'music_loop':
+            const mode = queue.repeatMode;
+            // Modes: 0 = disabled, 1 = repeat song, 2 = repeat queue
+            const nextMode = mode === 0 ? 1 : (mode === 1 ? 2 : 0);
+            queue.setRepeatMode(nextMode);
+            const modeName = nextMode === 0 ? 'Off' : (nextMode === 1 ? 'Song' : 'Queue');
+            await interaction.reply({ content: `🔁 Loop mode set to: **${modeName}**`, ephemeral: true });
+            break;
+          case 'music_rewind':
+            const newTimeBack = Math.max(0, queue.currentTime - 15);
+            queue.seek(newTimeBack);
+            await interaction.reply({ content: `⏪ Rewound 15 seconds.`, ephemeral: true });
+            break;
+          case 'music_forward':
+            const newTimeFwd = queue.currentTime + 15;
+            queue.seek(newTimeFwd);
+            await interaction.reply({ content: `⏩ Skipped forward 15 seconds.`, ephemeral: true });
+            break;
+        }
       }
     }
 
