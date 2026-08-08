@@ -197,7 +197,8 @@ export default function Dashboard() {
                 <p className="text-gray-400 text-lg">Select a server to manage permissions.</p>
               </div>
             ) : (
-              <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl">
+              <>
+                <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl">
                 <h2 className="text-2xl font-bold mb-6">{selectedGuild.name} - Permissions</h2>
                 
                 <form onSubmit={handleAddPermission} className="flex gap-4 mb-8 bg-gray-950 p-4 rounded-xl border border-gray-800">
@@ -320,6 +321,7 @@ export default function Dashboard() {
                   </div>
                 </form>
               </div>
+              </>
             )}
           </div>
         </div>
