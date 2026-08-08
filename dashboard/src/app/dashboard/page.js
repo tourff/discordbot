@@ -17,6 +17,14 @@ export default function Dashboard() {
   const [newId, setNewId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const [settings, setSettings] = useState({
+    WELCOME_CHANNEL_ID: '',
+    WELCOME_MESSAGE: '',
+    GOODBYE_CHANNEL_ID: '',
+    GOODBYE_MESSAGE: ''
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/');
@@ -45,19 +53,41 @@ export default function Dashboard() {
   }, [session]);
 
   useEffect(() => {
-    async function fetchPermissions() {
+    async function fetchData() {
       if (selectedGuild) {
-        const { data, error } = await supabase
+        // Fetch permissions
+        const { data: permData, error: permError } = await supabase
           .from('bot_permissions')
           .select('*')
           .eq('guild_id', selectedGuild.id);
         
-        if (!error && data) {
-          setPermissions(data);
+        if (!permError && permData) {
+          setPermissions(permData);
+        }
+
+        // Fetch settings
+        const { data: setData, error: setError } = await supabase
+          .from('bot_settings')
+          .select('*')
+          .eq('guild_id', selectedGuild.id);
+
+        if (!setError && setData) {
+          const newSettings = {
+            WELCOME_CHANNEL_ID: '',
+            WELCOME_MESSAGE: '',
+            GOODBYE_CHANNEL_ID: '',
+            GOODBYE_MESSAGE: ''
+          };
+          setData.forEach(item => {
+            if (newSettings[item.key] !== undefined) {
+              newSettings[item.key] = item.value;
+            }
+          });
+          setSettings(newSettings);
         }
       }
     }
-    fetchPermissions();
+    fetchData();
   }, [selectedGuild]);
 
   const handleAddPermission = async (e) => {
@@ -86,6 +116,30 @@ export default function Dashboard() {
     if (!error) {
       setPermissions(permissions.filter(p => p.id !== id));
     }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    if (!selectedGuild) return;
+    setIsSavingSettings(true);
+
+    const upserts = Object.keys(settings).map(key => ({
+      guild_id: selectedGuild.id,
+      key,
+      value: settings[key]
+    }));
+
+    const { error } = await supabase
+      .from('bot_settings')
+      .upsert(upserts, { onConflict: 'guild_id,key' });
+
+    if (error) {
+      console.error('Failed to save settings', error);
+      alert('Failed to save settings!');
+    } else {
+      alert('Settings saved successfully!');
+    }
+    setIsSavingSettings(false);
   };
 
   if (status === 'loading') {
@@ -199,6 +253,72 @@ export default function Dashboard() {
                     ))
                   )}
                 </div>
+              </div>
+
+              {/* Welcome & Goodbye Settings */}
+              <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl mt-8 mb-8">
+                <h2 className="text-2xl font-bold mb-6">Welcome & Goodbye System</h2>
+                <form onSubmit={handleSaveSettings} className="space-y-6">
+                  {/* Welcome Settings */}
+                  <div className="bg-gray-950 p-6 rounded-xl border border-gray-800 space-y-4">
+                    <h3 className="text-lg font-semibold text-indigo-400">👋 Welcome Configuration</h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Welcome Channel ID</label>
+                      <input 
+                        type="text" 
+                        value={settings.WELCOME_CHANNEL_ID}
+                        onChange={e => setSettings({...settings, WELCOME_CHANNEL_ID: e.target.value})}
+                        placeholder="e.g. 123456789012345678"
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Welcome Message</label>
+                      <textarea 
+                        value={settings.WELCOME_MESSAGE}
+                        onChange={e => setSettings({...settings, WELCOME_MESSAGE: e.target.value})}
+                        placeholder="Use {user} and {server}"
+                        rows={3}
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Goodbye Settings */}
+                  <div className="bg-gray-950 p-6 rounded-xl border border-gray-800 space-y-4">
+                    <h3 className="text-lg font-semibold text-fuchsia-400">🚪 Goodbye Configuration</h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Goodbye Channel ID</label>
+                      <input 
+                        type="text" 
+                        value={settings.GOODBYE_CHANNEL_ID}
+                        onChange={e => setSettings({...settings, GOODBYE_CHANNEL_ID: e.target.value})}
+                        placeholder="e.g. 123456789012345678"
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-fuchsia-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Goodbye Message</label>
+                      <textarea 
+                        value={settings.GOODBYE_MESSAGE}
+                        onChange={e => setSettings({...settings, GOODBYE_MESSAGE: e.target.value})}
+                        placeholder="Use {user} and {server}"
+                        rows={3}
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-fuchsia-500 outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button 
+                      type="submit"
+                      disabled={isSavingSettings}
+                      className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold transition-colors disabled:opacity-50"
+                    >
+                      {isSavingSettings ? 'Saving...' : 'Save Settings'}
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
           </div>
