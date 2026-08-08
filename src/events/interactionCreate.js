@@ -8,6 +8,7 @@
 'use strict';
 
 const { handleButtonRole } = require('../modules/buttonRoles');
+const { hasPermission } = require('../modules/permissions');
 
 module.exports = {
   name: 'interactionCreate',
@@ -24,6 +25,11 @@ module.exports = {
       if (!command) return;
 
       try {
+        const canUse = await hasPermission(interaction.member);
+        if (!canUse) {
+          return interaction.reply({ content: '🚫 You do not have permission to use this bot.', ephemeral: true });
+        }
+        
         await command.execute(interaction, client);
       } catch (err) {
         console.error(`[interactionCreate] Error executing /${interaction.commandName}:`, err);

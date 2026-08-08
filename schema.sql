@@ -95,3 +95,27 @@ CREATE TRIGGER update_bot_settings_updated_at
 CREATE TRIGGER update_social_config_updated_at
   BEFORE UPDATE ON public.social_config
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 4. bot_permissions
+--    Stores access permissions for using the bot.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.bot_permissions (
+  id         BIGSERIAL    PRIMARY KEY,
+  guild_id   TEXT         NOT NULL,
+  type       TEXT         NOT NULL CHECK (type IN ('role', 'user')),
+  target_id  TEXT         NOT NULL,
+  created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  UNIQUE (guild_id, type, target_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bot_permissions_guild
+  ON public.bot_permissions (guild_id);
+
+ALTER TABLE public.bot_permissions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Bot full access" ON public.bot_permissions
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
