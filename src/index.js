@@ -85,3 +85,16 @@ client.login(process.env.BOT_TOKEN).catch((err) => {
   console.error('[Discord] Failed to login:', err);
   process.exit(1);
 });
+
+// ── 6. Anti-Crash / Error Handling ────────────────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Anti-Crash] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Anti-Crash] Uncaught Exception:', err);
+});
+
+process.on('uncaughtExceptionMonitor', (err, origin) => {
+  console.error('[Anti-Crash] Uncaught Exception Monitor:', err, origin);
+});

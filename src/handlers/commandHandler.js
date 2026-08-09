@@ -43,6 +43,12 @@ module.exports = function loadCommands(client) {
         console.warn(`[CommandHandler] Skipping ${filePath} — missing data or execute.`);
         continue;
       }
+      
+      // Determine category from folder name
+      const relativePath = path.relative(commandsPath, filePath);
+      const category = path.dirname(relativePath).split(path.sep)[0] || 'Uncategorized';
+      command.category = category;
+
       client.commands.set(command.data.name, command);
       loaded++;
     } catch (err) {

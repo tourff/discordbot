@@ -8,20 +8,47 @@ module.exports = {
   async execute(interaction) {
     const { commands } = interaction.client;
     
-    // Group commands by category (which is the folder name they are in)
-    // However, since we don't store category explicitly in the command object,
-    // we will just list them all cleanly.
-    const commandList = commands.map(cmd => {
-      return `**/${cmd.data.name}**\n↳ *${cmd.data.description}*`;
-    }).join('\n\n');
+    // Group commands by category
+    const categories = {};
+    commands.forEach(cmd => {
+      const cat = cmd.category || 'General';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(`\`/${cmd.data.name}\` - ${cmd.data.description}`);
+    });
 
     const embed = new EmbedBuilder()
-      .setColor(0x5865f2) // Discord Blurple
-      .setTitle('📚 Bot Commands Help')
-      .setDescription(`Here is a list of all the commands you can use:\n\n${commandList}`)
+      .setColor(0x2B2D31) // Professional dark theme color
+      .setAuthor({ 
+        name: `${interaction.client.user.username} Help Center`, 
+        iconURL: interaction.client.user.displayAvatarURL() 
+      })
+      .setDescription('Here is a detailed list of all available commands. Use them to interact with the bot!')
       .setThumbnail(interaction.client.user.displayAvatarURL())
-      .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
+      .setFooter({ 
+        text: `Requested by ${interaction.user.tag}`, 
+        iconURL: interaction.user.displayAvatarURL() 
+      })
       .setTimestamp();
+
+    // Map categories to emojis for a better look
+    const categoryEmojis = {
+      moderation: '🛡️',
+      music: '🎵',
+      utility: '🛠️',
+      General: '📌'
+    };
+
+    // Add fields for each category
+    for (const [cat, cmds] of Object.entries(categories)) {
+      const emoji = categoryEmojis[cat] || '✨';
+      const formattedCategory = cat.charAt(0).toUpperCase() + cat.slice(1); // Capitalize first letter
+      
+      embed.addFields({
+        name: `${emoji} ${formattedCategory} Commands`,
+        value: cmds.join('\n'),
+        inline: false
+      });
+    }
 
     await interaction.reply({ embeds: [embed] });
   },
