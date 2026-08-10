@@ -174,6 +174,40 @@ module.exports = {
     }
 
     // ── Select Menu interactions ────────────────────────────────────────────
+    if (interaction.isStringSelectMenu()) {
+      if (interaction.customId === 'help_category_select') {
+        const category = interaction.values[0].replace('help_', '');
+        const { commands } = client;
+        
+        const categoryCommands = [];
+        commands.forEach(cmd => {
+          const cat = (cmd.category || 'General').toLowerCase();
+          if (cat === category) {
+            categoryCommands.push(`\`/${cmd.data.name}\` - ${cmd.data.description}`);
+          }
+        });
+
+        const { EmbedBuilder } = require('discord.js');
+        let emoji = '📌';
+        if (category === 'moderation') emoji = '🛡️';
+        if (category === 'music') emoji = '🎵';
+        if (category === 'utility') emoji = '🛠️';
+
+        const embed = new EmbedBuilder()
+          .setColor('#00E5FF')
+          .setTitle(`${emoji} ${category.charAt(0).toUpperCase() + category.slice(1)} Commands`)
+          .setDescription(categoryCommands.join('\n') || 'No commands found in this category.')
+          .setFooter({ 
+            text: `Requested by ${interaction.user.tag}`, 
+            iconURL: interaction.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        await interaction.update({ embeds: [embed] });
+        return;
+      }
+    }
+
     if (interaction.isChannelSelectMenu()) {
       if (interaction.customId === 'welcome_channel_select') {
         const channelId = interaction.values[0];
