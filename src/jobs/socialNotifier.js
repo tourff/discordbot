@@ -83,7 +83,16 @@ async function saveLastId(platform, postId) {
 async function sendNotification(client, channelId, customMessage, platform, item) {
   if (!channelId) return;
 
-  const channel = client.channels.cache.get(channelId);
+  // Try cache first, then fetch from API (handles bot restart / uncached channels)
+  let channel = client.channels.cache.get(channelId);
+  if (!channel) {
+    try {
+      channel = await client.channels.fetch(channelId);
+    } catch (err) {
+      console.error(`[socialNotifier] Could not fetch channel ${channelId}:`, err.message);
+      return;
+    }
+  }
   if (!channel) return;
 
   let thumbnail = null;

@@ -19,6 +19,13 @@ function getMainDashboard() {
 async function getSubDashboard(guildId, platform) {
   const { getSocialPlatformConfig } = require('../../modules/settings');
   const config = await getSocialPlatformConfig(guildId, platform);
+
+  const urlHints = {
+    YOUTUBE:   '`https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxxxx`',
+    FACEBOOK:  '`https://www.facebook.com/feeds/page.php?id=PAGEID&format=rss20`',
+    INSTAGRAM: '`https://rsshub.app/instagram/user/USERNAME`',
+    TIKTOK:    '`https://rsshub.app/tiktok/user/@USERNAME`',
+  };
   
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
@@ -27,7 +34,8 @@ async function getSubDashboard(guildId, platform) {
     .addFields(
       { name: 'Channel', value: config.channelId ? `<#${config.channelId}>` : 'Not set', inline: true },
       { name: 'RSS Link', value: config.url ? `\`${config.url}\`` : 'Not set', inline: true },
-      { name: 'Message', value: config.message ? `\`\`\`text\n${config.message.substring(0, 1000)}\n\`\`\`` : 'Not set', inline: false }
+      { name: 'Message', value: config.message ? `\`\`\`text\n${config.message.substring(0, 1000)}\n\`\`\`` : 'Not set', inline: false },
+      { name: '\u200b', value: `📌 **URL Format for ${platform}:**\n${urlHints[platform] ?? 'Any valid RSS/Atom feed URL'}`, inline: false }
     );
 
   const selectRow = new ActionRowBuilder().addComponents(

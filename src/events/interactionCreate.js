@@ -251,21 +251,52 @@ module.exports = {
           await interaction.reply({ content: '❌ Failed to update goodbye message in database.', ephemeral: true });
         }
       } else if (interaction.customId.startsWith('social_urlmodal_')) {
-        const platform = interaction.customId.split('_')[2];
-        const newUrl = interaction.fields.getTextInputValue('social_url_input');
+        // customId format: social_urlmodal_PLATFORM (e.g. social_urlmodal_YOUTUBE)
+        const platform = interaction.customId.replace('social_urlmodal_', '');
+        const newUrl = interaction.fields.getTextInputValue('social_url_input').trim();
         const { setSetting } = require('../modules/settings');
+
+        // Validate: try to parse the feed immediately so the user gets instant feedback
+        const Parser = require('rss-parser');
+        const testParser = new Parser();
+        let feedOk = false;
+        try {
+          await testParser.parseURL(newUrl);
+          feedOk = true;
+        } catch (_e) {
+          // Feed failed — still save it but warn the user
+        }
+
         await setSetting(interaction.guild.id, `${platform}_URL`, newUrl);
         const { getSubDashboard } = require('../commands/utility/setupsocial');
         const subDash = await getSubDashboard(interaction.guild.id, platform);
-        await interaction.update(subDash);
+
+        // Modals must use reply(), NOT update() — update() only works for button/select interactions
+        if (feedOk) {
+          await interaction.reply({ content: `✅ RSS link saved! The feed is valid and notifications will start within 5 minutes.`, ephemeral: true });
+        } else {
+          await interaction.reply({
+            content: [
+              `⚠️ Link saved, but the feed could **not** be reached or parsed.`,
+              `Please double-check the URL — it must be a valid RSS/Atom feed.`,
+              platform === 'YOUTUBE'
+                ? '\n📌 **YouTube tip:** Use the Atom feed URL format:\n`https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxxxx`'
+                : platform === 'INSTAGRAM' || platform === 'TIKTOK'
+                ? `\n📌 **${platform} tip:** Use an RSS bridge like \`https://rsshub.app/${platform.toLowerCase()}/user/USERNAME\``
+                : '',
+            ].join('\n'),
+            ephemeral: true,
+          });
+        }
       } else if (interaction.customId.startsWith('social_msgmodal_')) {
-        const platform = interaction.customId.split('_')[2];
+        // customId format: social_msgmodal_PLATFORM
+        const platform = interaction.customId.replace('social_msgmodal_', '');
         const newMessage = interaction.fields.getTextInputValue('social_msg_input');
         const { setSetting } = require('../modules/settings');
         await setSetting(interaction.guild.id, `${platform}_MESSAGE`, newMessage);
-        const { getSubDashboard } = require('../commands/utility/setupsocial');
-        const subDash = await getSubDashboard(interaction.guild.id, platform);
-        await interaction.update(subDash);
+
+        // Modals must use reply(), NOT update()
+        await interaction.reply({ content: `✅ Custom message for **${platform}** saved!`, ephemeral: true });
       }
     }
   },
