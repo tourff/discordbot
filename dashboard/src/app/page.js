@@ -8,36 +8,49 @@ const FEATURES = [
   {
     icon: '🛡️',
     title: 'Permission Control',
-    desc: 'Granular role & user-level access control for every bot command.',
-    color: 'rgba(99,102,241,0.15)',
-    border: 'rgba(99,102,241,0.25)',
+    desc: 'Granular role & user-level access control for every bot command. Fine-tune who can do what.',
+    gradient: 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.05) 100%)',
+    border: 'rgba(99,102,241,0.22)',
+    glow: 'rgba(99,102,241,0.2)',
+    accent: '#818cf8',
   },
   {
     icon: '👋',
     title: 'Welcome System',
-    desc: 'Fully customizable welcome & goodbye messages with dynamic placeholders.',
-    color: 'rgba(168,85,247,0.15)',
-    border: 'rgba(168,85,247,0.25)',
+    desc: 'Fully customizable welcome & goodbye messages with dynamic placeholders and rich formatting.',
+    gradient: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.05) 100%)',
+    border: 'rgba(139,92,246,0.22)',
+    glow: 'rgba(139,92,246,0.2)',
+    accent: '#a78bfa',
   },
   {
     icon: '⚡',
-    title: 'Instant Sync',
-    desc: 'Changes propagate to your bot in real-time via Supabase.',
-    color: 'rgba(236,72,153,0.15)',
-    border: 'rgba(236,72,153,0.25)',
+    title: 'Real-time Sync',
+    desc: 'Changes propagate to your bot instantly via Supabase. Zero downtime, zero delays.',
+    gradient: 'linear-gradient(135deg, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.05) 100%)',
+    border: 'rgba(236,72,153,0.22)',
+    glow: 'rgba(236,72,153,0.2)',
+    accent: '#f472b6',
   },
 ];
 
 const STATS = [
-  { value: '99.9%', label: 'Uptime' },
-  { value: '<50ms', label: 'Response' },
-  { value: '∞', label: 'Servers' },
+  { value: '99.9%', label: 'Uptime', icon: '🟢' },
+  { value: '<50ms', label: 'Latency', icon: '⚡' },
+  { value: '∞', label: 'Servers', icon: '🌐' },
+];
+
+const STEPS = [
+  { num: '01', title: 'Login with Discord', desc: 'Authenticate securely via OAuth2. No passwords stored.' },
+  { num: '02', title: 'Select Your Server', desc: 'Choose from servers where you have admin privileges.' },
+  { num: '03', title: 'Configure & Deploy', desc: 'Set permissions and welcome messages. Changes apply instantly.' },
 ];
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [hoveredFeature, setHoveredFeature] = useState(null);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -54,169 +67,432 @@ export default function Home() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px' }} />
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading...</p>
+          <div className="spinner" style={{ margin: '0 auto 20px' }} />
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, fontWeight: 500, letterSpacing: '0.02em' }}>Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', overflowX: 'hidden', position: 'relative' }}>
+
+      {/* Noise texture */}
+      <div className="noise-overlay" />
 
       {/* Animated background orbs */}
-      <div className="orb animate-float" style={{ width: 600, height: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)', top: '-15%', left: '-10%' }} />
-      <div className="orb animate-float-delayed" style={{ width: 500, height: 500, background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', bottom: '-10%', right: '-5%' }} />
-      <div className="orb" style={{ width: 300, height: 300, background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)', top: '40%', right: '20%', animationDelay: '1s', animation: 'pulse-glow 5s ease-in-out infinite 1s' }} />
-
-      {/* Dot grid overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(99,102,241,0.08) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
+      <div className="orb animate-float" style={{
+        width: 700, height: 700,
+        background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)',
+        top: '-20%', left: '-15%', position: 'fixed',
+      }} />
+      <div className="orb animate-float-delayed" style={{
+        width: 600, height: 600,
+        background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
+        bottom: '-15%', right: '-10%', position: 'fixed',
+        animationDelay: '1s',
+      }} />
+      <div className="orb animate-pulse-glow" style={{
+        width: 350, height: 350,
+        background: 'radial-gradient(circle, rgba(236,72,153,0.09) 0%, transparent 70%)',
+        top: '45%', right: '18%', position: 'fixed',
       }} />
 
-      {/* Navbar */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        padding: '16px 48px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(8,11,20,0.7)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(99,102,241,0.1)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, boxShadow: '0 0 20px rgba(99,102,241,0.4)',
-          }}>⚡</div>
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em' }}>
-            <span className="gradient-text">Bot</span>
-            <span style={{ color: 'var(--text-secondary)' }}> Dashboard</span>
-          </span>
+      {/* Mesh grid */}
+      <div className="mesh-grid" style={{ position: 'fixed' }} />
+
+      {/* ─── NAVBAR ─── */}
+      <nav className="navbar-premium">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="logo-icon">
+            <span style={{ fontSize: 20 }}>⚡</span>
+          </div>
+          <div>
+            <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em' }}>
+              <span className="gradient-text">Nexus</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> Bot</span>
+            </span>
+          </div>
         </div>
-        <button
-          onClick={handleSignIn}
-          disabled={isSigningIn}
-          className="btn-primary"
-          style={{ padding: '8px 20px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, position: 'relative', zIndex: 1 }}
-        >
-          <DiscordIcon size={16} />
-          <span style={{ position: 'relative', zIndex: 1 }}>Sign In</span>
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="badge-live" style={{ fontSize: 10.5 }}>
+            <span className="badge-live-dot" />
+            All Systems Operational
+          </span>
+          <button
+            id="navbar-signin-btn"
+            onClick={handleSignIn}
+            disabled={isSigningIn}
+            className="btn-primary"
+            style={{ padding: '9px 22px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <DiscordIcon size={16} />
+            <span>{isSigningIn ? 'Connecting…' : 'Sign In'}</span>
+          </button>
+        </div>
       </nav>
 
-      {/* Hero */}
-      <div style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      {/* ─── HERO SECTION ─── */}
+      <section style={{
+        minHeight: '100vh',
+        display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '120px 24px 80px', textAlign: 'center', position: 'relative',
+        padding: '140px 24px 100px',
+        textAlign: 'center',
+        position: 'relative', zIndex: 1,
       }}>
-        {/* Badge */}
-        <div className="animate-slide-up" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '6px 16px',
-          background: 'rgba(99,102,241,0.1)',
-          border: '1px solid rgba(99,102,241,0.25)',
-          borderRadius: 999, fontSize: 13, fontWeight: 600,
-          color: '#818cf8', marginBottom: 28,
-          backdropFilter: 'blur(10px)',
-        }}>
-          <span style={{ display: 'inline-block', width: 7, height: 7, background: '#818cf8', borderRadius: '50%', boxShadow: '0 0 8px #818cf8', animation: 'pulse-glow 2s ease-in-out infinite' }} />
-          Now with Real-time Sync
+
+        {/* Pill badge */}
+        <div className="pill-badge animate-slide-up" style={{ marginBottom: 32 }}>
+          <span style={{ display: 'inline-block', width: 7, height: 7, background: '#818cf8', borderRadius: '50%', boxShadow: '0 0 10px #818cf8', animation: 'blink-dot 1.8s ease-in-out infinite' }} />
+          Now with Real-time Sync  ·  v2.0
+          <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>·</span>
+          <span style={{ color: '#a78bfa' }}>What's new →</span>
         </div>
 
-        {/* Title */}
+        {/* Hero title */}
         <h1 className="animate-slide-up-delay-1" style={{
-          fontSize: 'clamp(42px, 7vw, 80px)',
+          fontSize: 'clamp(48px, 8vw, 88px)',
           fontWeight: 900,
-          letterSpacing: '-0.04em',
-          lineHeight: 1.05,
-          marginBottom: 24, maxWidth: 800,
+          letterSpacing: '-0.05em',
+          lineHeight: 1.0,
+          marginBottom: 28,
+          maxWidth: 900,
         }}>
           Your Bot.
           <br />
           <span className="shimmer-text">Your Rules.</span>
+          <br />
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.55em', letterSpacing: '-0.02em', lineHeight: 2 }}>
+            Total Control. Zero Hassle.
+          </span>
         </h1>
 
+        {/* Subtitle */}
         <p className="animate-slide-up-delay-2" style={{
-          fontSize: 'clamp(16px, 2vw, 20px)',
+          fontSize: 'clamp(16px, 2.2vw, 20px)',
           color: 'var(--text-secondary)',
-          maxWidth: 560, lineHeight: 1.7, marginBottom: 48,
+          maxWidth: 580,
+          lineHeight: 1.75,
+          marginBottom: 52,
+          fontWeight: 400,
         }}>
-          A sleek, powerful dashboard to manage your Discord bot's permissions,
+          A sleek, professional dashboard to manage your Discord bot's permissions,
           welcome messages, and server settings — all in one place.
         </p>
 
-        {/* CTA */}
-        <div className="animate-slide-up-delay-3" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {/* CTA Buttons */}
+        <div className="animate-slide-up-delay-3" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 80 }}>
           <button
+            id="hero-login-btn"
             onClick={handleSignIn}
             disabled={isSigningIn}
             className="btn-primary"
             style={{
-              padding: '16px 36px', fontSize: 16, fontWeight: 700,
-              display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1,
+              padding: '17px 38px', fontSize: 16, fontWeight: 700,
+              display: 'flex', alignItems: 'center', gap: 12,
               borderRadius: 14,
             }}
           >
-            <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <DiscordIcon size={22} />
-              {isSigningIn ? 'Connecting...' : 'Login with Discord'}
-            </span>
+            <DiscordIcon size={22} />
+            <span>{isSigningIn ? 'Connecting to Discord…' : 'Login with Discord'}</span>
+          </button>
+
+          <button
+            style={{
+              padding: '17px 30px', fontSize: 15, fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 8,
+              borderRadius: 14, cursor: 'pointer',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.25s ease',
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
+            <span>View Docs</span>
+            <span style={{ fontSize: 18 }}>→</span>
           </button>
         </div>
 
         {/* Stats row */}
-        <div style={{
-          display: 'flex', gap: 48, marginTop: 72, flexWrap: 'wrap', justifyContent: 'center',
+        <div className="animate-slide-up-delay-4" style={{
+          display: 'flex', gap: 64,
+          flexWrap: 'wrap', justifyContent: 'center',
+          position: 'relative',
         }}>
-          {STATS.map((s) => (
-            <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em' }} className="gradient-text">{s.value}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
+          {STATS.map((s, i) => (
+            <div key={s.label} className="hero-stat" style={{ paddingRight: i < STATS.length - 1 ? 64 : 0 }}>
+              <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }} className="gradient-text">
+                {s.value}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Divider */}
-        <div className="divider" style={{ width: '100%', maxWidth: 600, marginTop: 72 }} />
+        {/* Scroll indicator */}
+        <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', opacity: 0.4 }}>
+          <div style={{
+            width: 24, height: 38,
+            border: '1.5px solid rgba(99,102,241,0.4)',
+            borderRadius: 12, display: 'flex', justifyContent: 'center', paddingTop: 7,
+          }}>
+            <div style={{
+              width: 4, height: 8, background: '#818cf8',
+              borderRadius: 4, animation: 'float 1.8s ease-in-out infinite',
+            }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURES SECTION ─── */}
+      <section style={{
+        padding: '120px 24px',
+        maxWidth: 1200, margin: '0 auto',
+        position: 'relative', zIndex: 1,
+      }}>
+        {/* Section label */}
+        <div style={{ textAlign: 'center', marginBottom: 72 }}>
+          <div style={{
+            display: 'inline-block',
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.15em',
+            textTransform: 'uppercase', color: '#818cf8',
+            marginBottom: 16,
+          }}>
+            Core Features
+          </div>
+          <h2 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 16 }}>
+            Everything you need,
+            <br /><span className="gradient-text">nothing you don't.</span>
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 17, maxWidth: 500, margin: '0 auto', lineHeight: 1.7 }}>
+            Built for Discord server admins who want precise control without the complexity.
+          </p>
+        </div>
 
         {/* Feature cards */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 20, marginTop: 0, width: '100%', maxWidth: 900,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 22,
         }}>
           {FEATURES.map((f, i) => (
-            <div key={f.title} className="glass-card animate-slide-up" style={{
-              padding: '28px 24px', textAlign: 'left',
-              animationDelay: `${0.1 * i + 0.5}s`,
-              opacity: 0, animationFillMode: 'forwards',
-            }}>
+            <div
+              key={f.title}
+              className="feature-card animate-slide-up"
+              onMouseEnter={() => setHoveredFeature(i)}
+              onMouseLeave={() => setHoveredFeature(null)}
+              style={{
+                animationDelay: `${0.12 * i}s`,
+                opacity: 0,
+                animationFillMode: 'forwards',
+              }}
+            >
+              {/* Top accent line */}
               <div style={{
-                width: 48, height: 48, borderRadius: 12, fontSize: 22,
-                background: f.color, border: `1px solid ${f.border}`,
+                position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+                background: `linear-gradient(90deg, transparent, ${f.accent}, transparent)`,
+                opacity: hoveredFeature === i ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+              }} />
+
+              {/* Glow on hover */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: f.gradient,
+                opacity: hoveredFeature === i ? 1 : 0,
+                transition: 'opacity 0.35s ease',
+                borderRadius: 'inherit',
+                pointerEvents: 'none',
+              }} />
+
+              <div style={{
+                width: 54, height: 54, borderRadius: 16, fontSize: 24,
+                background: f.gradient,
+                border: `1px solid ${f.border}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 16,
+                marginBottom: 20,
+                position: 'relative', zIndex: 1,
+                boxShadow: hoveredFeature === i ? `0 0 30px ${f.glow}` : 'none',
+                transition: 'box-shadow 0.35s ease',
               }}>{f.icon}</div>
-              <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{f.title}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
+
+              <h3 style={{
+                fontWeight: 700, fontSize: 18, marginBottom: 10,
+                letterSpacing: '-0.02em', position: 'relative', zIndex: 1,
+              }}>{f.title}</h3>
+
+              <p style={{
+                color: 'var(--text-secondary)', fontSize: 14.5,
+                lineHeight: 1.65, position: 'relative', zIndex: 1,
+              }}>{f.desc}</p>
+
+              <div style={{
+                marginTop: 20, display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 13, fontWeight: 600, color: f.accent,
+                position: 'relative', zIndex: 1,
+                opacity: hoveredFeature === i ? 1 : 0,
+                transform: hoveredFeature === i ? 'translateX(0)' : 'translateX(-8px)',
+                transition: 'all 0.3s ease',
+              }}>
+                Learn more <span>→</span>
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <div style={{
-        textAlign: 'center', padding: '24px',
-        color: 'var(--text-muted)', fontSize: 13,
-        borderTop: '1px solid rgba(99,102,241,0.08)',
-        position: 'relative',
+      {/* ─── HOW IT WORKS ─── */}
+      <section style={{
+        padding: '100px 24px',
+        position: 'relative', zIndex: 1,
+        borderTop: '1px solid rgba(99,102,241,0.07)',
+        borderBottom: '1px solid rgba(99,102,241,0.07)',
+        background: 'rgba(10, 14, 28, 0.4)',
       }}>
-        Built with ❤️ for Discord communities
-      </div>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-block',
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.15em',
+            textTransform: 'uppercase', color: '#a78bfa',
+            marginBottom: 16,
+          }}>
+            How It Works
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 64 }}>
+            Get started in <span className="shimmer-text">3 simple steps</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32 }}>
+            {STEPS.map((step, i) => (
+              <div key={step.num} style={{ position: 'relative' }}>
+                {/* Connector line */}
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    position: 'absolute', top: 28, left: 'calc(50% + 32px)', right: 'calc(-50% + 32px)',
+                    height: 1,
+                    background: 'linear-gradient(90deg, rgba(99,102,241,0.35), rgba(99,102,241,0.1))',
+                    display: 'none',
+                  }} />
+                )}
+
+                <div style={{
+                  width: 56, height: 56, borderRadius: 16,
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))',
+                  border: '1px solid rgba(99,102,241,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 20px',
+                  fontSize: 16, fontWeight: 800, color: '#818cf8',
+                  fontFamily: "'Inter', monospace",
+                  boxShadow: '0 0 30px rgba(99,102,241,0.12)',
+                }}>{step.num}</div>
+
+                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>{step.title}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.65 }}>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CTA SECTION ─── */}
+      <section style={{
+        padding: '120px 24px',
+        textAlign: 'center',
+        position: 'relative', zIndex: 1,
+      }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          {/* Glow blob */}
+          <div style={{
+            position: 'absolute', top: '30%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 500, height: 300,
+            background: 'radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+            pointerEvents: 'none',
+          }} />
+
+          <h2 style={{
+            fontSize: 'clamp(36px, 5.5vw, 64px)',
+            fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1.0,
+            marginBottom: 24, position: 'relative',
+          }}>
+            Ready to take
+            <br />
+            <span className="shimmer-text">control?</span>
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 17, lineHeight: 1.7, marginBottom: 44 }}>
+            Join hundreds of Discord communities already using our bot dashboard to manage their servers more efficiently.
+          </p>
+
+          <button
+            id="cta-login-btn"
+            onClick={handleSignIn}
+            disabled={isSigningIn}
+            className="btn-primary"
+            style={{
+              padding: '18px 44px', fontSize: 17, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 13,
+              borderRadius: 16,
+            }}
+          >
+            <DiscordIcon size={24} />
+            <span>{isSigningIn ? 'Connecting…' : 'Get Started Free'}</span>
+          </button>
+
+          <p style={{ marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>
+            No credit card required · Free forever
+          </p>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer style={{
+        borderTop: '1px solid rgba(99,102,241,0.07)',
+        padding: '32px 48px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 16,
+        position: 'relative', zIndex: 1,
+        background: 'rgba(5, 7, 15, 0.5)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 15, borderRadius: 8 }}>
+            ⚡
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 14, letterSpacing: '-0.02em' }}>
+            <span className="gradient-text">Nexus</span>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> Bot</span>
+          </span>
+        </div>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+          Built with ❤️ for Discord communities
+        </p>
+
+        <div style={{ display: 'flex', gap: 20 }}>
+          {['Privacy', 'Terms', 'Support'].map(link => (
+            <span key={link} style={{
+              fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer',
+              transition: 'color 0.2s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = '#818cf8'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            >{link}</span>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }
