@@ -74,10 +74,15 @@ client.distube = new DisTube(client, {
 loadDisTube(client);
 
 // ── 4. Start background cron jobs ─────────────────────────────────────────────
+const startReminderCron = require('./jobs/reminderJob');
+const startAutopurgeCron = require('./jobs/autopurgeJob');
+
 // Delay startup slightly so the client is ready before the first poll
 client.once('ready', () => {
   console.log(`[Discord] Logged in as ${client.user.tag}`);
   startSocialCron(client);
+  startReminderCron(client);
+  startAutopurgeCron(client);
 });
 
 // ── 5. Login ──────────────────────────────────────────────────────────────────

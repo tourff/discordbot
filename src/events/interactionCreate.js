@@ -170,6 +170,9 @@ module.exports = {
             await interaction.reply({ content: `⏩ Skipped forward 15 seconds.`, ephemeral: true });
             break;
         }
+      } else if (interaction.customId.startsWith('smanager_')) {
+        const { handleSManagerButtons } = require('../modules/smanagerUI');
+        await handleSManagerButtons(interaction).catch(console.error);
       }
     }
 
@@ -189,6 +192,7 @@ module.exports = {
 
         const { EmbedBuilder } = require('discord.js');
         let emoji = '📌';
+        if (category === 'esports') emoji = '🎮';
         if (category === 'moderation') emoji = '🛡️';
         if (category === 'music') emoji = '🎵';
         if (category === 'utility') emoji = '🛠️';
@@ -204,6 +208,10 @@ module.exports = {
           .setTimestamp();
         
         await interaction.update({ embeds: [embed] });
+        return;
+      } else if (interaction.customId.startsWith('smanager_select_')) {
+        const { handleSManagerSelect } = require('../modules/smanagerUI');
+        await handleSManagerSelect(interaction).catch(console.error);
         return;
       }
     }
@@ -297,6 +305,48 @@ module.exports = {
 
         // Modals must use reply(), NOT update()
         await interaction.reply({ content: `✅ Custom message for **${platform}** saved!`, ephemeral: true });
+      } else if (interaction.customId.startsWith('embed_builder_')) {
+        const channelId = interaction.customId.replace('embed_builder_', '');
+        const channel = interaction.guild.channels.cache.get(channelId);
+        
+        if (!channel) return interaction.reply({ content: '❌ Channel not found.', ephemeral: true });
+
+        const title = interaction.fields.getTextInputValue('embed_title') || null;
+        const desc = interaction.fields.getTextInputValue('embed_desc');
+        const colorInput = interaction.fields.getTextInputValue('embed_color') || '#5865F2';
+        const thumbnail = interaction.fields.getTextInputValue('embed_thumbnail') || null;
+        const image = interaction.fields.getTextInputValue('embed_image') || null;
+
+        let color;
+        try {
+          color = parseInt(colorInput.replace('#', ''), 16);
+          if (isNaN(color)) color = 0x5865F2;
+        } catch {
+          color = 0x5865F2;
+        }
+
+        const { EmbedBuilder } = require('discord.js');
+        const embed = new EmbedBuilder()
+          .setColor(color)
+          .setDescription(desc);
+
+        if (title) embed.setTitle(title);
+        if (thumbnail && thumbnail.startsWith('http')) embed.setThumbnail(thumbnail);
+        if (image && image.startsWith('http')) embed.setImage(image);
+
+        try {
+          await channel.send({ embeds: [embed] });
+          await interaction.reply({ content: `✅ Embed sent to ${channel}!`, ephemeral: true });
+        } catch (e) {
+          console.error('[embed builder]', e);
+          await interaction.reply({ content: `❌ Failed to send embed: ${e.message}`, ephemeral: true });
+        }
+      } else if (interaction.customId === 'smanager_create_modal') {
+        const { handleSManagerModals } = require('../modules/smanagerUI');
+        await handleSManagerModals(interaction).catch(console.error);
+      } else if (interaction.customId.startsWith('smanager_edit_modal_')) {
+        const { handleSManagerEditModal } = require('../modules/smanagerUI');
+        await handleSManagerEditModal(interaction).catch(console.error);
       }
     }
   },

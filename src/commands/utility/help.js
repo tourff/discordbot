@@ -22,9 +22,10 @@ module.exports = {
       .setColor('#00E5FF') // Cyan color matching the vibe
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .addFields(
+        { name: '🎮 Esports', value: `\`${categories['esports'] || 0} Commands\``, inline: true },
         { name: '🛡️ Moderation', value: `\`${categories['moderation'] || 0} Commands\``, inline: true },
-        { name: '🎵 Music', value: `\`${categories['music'] || 0} Commands\``, inline: true },
         { name: '🛠️ Utility', value: `\`${categories['utility'] || 0} Commands\``, inline: true },
+        { name: '🎵 Music', value: `\`${categories['music'] || 0} Commands\``, inline: true },
         { name: '📌 General', value: `\`${categories['general'] || 0} Commands\``, inline: true }
       )
       .setFooter({ 
@@ -38,6 +39,12 @@ module.exports = {
         .setCustomId('help_category_select')
         .setPlaceholder('📂 Select a category to view commands...')
         .addOptions([
+          {
+            label: 'Esports Commands',
+            description: 'IDP, Tagcheck, Scrims, Tourneys',
+            value: 'help_esports',
+            emoji: '🎮',
+          },
           {
             label: 'Moderation Commands',
             description: 'Ban, Kick, Mute, Warn and moderation tools',
