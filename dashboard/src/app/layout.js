@@ -1,28 +1,23 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata = {
-  title: "Bot Dashboard",
-  description: "Manage your Discord Bot",
+  title: "Bot Dashboard | Manage Your Discord Server",
+  description: "A sleek, professional dashboard to manage your Discord bot's permissions, welcome messages, and server settings.",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 text-white`}
-      >
+    <html lang="en" className={inter.variable}>
+      <body style={{ fontFamily: "var(--font-inter, 'Inter', sans-serif)" }}>
         <Providers>
           {children}
         </Providers>
