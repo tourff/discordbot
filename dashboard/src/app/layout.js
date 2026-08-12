@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Bot Dashboard | Manage Your Discord Server",
-  description: "A sleek, professional dashboard to manage your Discord bot's permissions, welcome messages, and server settings.",
+  title: "Jarvis Bot Dashboard | Manage Your Discord Server",
+  description: "Jarvis Bot — A powerful Discord bot dashboard by trj7. Manage permissions, automod, social notifier, logging, roles, welcome messages & music.",
 };
 
 export default function RootLayout({ children }) {
