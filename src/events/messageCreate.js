@@ -33,6 +33,9 @@ module.exports = {
     const scrimHandled = await handleScrimRegistration(message).catch(console.error);
     if (scrimHandled) return; // Processed by scrim manager
 
+    const tourneyHandled = await handleTourneyRegistration(message).catch(console.error);
+    if (tourneyHandled) return; // Processed by tourney manager
+
     await autoMod(message, client).catch(console.error);
   },
 };

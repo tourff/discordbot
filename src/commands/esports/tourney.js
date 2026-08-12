@@ -23,10 +23,10 @@ module.exports = {
       .setColor(0xFF00FF)
       .setTitle("🏆 Jarvis Tournament Manager")
       .setDescription(tourneys && tourneys.length > 0 
-        ? tourneys.map((t, i) => \`\\\`\${i + 1}.\\\` \${t.enabled ? '✅' : '❌'} **\${t.name}**\`).join('\\n')
-        : "\`\`\`Click Create button for new Tournament.\`\`\`"
+        ? tourneys.map((t, i) => `\`${i + 1}.\` ${t.enabled ? '✅' : '❌'} **${t.name}**`).join('\n')
+        : "```Click Create button for new Tournament.```"
       )
-      .setFooter({ text: \`Total Tournaments in this server: \${tourneys?.length || 0}\` });
+      .setFooter({ text: `Total Tournaments in this server: ${tourneys?.length || 0}` });
 
     const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()

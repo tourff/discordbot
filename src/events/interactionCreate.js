@@ -173,6 +173,9 @@ module.exports = {
       } else if (interaction.customId.startsWith('smanager_')) {
         const { handleSManagerButtons } = require('../modules/smanagerUI');
         await handleSManagerButtons(interaction).catch(console.error);
+      } else if (interaction.customId.startsWith('tourney_')) {
+        const { handleTourneyButtons } = require('../modules/tourneyUI');
+        await handleTourneyButtons(interaction).catch(console.error);
       }
     }
 
@@ -212,6 +215,10 @@ module.exports = {
       } else if (interaction.customId.startsWith('smanager_select_')) {
         const { handleSManagerSelect } = require('../modules/smanagerUI');
         await handleSManagerSelect(interaction).catch(console.error);
+        return;
+      } else if (interaction.customId.startsWith('tourney_select_')) {
+        const { handleTourneySelect } = require('../modules/tourneyUI');
+        await handleTourneySelect(interaction).catch(console.error);
         return;
       }
     }
@@ -347,6 +354,9 @@ module.exports = {
       } else if (interaction.customId.startsWith('smanager_edit_modal_')) {
         const { handleSManagerEditModal } = require('../modules/smanagerUI');
         await handleSManagerEditModal(interaction).catch(console.error);
+      } else if (interaction.customId === 'tourney_create_modal' || interaction.customId.startsWith('tourney_edit_modal_')) {
+        const { handleTourneyModals } = require('../modules/tourneyUI');
+        await handleTourneyModals(interaction).catch(console.error);
       }
     }
   },

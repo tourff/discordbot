@@ -119,3 +119,124 @@ CREATE POLICY "Bot full access" ON public.bot_permissions
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- NEW TABLES: Tags, Autopurge, Tagcheck, Scrims, Tourneys
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Tags
+CREATE TABLE IF NOT EXISTS public.tags (
+  id BIGSERIAL PRIMARY KEY,
+  guild_id TEXT,
+  name TEXT,
+  content TEXT,
+  owner_id TEXT,
+  usage INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Autopurge
+CREATE TABLE IF NOT EXISTS public.autopurge (
+  guild_id TEXT,
+  channel_id TEXT PRIMARY KEY,
+  delete_after_seconds INT
+);
+
+-- Tagcheck
+CREATE TABLE IF NOT EXISTS public.tagcheck_config (
+  guild_id TEXT,
+  channel_id TEXT PRIMARY KEY,
+  required_mentions INT DEFAULT 4,
+  delete_after BOOLEAN DEFAULT FALSE
+);
+
+-- EasyTag
+CREATE TABLE IF NOT EXISTS public.easytag_config (
+  guild_id TEXT,
+  channel_id TEXT PRIMARY KEY
+);
+
+-- Reminders
+CREATE TABLE IF NOT EXISTS public.reminders (
+  id BIGSERIAL PRIMARY KEY,
+  guild_id TEXT,
+  user_id TEXT,
+  channel_id TEXT,
+  note TEXT,
+  remind_at TIMESTAMPTZ
+);
+
+-- Scrims
+CREATE TABLE IF NOT EXISTS public.scrims (
+  id BIGSERIAL PRIMARY KEY,
+  guild_id TEXT,
+  name TEXT,
+  registration_channel_id TEXT,
+  slotlist_channel_id TEXT,
+  role_id TEXT,
+  ping_role_id TEXT,
+  total_slots INT DEFAULT 12,
+  required_mentions INT DEFAULT 4,
+  autodelete_rejects BOOLEAN DEFAULT FALSE,
+  no_duplicate_name BOOLEAN DEFAULT TRUE,
+  multiregister BOOLEAN DEFAULT FALSE,
+  open_time TIME,
+  open_days TEXT[],
+  enabled BOOLEAN DEFAULT TRUE,
+  is_open BOOLEAN DEFAULT FALSE,
+  current_slot INT DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS public.scrim_slots (
+  id BIGSERIAL PRIMARY KEY,
+  scrim_id BIGINT REFERENCES public.scrims(id) ON DELETE CASCADE,
+  slot_num INT,
+  user_id TEXT,
+  team_name TEXT,
+  members TEXT[],
+  jump_url TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.scrim_reserved_slots (
+  id BIGSERIAL PRIMARY KEY,
+  scrim_id BIGINT REFERENCES public.scrims(id) ON DELETE CASCADE,
+  slot_num INT,
+  user_id TEXT,
+  team_name TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.scrim_banned_teams (
+  id BIGSERIAL PRIMARY KEY,
+  scrim_id BIGINT REFERENCES public.scrims(id) ON DELETE CASCADE,
+  user_id TEXT,
+  reason TEXT,
+  banned_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tourneys (similar structure)
+CREATE TABLE IF NOT EXISTS public.tourneys (
+  id BIGSERIAL PRIMARY KEY,
+  guild_id TEXT,
+  name TEXT,
+  registration_channel_id TEXT,
+  confirm_channel_id TEXT,
+  role_id TEXT,
+  total_slots INT,
+  required_mentions INT DEFAULT 4,
+  autodelete_rejects BOOLEAN DEFAULT FALSE,
+  no_duplicate_name BOOLEAN DEFAULT TRUE,
+  multiregister BOOLEAN DEFAULT FALSE,
+  enabled BOOLEAN DEFAULT TRUE,
+  is_open BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS public.tourney_slots (
+  id BIGSERIAL PRIMARY KEY,
+  tourney_id BIGINT REFERENCES public.tourneys(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending', -- pending, confirmed, denied
+  slot_num INT,
+  user_id TEXT,
+  team_name TEXT,
+  members TEXT[],
+  jump_url TEXT
+);

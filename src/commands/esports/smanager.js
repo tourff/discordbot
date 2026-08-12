@@ -23,10 +23,10 @@ module.exports = {
       .setColor(0x00FFB3)
       .setTitle("🏆 Jarvis Smart Scrims Manager")
       .setDescription(scrims && scrims.length > 0 
-        ? scrims.map((s, i) => \`\\\`\${i + 1}.\\\` \${s.enabled ? '✅' : '❌'} **\${s.name}**\`).join('\\n')
-        : "\`\`\`Click Create button for new Scrim.\`\`\`"
+        ? scrims.map((s, i) => `\`${i + 1}.\` ${s.enabled ? '✅' : '❌'} **${s.name}**`).join('\n')
+        : "```Click Create button for new Scrim.```"
       )
-      .setFooter({ text: \`Total Scrims in this server: \${scrims?.length || 0}\` });
+      .setFooter({ text: `Total Scrims in this server: ${scrims?.length || 0}` });
 
     const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
