@@ -240,3 +240,78 @@ CREATE TABLE IF NOT EXISTS public.tourney_slots (
   members TEXT[],
   jump_url TEXT
 );
+
+-- ─────────────────────────────────────────────────────────────────────────────
+5. lockdowns
+--    Stores active lockdowns (channels, categories, servers) with optional
+--    expiration timers.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.lockdowns (
+  id           BIGSERIAL    PRIMARY KEY,
+  guild_id     TEXT         NOT NULL,
+  type         TEXT         NOT NULL CHECK (type IN ('channel', 'guild', 'maintenance')),
+  channel_id   TEXT         NOT NULL,
+  author_id    TEXT         NOT NULL,
+  role_id      TEXT,
+  channel_ids  TEXT[],
+  expire_time  TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_lockdowns_guild
+  ON public.lockdowns (guild_id);
+
+ALTER TABLE public.lockdowns ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Bot full access" ON public.lockdowns
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 6. votes
+--    Tracks voting statistics and user preferences for vote reminders.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.votes (
+  user_id      TEXT         PRIMARY KEY,
+  total_votes  INT          DEFAULT 0,
+  reminder     BOOLEAN      DEFAULT FALSE,
+  expire_time  TIMESTAMPTZ,
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Bot full access" ON public.votes
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 7. user_profiles
+--    Tracks user currency (Quo Coins) and special statuses (e.g. developer).
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  user_id      TEXT         PRIMARY KEY,
+  money        INT          DEFAULT 0,
+  is_dev       BOOLEAN      DEFAULT FALSE,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Bot full access" ON public.user_profiles
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Alterations (Updates to existing tables)
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS is_nsfw BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS is_embed BOOLEAN DEFAULT FALSE;
+
+

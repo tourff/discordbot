@@ -7,7 +7,7 @@ module.exports = {
   category: 'moderation',
   data: new SlashCommandBuilder()
     .setName('purge')
-    .setDescription('Bulk delete messages from a channel.')
+    .setDescription('Bulk delete messages or manage message elements.')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand(sub =>
       sub.setName('amount')
@@ -30,12 +30,37 @@ module.exports = {
         .setDescription('Delete messages containing specific text.')
         .addStringOption(o => o.setName('text').setDescription('Text to search for').setRequired(true))
         .addIntegerOption(o => o.setName('count').setDescription('How many messages to search through (max 100)').setMinValue(1).setMaxValue(100))
+    )
+    .addSubcommand(sub =>
+      sub.setName('embeds')
+        .setDescription('Delete messages containing embeds.')
+        .addIntegerOption(o => o.setName('count').setDescription('How many messages to search through (max 100)').setMinValue(1).setMaxValue(100))
+    )
+    .addSubcommand(sub =>
+      sub.setName('files')
+        .setDescription('Delete messages containing attachments/files.')
+        .addIntegerOption(o => o.setName('count').setDescription('How many messages to search through (max 100)').setMinValue(1).setMaxValue(100))
+    )
+    .addSubcommand(sub =>
+      sub.setName('images')
+        .setDescription('Delete messages containing embeds or attachments.')
+        .addIntegerOption(o => o.setName('count').setDescription('How many messages to search through (max 100)').setMinValue(1).setMaxValue(100))
+    )
+    .addSubcommand(sub =>
+      sub.setName('reactions')
+        .setDescription('Remove all reactions from recent messages.')
+        .addIntegerOption(o => o.setName('count').setDescription('How many messages to clear reactions from (max 100)').setMinValue(1).setMaxValue(100))
+    )
+    .addSubcommand(sub =>
+      sub.setName('selfclean')
+        .setDescription("Delete the bot's own messages in this channel.")
+        .addIntegerOption(o => o.setName('count').setDescription('How many messages to search through (max 100)').setMinValue(1).setMaxValue(100))
     ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 
-    if (!interaction.channel.permissionsFor(interaction.guild.members.me).has('ManageMessages')) {
+    if (!interaction.channel.permissionsFor(interaction.guild.members.me).has('ManageMessages') && sub !== 'reactions') {
       return interaction.reply({ content: '❌ I need **Manage Messages** permission in this channel.', ephemeral: true });
     }
 
@@ -61,11 +86,44 @@ module.exports = {
         filter = m => m.content.toLowerCase().includes(text);
         break;
       }
+      case 'embeds':
+        filter = m => m.embeds.length > 0;
+        break;
+      case 'files':
+        filter = m => m.attachments.size > 0;
+        break;
+      case 'images':
+        filter = m => m.embeds.length > 0 || m.attachments.size > 0;
+        break;
+      case 'selfclean':
+        filter = m => m.author.id === interaction.client.user.id;
+        break;
     }
 
     try {
-      // Fetch messages and filter
-      const messages = await interaction.channel.messages.fetch({ limit: sub === 'amount' ? count : 100 });
+      // Fetch messages
+      const messages = await interaction.channel.messages.fetch({ limit: count });
+
+      // ── SUB: REACTIONS ──────────────────────────────────────────────────────
+      if (sub === 'reactions') {
+        let clearedCount = 0;
+        for (const [, msg] of messages) {
+          if (msg.reactions.cache.size > 0) {
+            await msg.reactions.removeAll().catch(() => null);
+            clearedCount++;
+          }
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor(0x00ff88)
+          .setTitle('🗑️ Reactions Cleared')
+          .setDescription(`Successfully removed reactions from **${clearedCount}** message(s).`)
+          .setTimestamp();
+
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      // ── DELETION SUBCOMMANDS ─────────────────────────────────────────────────
       const toDelete = sub === 'amount'
         ? [...messages.values()].slice(0, count)
         : [...messages.values()].filter(filter).slice(0, count);

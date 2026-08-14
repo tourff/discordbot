@@ -176,6 +176,122 @@ module.exports = {
       } else if (interaction.customId.startsWith('tourney_')) {
         const { handleTourneyButtons } = require('../modules/tourneyUI');
         await handleTourneyButtons(interaction).catch(console.error);
+      } else if (interaction.customId.startsWith('role_revert_')) {
+        const { getTransaction, deleteTransaction } = require('../modules/roleRevertCache');
+        const { PermissionFlagsBits } = require('discord.js');
+        
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
+          return interaction.reply({ content: '❌ You must have **Manage Roles** permission to revert this action.', ephemeral: true });
+        }
+
+        const txnId = interaction.customId;
+        const txn = getTransaction(txnId);
+        if (!txn) {
+          return interaction.reply({ content: '❌ This transaction has expired or cannot be found.', ephemeral: true });
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+
+        const { roleId, memberIds, actionType } = txn;
+        const role = interaction.guild.roles.cache.get(roleId);
+        if (!role) {
+          return interaction.editReply({ content: '❌ The role associated with this action no longer exists.' });
+        }
+
+        let success = 0, failed = 0;
+        const reason = `Role action reverted by ${interaction.user.tag}`;
+
+        for (const mId of memberIds) {
+          const member = await interaction.guild.members.fetch(mId).catch(() => null);
+          if (member) {
+            try {
+              if (actionType === 'add') {
+                await member.roles.remove(role, reason);
+              } else {
+                await member.roles.add(role, reason);
+              }
+              success++;
+            } catch {
+              failed++;
+            }
+          }
+        }
+
+        deleteTransaction(txnId);
+
+        const originalMessage = interaction.message;
+        if (originalMessage) {
+          await originalMessage.edit({ components: [] }).catch(() => null);
+        }
+
+        await interaction.editReply({
+          content: `✅ Successfully reverted role action. Undid changes for **${success}** members (${failed} failed).`
+        });
+      } else if (interaction.customId.startsWith('ss_approve_')) {
+        const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
+          return interaction.reply({ content: '❌ You must have **Manage Roles** permission to verify screenshots.', ephemeral: true });
+        }
+
+        const targetUserId = interaction.customId.replace('ss_approve_', '');
+        const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => null);
+
+        if (!targetMember) {
+          return interaction.reply({ content: '❌ The user who submitted this screenshot is no longer in this server.', ephemeral: true });
+        }
+
+        const { getSetting } = require('../modules/settings');
+        const roleId = await getSetting(interaction.guild.id, 'SS_VERIFY_ROLE');
+        const role = roleId ? interaction.guild.roles.cache.get(roleId) : null;
+
+        if (!role) {
+          return interaction.reply({ content: '❌ Screenshot verification role is not configured or not found in server settings. Set it up using `/ssverify setup`.', ephemeral: true });
+        }
+
+        await interaction.deferUpdate();
+
+        try {
+          await targetMember.roles.add(role, `Screenshot approved by ${interaction.user.tag}`);
+          
+          await targetMember.send({
+            content: `✅ Your screenshot submission in **${interaction.guild.name}** was **approved** by staff! You have been assigned the **${role.name}** role.`
+          }).catch(() => null);
+
+          const oldEmbed = interaction.message.embeds[0];
+          const newEmbed = EmbedBuilder.from(oldEmbed)
+            .setColor(0x00ff88)
+            .setTitle('📸 Screenshot Approved')
+            .addFields(
+              { name: 'Status', value: `✅ Approved by ${interaction.user}`, inline: true }
+            );
+
+          await interaction.message.edit({ embeds: [newEmbed], components: [] });
+        } catch (err) {
+          console.error(err);
+          await interaction.followUp({ content: `❌ Failed to approve: ${err.message}`, ephemeral: true });
+        }
+      } else if (interaction.customId.startsWith('ss_reject_')) {
+        const { PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
+          return interaction.reply({ content: '❌ You must have **Manage Roles** permission to reject screenshots.', ephemeral: true });
+        }
+
+        const targetUserId = interaction.customId.replace('ss_reject_', '');
+
+        const modal = new ModalBuilder()
+          .setCustomId(`ss_reject_modal_${targetUserId}`)
+          .setTitle('Reject Screenshot');
+
+        const reasonInput = new TextInputBuilder()
+          .setCustomId('ss_reject_reason')
+          .setLabel('Rejection Reason')
+          .setPlaceholder('Enter reason (e.g. invalid logo, crop, blurry image)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMaxLength(500);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(reasonInput));
+        await interaction.showModal(modal);
       }
     }
 
@@ -357,6 +473,31 @@ module.exports = {
       } else if (interaction.customId === 'tourney_create_modal' || interaction.customId.startsWith('tourney_edit_modal_')) {
         const { handleTourneyModals } = require('../modules/tourneyUI');
         await handleTourneyModals(interaction).catch(console.error);
+      } else if (interaction.customId.startsWith('ss_reject_modal_')) {
+        const { EmbedBuilder } = require('discord.js');
+        const targetUserId = interaction.customId.replace('ss_reject_modal_', '');
+        const reason = interaction.fields.getTextInputValue('ss_reject_reason');
+
+        const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => null);
+
+        await interaction.deferUpdate();
+
+        if (targetMember) {
+          await targetMember.send({
+            content: `❌ Your screenshot submission in **${interaction.guild.name}** was **rejected** by staff.\n\n**Reason:** ${reason}`
+          }).catch(() => null);
+        }
+
+        const oldEmbed = interaction.message.embeds[0];
+        const newEmbed = EmbedBuilder.from(oldEmbed)
+          .setColor(0xff4444)
+          .setTitle('📸 Screenshot Rejected')
+          .addFields(
+            { name: 'Status', value: `❌ Rejected by ${interaction.user}`, inline: true },
+            { name: 'Reason', value: reason, inline: false }
+          );
+
+        await interaction.message.edit({ embeds: [newEmbed], components: [] });
       }
     }
   },

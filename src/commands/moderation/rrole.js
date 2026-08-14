@@ -58,11 +58,13 @@ module.exports = {
     }
 
     let success = 0, failed = 0;
+    const successMemberIds = [];
 
     for (const member of targets) {
       try {
         await member.roles.remove(role, reason);
         success++;
+        successMemberIds.push(member.id);
         if (success % 5 === 0) await new Promise(r => setTimeout(r, 500));
       } catch {
         failed++;
@@ -80,6 +82,22 @@ module.exports = {
       )
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [embed] });
+    const components = [];
+    if (success > 0) {
+      const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+      const { saveTransaction } = require('../../modules/roleRevertCache');
+      const txnId = `role_revert_${interaction.id}`;
+      saveTransaction(txnId, role.id, successMemberIds, 'remove');
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(txnId)
+          .setLabel('Revert Action')
+          .setStyle(ButtonStyle.Danger)
+      );
+      components.push(row);
+    }
+
+    await interaction.editReply({ embeds: [embed], components });
   },
 };

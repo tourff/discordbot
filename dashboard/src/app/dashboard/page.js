@@ -21,7 +21,7 @@ const Icon = {
   Globe:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
   Music:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
   Discord:  ({ size = 16 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink:0 }}><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>,
-  Jarvis:   ({ size = 18 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M8.5 8.5l7 7"/></svg>,
+  Quotient:   ({ size = 18 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M8.5 8.5l7 7"/></svg>,
 };
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
@@ -103,7 +103,8 @@ const TABS = [
   { id: 'welcome',     label: 'Welcome',          icon: '👋',              color: '#34d399' },
   { id: 'automod',     label: 'AutoMod',          icon: <Icon.Robot />,    color: '#f87171' },
   { id: 'logging',     label: 'Logging',          icon: <Icon.Logs />,     color: '#a78bfa' },
-  { id: 'roles',       label: 'Roles',            icon: <Icon.Roles />,    color: '#fbbf24' },
+  { id: 'roles',       label: 'Roles & Auto',     icon: <Icon.Roles />,    color: '#fbbf24' },
+  { id: 'esports',     label: 'Esports & SS',     icon: '🎮',              color: '#10b981' },
   { id: 'social',      label: 'Social Notifier',  icon: <Icon.Globe />,    color: '#38bdf8' },
   { id: 'music',       label: 'Music',            icon: <Icon.Music />,    color: '#f472b6' },
 ];
@@ -154,8 +155,11 @@ export default function Dashboard() {
   const [logging, setLogging] = useState({ MOD_LOGS_CHANNEL_ID: '', SERVER_LOGS_CHANNEL_ID: '' });
   const [isSavingLogging, setIsSavingLogging] = useState(false);
 
-  const [roles, setRoles] = useState({ DEFAULT_MEMBER_ROLE_ID: '' });
+  const [roles, setRoles] = useState({ DEFAULT_MEMBER_ROLE_ID: '', AUTOROLE_HUMANS_ROLE_ID: '', AUTOROLE_BOTS_ROLE_ID: '' });
   const [isSavingRoles, setIsSavingRoles] = useState(false);
+
+  const [esports, setEsports] = useState({ SS_VERIFY_CHANNEL: '', SS_VERIFY_ROLE: '' });
+  const [isSavingEsports, setIsSavingEsports] = useState(false);
 
   const [social, setSocial] = useState({
     YOUTUBE_URL: '', YOUTUBE_CHANNEL_ID: '', YOUTUBE_MESSAGE: '',
@@ -195,6 +199,7 @@ export default function Dashboard() {
       'WELCOME_CHANNEL_ID','WELCOME_MESSAGE','GOODBYE_CHANNEL_ID','GOODBYE_MESSAGE',
       'AUTOMOD_BAD_WORDS','AUTOMOD_ANTI_SPAM','AUTOMOD_BLOCK_INVITES','AUTOMOD_BLOCK_URLS',
       'MOD_LOGS_CHANNEL_ID','SERVER_LOGS_CHANNEL_ID','DEFAULT_MEMBER_ROLE_ID',
+      'AUTOROLE_HUMANS_ROLE_ID','AUTOROLE_BOTS_ROLE_ID','SS_VERIFY_CHANNEL','SS_VERIFY_ROLE',
       'YOUTUBE_URL','YOUTUBE_CHANNEL_ID','YOUTUBE_MESSAGE',
       'FACEBOOK_URL','FACEBOOK_CHANNEL_ID','FACEBOOK_MESSAGE',
       'INSTAGRAM_URL','INSTAGRAM_CHANNEL_ID','INSTAGRAM_MESSAGE',
@@ -226,7 +231,15 @@ export default function Dashboard() {
           MOD_LOGS_CHANNEL_ID:    map.MOD_LOGS_CHANNEL_ID    || '',
           SERVER_LOGS_CHANNEL_ID: map.SERVER_LOGS_CHANNEL_ID || '',
         });
-        setRoles({ DEFAULT_MEMBER_ROLE_ID: map.DEFAULT_MEMBER_ROLE_ID || '' });
+        setRoles({
+          DEFAULT_MEMBER_ROLE_ID: map.DEFAULT_MEMBER_ROLE_ID || '',
+          AUTOROLE_HUMANS_ROLE_ID: map.AUTOROLE_HUMANS_ROLE_ID || '',
+          AUTOROLE_BOTS_ROLE_ID: map.AUTOROLE_BOTS_ROLE_ID || '',
+        });
+        setEsports({
+          SS_VERIFY_CHANNEL: map.SS_VERIFY_CHANNEL || '',
+          SS_VERIFY_ROLE: map.SS_VERIFY_ROLE || '',
+        });
         setSocial({
           YOUTUBE_URL: map.YOUTUBE_URL || '', YOUTUBE_CHANNEL_ID: map.YOUTUBE_CHANNEL_ID || '', YOUTUBE_MESSAGE: map.YOUTUBE_MESSAGE || '',
           FACEBOOK_URL: map.FACEBOOK_URL || '', FACEBOOK_CHANNEL_ID: map.FACEBOOK_CHANNEL_ID || '', FACEBOOK_MESSAGE: map.FACEBOOK_MESSAGE || '',
@@ -276,6 +289,14 @@ export default function Dashboard() {
     setIsSavingRoles(false);
   };
 
+  const handleSaveEsports = async (e) => {
+    e.preventDefault();
+    setIsSavingEsports(true);
+    const ok = await saveSettings(esports);
+    showToast(ok ? 'Esports settings saved! 🎮' : 'Failed to save.', ok ? 'success' : 'error');
+    setIsSavingEsports(false);
+  };
+
   const handleSaveSocial = async (e) => {
     e.preventDefault();
     setIsSavingSocial(true);
@@ -308,7 +329,7 @@ export default function Dashboard() {
           <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 0 40px rgba(99,102,241,0.15)' }}>
             <div className="spinner" style={{ width: 28, height: 28, borderWidth: 2.5 }} />
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Loading Jarvis Dashboard…</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Loading Quotient Dashboard…</p>
         </div>
       </div>
     );
@@ -329,11 +350,11 @@ export default function Dashboard() {
       <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px', background: 'rgba(5,7,15,0.93)', backdropFilter: 'blur(32px)', borderBottom: '1px solid rgba(255,255,255,0.04)', boxShadow: '0 1px 0 rgba(99,102,241,0.06), 0 4px 24px rgba(0,0,0,0.3)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="logo-icon" style={{ width: 34, height: 34, borderRadius: 10 }}>
-            <Icon.Jarvis size={18} />
+            <Icon.Quotient size={18} />
           </div>
           <div>
             <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.03em' }}>
-              <span className="gradient-text">Jarvis</span>
+              <span className="gradient-text">Quotient</span>
               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> Bot</span>
             </span>
           </div>
@@ -438,7 +459,7 @@ export default function Dashboard() {
               </div>
               <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 10, letterSpacing: '-0.03em' }}>Select a Server</h2>
               <p style={{ color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.7, fontSize: 15, marginBottom: 28 }}>
-                Choose one of your admin servers from the sidebar to start managing Jarvis Bot settings.
+                Choose one of your admin servers from the sidebar to start managing Quotient Bot settings.
               </p>
               {guilds.length > 0 && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 500 }}>
@@ -708,12 +729,20 @@ export default function Dashboard() {
                     <form onSubmit={handleSaveRoles} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
                       <div className="glass-card-static" style={{ padding: '24px 26px' }}>
-                        <SectionHeading icon={<Icon.Roles />} iconBg="rgba(245,158,11,0.12)" iconColor="#fbbf24" title="Default Member Role" subtitle="Automatically assigned to new members when they join the server" />
-                        <Field label="Default Member Role ID">
-                          <input type="text" value={roles.DEFAULT_MEMBER_ROLE_ID} onChange={e => setRoles({ ...roles, DEFAULT_MEMBER_ROLE_ID: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%', maxWidth: 480 }} />
-                        </Field>
+                        <SectionHeading icon={<Icon.Roles />} iconBg="rgba(245,158,11,0.12)" iconColor="#fbbf24" title="Autoroles" subtitle="Automatically assign roles to joining members" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+                          <Field label="Default Member Role ID" hint="assigned to all humans (legacy/fallback)">
+                            <input type="text" value={roles.DEFAULT_MEMBER_ROLE_ID} onChange={e => setRoles({ ...roles, DEFAULT_MEMBER_ROLE_ID: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%' }} />
+                          </Field>
+                          <Field label="Human Autorole ID" hint="assigned to joining human members">
+                            <input type="text" value={roles.AUTOROLE_HUMANS_ROLE_ID} onChange={e => setRoles({ ...roles, AUTOROLE_HUMANS_ROLE_ID: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%' }} />
+                          </Field>
+                          <Field label="Bot Autorole ID" hint="assigned to joining bot accounts">
+                            <input type="text" value={roles.AUTOROLE_BOTS_ROLE_ID} onChange={e => setRoles({ ...roles, AUTOROLE_BOTS_ROLE_ID: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%' }} />
+                          </Field>
+                        </div>
                         <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)', borderRadius: 10, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                          💡 <strong style={{ color: '#fbbf24' }}>Tip:</strong> Right-click a role in Discord → Copy Role ID. Make sure Jarvis Bot's role is above this role in the hierarchy.
+                          💡 <strong style={{ color: '#fbbf24' }}>Tip:</strong> Right-click a role in Discord → Copy Role ID. Make sure Quotient Bot's role is above these roles in the hierarchy.
                         </div>
                       </div>
 
@@ -812,6 +841,37 @@ export default function Dashboard() {
                   )}
 
                   {/* ══════════════════════════════════════════ */}
+                  {/* ─── TAB: ESPORTS ─── */}
+                  {/* ══════════════════════════════════════════ */}
+                  {activeTab === 'esports' && (
+                    <form onSubmit={handleSaveEsports} className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                      <div className="glass-card-static" style={{ padding: '24px 26px' }}>
+                        <SectionHeading icon="🎮" iconBg="rgba(16,185,129,0.12)" iconColor="#10b981" title="Screenshot Verification" subtitle="Configure screenshots log channel and role to assign" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+                          <Field label="Verification Log Channel ID" hint="where staff approves/rejects submissions">
+                            <input type="text" value={esports.SS_VERIFY_CHANNEL} onChange={e => setEsports({ ...esports, SS_VERIFY_CHANNEL: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%' }} />
+                          </Field>
+                          <Field label="Verified Role ID" hint="role given upon successful verification">
+                            <input type="text" value={esports.SS_VERIFY_ROLE} onChange={e => setEsports({ ...esports, SS_VERIFY_ROLE: e.target.value })} placeholder="e.g. 123456789012345678" className="input-field" style={{ padding: '10px 13px', width: '100%' }} />
+                          </Field>
+                        </div>
+                        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)', borderRadius: 10, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                          💡 <strong style={{ color: '#10b981' }}>How it works:</strong> Users submit screenshot attachments via `/ssverify submit`. The bot will post them to the log channel with **Approve** and **Reject** buttons for staff members.
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Changes apply instantly</span>
+                        <button type="submit" disabled={isSavingEsports} className="btn-primary" style={{ padding: '11px 28px', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 9, borderRadius: 12 }}>
+                          {isSavingEsports ? <span className="spinner-sm" /> : <Icon.Check />}
+                          <span>{isSavingEsports ? 'Saving…' : 'Save Esports Settings'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* ══════════════════════════════════════════ */}
                   {/* ─── TAB: MUSIC ─── */}
                   {/* ══════════════════════════════════════════ */}
                   {activeTab === 'music' && (
@@ -822,7 +882,7 @@ export default function Dashboard() {
                         <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🎵</div>
                         <div>
                           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 3, letterSpacing: '-0.02em' }}>Music System</div>
-                          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55 }}>Jarvis Bot includes a full-featured music player. Use slash commands in any voice channel to play music.</div>
+                          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55 }}>Quotient Bot includes a full-featured music player. Use slash commands in any voice channel to play music.</div>
                         </div>
                         <span className="badge-live" style={{ marginLeft: 'auto', flexShrink: 0 }}><span className="badge-live-dot" />Active</span>
                       </div>

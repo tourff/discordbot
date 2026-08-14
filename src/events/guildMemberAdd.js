@@ -8,7 +8,7 @@
 'use strict';
 
 const { EmbedBuilder } = require('discord.js');
-const { getWelcomeChannelId, getWelcomeMessage, getDefaultMemberRoleId } = require('../modules/settings');
+const { getWelcomeChannelId, getWelcomeMessage, getDefaultMemberRoleId, getSetting } = require('../modules/settings');
 
 module.exports = {
   name: 'guildMemberAdd',
@@ -19,16 +19,30 @@ module.exports = {
   async execute(member) {
     const { guild } = member;
 
-    // ── 1. Assign default member role ────────────────────────────────────────
-    const roleId = await getDefaultMemberRoleId(guild.id);
-    if (roleId) {
-      const role = guild.roles.cache.get(roleId);
+    // ── 1. Assign default and specific autoroles ──────────────────────────────
+    const rolesToAdd = [];
+
+    // Check specific autoroles for bots/humans
+    if (member.user.bot) {
+      const botRoleId = await getSetting(guild.id, 'AUTOROLE_BOTS_ROLE_ID');
+      if (botRoleId) rolesToAdd.push(botRoleId);
+    } else {
+      const humanRoleId = await getSetting(guild.id, 'AUTOROLE_HUMANS_ROLE_ID');
+      if (humanRoleId) rolesToAdd.push(humanRoleId);
+      
+      // Fallback/Legacy default role
+      const defaultRoleId = await getDefaultMemberRoleId(guild.id);
+      if (defaultRoleId) rolesToAdd.push(defaultRoleId);
+    }
+
+    for (const rId of rolesToAdd) {
+      const role = guild.roles.cache.get(rId);
       if (role) {
         await member.roles.add(role).catch((err) =>
-          console.error('[guildMemberAdd] Could not assign default role:', err)
+          console.error(`[guildMemberAdd] Could not assign role ${rId}:`, err)
         );
       } else {
-        console.warn(`[guildMemberAdd] Role ${roleId} not found in cache.`);
+        console.warn(`[guildMemberAdd] Role ${rId} not found in cache.`);
       }
     }
 

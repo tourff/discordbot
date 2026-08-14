@@ -76,6 +76,7 @@ loadDisTube(client);
 // ── 4. Start background cron jobs ─────────────────────────────────────────────
 const startReminderCron = require('./jobs/reminderJob');
 const startAutopurgeCron = require('./jobs/autopurgeJob');
+const startLockdownCron = require('./jobs/lockdownJob');
 
 // Delay startup slightly so the client is ready before the first poll
 client.once('ready', () => {
@@ -83,6 +84,7 @@ client.once('ready', () => {
   startSocialCron(client);
   startReminderCron(client);
   startAutopurgeCron(client);
+  startLockdownCron(client);
 });
 
 // ── 5. Login ──────────────────────────────────────────────────────────────────

@@ -117,11 +117,11 @@ export default function Home() {
       <nav className="navbar-premium">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="logo-icon">
-            <JarvisIcon size={22} />
+            <QuotientIcon size={22} />
           </div>
           <div>
             <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em' }}>
-              <span className="gradient-text">Jarvis</span>
+              <span className="gradient-text">Quotient</span>
               <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> Bot</span>
             </span>
           </div>
@@ -165,7 +165,7 @@ export default function Home() {
           fontWeight: 900, letterSpacing: '-0.05em',
           lineHeight: 1.0, marginBottom: 28, maxWidth: 900,
         }}>
-          Meet <span className="shimmer-text">Jarvis.</span>
+          Meet <span className="shimmer-text">Quotient.</span>
           <br />
           <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.5em', letterSpacing: '-0.02em', lineHeight: 2.2 }}>
             Your Discord Server, Supercharged.
@@ -243,7 +243,7 @@ export default function Home() {
             <br /><span className="gradient-text">all in one place.</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 17, maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>
-            Jarvis Bot combines powerful moderation, automation, and entertainment features — fully configurable from the dashboard.
+            Quotient Bot combines powerful moderation, automation, and entertainment features — fully configurable from the dashboard.
           </p>
         </div>
 
@@ -323,7 +323,7 @@ export default function Home() {
             Ready to power up<br /><span className="shimmer-text">your server?</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 17, lineHeight: 1.7, marginBottom: 44 }}>
-            Join servers already using Jarvis Bot to manage their communities more efficiently.
+            Join servers already using Quotient Bot to manage their communities more efficiently.
           </p>
           <button
             id="cta-login-btn"
@@ -350,10 +350,10 @@ export default function Home() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 15, borderRadius: 8 }}>
-            <JarvisIcon size={16} />
+            <QuotientIcon size={16} />
           </div>
           <span style={{ fontWeight: 700, fontSize: 14, letterSpacing: '-0.02em' }}>
-            <span className="gradient-text">Jarvis</span>
+            <span className="gradient-text">Quotient</span>
             <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> Bot</span>
           </span>
         </div>
@@ -391,7 +391,7 @@ function DiscordIcon({ size = 20 }) {
   );
 }
 
-function JarvisIcon({ size = 20 }) {
+function QuotientIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
       <circle cx="12" cy="12" r="10"/>

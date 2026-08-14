@@ -1,13 +1,14 @@
 // src/commands/esports/ssverify.js
 'use strict';
 
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { setSetting, getSetting } = require('../../modules/settings');
 
 module.exports = {
   category: 'esports',
   data: new SlashCommandBuilder()
     .setName('ssverify')
-    .setDescription('Screenshot verification system for tournaments.')
+    .setDescription('Screenshot verification system.')
     .addSubcommand(sub =>
       sub.setName('submit')
         .setDescription('Submit a screenshot for verification.')
@@ -16,28 +17,32 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('setup')
-        .setDescription('Set the SS verification log channel.')
+        .setDescription('Set the SS verification log channel and role to assign.')
         .addChannelOption(o => o.setName('channel').setDescription('The channel where admins will verify SS').setRequired(true))
+        .addRoleOption(o => o.setName('role').setDescription('Role to assign upon approval').setRequired(true))
     ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
+    // ── SUB: SETUP ────────────────────────────────────────────────────────────
     if (sub === 'setup') {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
         return interaction.reply({ content: '❌ You need Manage Server permission to setup SS verification.', ephemeral: true });
       }
 
       const channel = interaction.options.getChannel('channel');
+      const role = interaction.options.getRole('role');
 
-      const { setSetting } = require('../../modules/settings');
       await setSetting(guildId, 'SS_VERIFY_CHANNEL', channel.id);
+      await setSetting(guildId, 'SS_VERIFY_ROLE', role.id);
 
-      await interaction.reply({ content: `✅ SS Verification logs will now be sent to ${channel}.`, ephemeral: true });
+      await interaction.reply({ content: `✅ SS Verification configured successfully:\n• Logs channel: ${channel}\n• Role to assign: ${role}`, ephemeral: true });
       return;
     }
 
+    // ── SUB: SUBMIT ───────────────────────────────────────────────────────────
     if (sub === 'submit') {
       await interaction.deferReply({ ephemeral: true });
 
@@ -48,16 +53,16 @@ module.exports = {
         return interaction.editReply({ content: '❌ Please upload a valid image file.' });
       }
 
-      const { getSetting } = require('../../modules/settings');
       const channelId = await getSetting(guildId, 'SS_VERIFY_CHANNEL');
+      const roleId = await getSetting(guildId, 'SS_VERIFY_ROLE');
 
-      if (!channelId) {
-        return interaction.editReply({ content: '❌ SS Verification is not set up in this server. Please contact an admin.' });
+      if (!channelId || !roleId) {
+        return interaction.editReply({ content: '❌ SS Verification is not set up in this server. Please ask an admin to configure it using `/ssverify setup`.' });
       }
 
       const logChannel = interaction.guild.channels.cache.get(channelId);
       if (!logChannel) {
-        return interaction.editReply({ content: '❌ SS Verification channel not found. Please contact an admin.' });
+        return interaction.editReply({ content: '❌ SS Verification log channel not found. Please contact an admin.' });
       }
 
       const embed = new EmbedBuilder()
@@ -70,9 +75,20 @@ module.exports = {
         .setImage(image.url)
         .setTimestamp();
 
-      await logChannel.send({ embeds: [embed] });
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`ss_approve_${interaction.user.id}`)
+          .setLabel('Approve ✅')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`ss_reject_${interaction.user.id}`)
+          .setLabel('Reject ❌')
+          .setStyle(ButtonStyle.Danger)
+      );
 
-      await interaction.editReply({ content: '✅ Your screenshot has been submitted for verification.' });
+      await logChannel.send({ embeds: [embed], components: [row] });
+
+      await interaction.editReply({ content: '✅ Your screenshot has been submitted for verification. Staff will review it shortly.' });
     }
   },
 };

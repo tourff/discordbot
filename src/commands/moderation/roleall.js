@@ -65,11 +65,13 @@ module.exports = {
 
     let success = 0, failed = 0;
     const reason = `Mass role add by ${interaction.user.tag}`;
+    const successMemberIds = [];
 
     for (const member of targets) {
       try {
         await member.roles.add(role, reason);
         success++;
+        successMemberIds.push(member.id);
         // Small delay to avoid rate limits
         if (success % 5 === 0) await new Promise(r => setTimeout(r, 500));
       } catch {
@@ -89,6 +91,22 @@ module.exports = {
       )
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [doneEmbed] });
+    const components = [];
+    if (success > 0) {
+      const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+      const { saveTransaction } = require('../../modules/roleRevertCache');
+      const txnId = `role_revert_${interaction.id}`;
+      saveTransaction(txnId, role.id, successMemberIds, 'add');
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(txnId)
+          .setLabel('Revert Action')
+          .setStyle(ButtonStyle.Danger)
+      );
+      components.push(row);
+    }
+
+    await interaction.editReply({ embeds: [doneEmbed], components });
   },
 };
