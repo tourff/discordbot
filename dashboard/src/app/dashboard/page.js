@@ -299,7 +299,7 @@ export default function Dashboard() {
             <div className="spinner" style={{ width: 32, height: 32, borderWidth: 2.5 }} />
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Loading Dashboard</p>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Quotient Bot</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Jarvis Bot</p>
         </div>
       </div>
     );
@@ -485,7 +485,7 @@ export default function Dashboard() {
               </div>
               <h2 style={{ fontSize: 32, fontWeight: 900, marginBottom: 12, letterSpacing: '-0.04em' }}>Select a <span className="gradient-text">Server</span></h2>
               <p style={{ color: 'var(--text-secondary)', maxWidth: 440, lineHeight: 1.75, fontSize: 15.5, marginBottom: 40 }}>
-                Choose one of your admin servers from the sidebar to start managing Quotient Bot settings.
+                Choose one of your admin servers from the sidebar to start managing Jarvis Bot settings.
               </p>
               {guilds.length > 0 && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 580 }}>
@@ -625,7 +625,7 @@ export default function Dashboard() {
                             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
                               {selectedGuild.name}
                             </div>
-                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Managing Quotient Bot for this server · ID: <code style={{ fontFamily: 'monospace', fontSize: 11, color: '#818cf8' }}>{selectedGuild.id}</code></div>
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Managing Jarvis Bot for this server · ID: <code style={{ fontFamily: 'monospace', fontSize: 11, color: '#818cf8' }}>{selectedGuild.id}</code></div>
                           </div>
                           <span className="badge-live"><span className="badge-live-dot" />Bot Active</span>
                         </div>
@@ -797,7 +797,7 @@ export default function Dashboard() {
                                   <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#5865f2,#7289da)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>⚡</div>
                                   <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                      <span style={{ fontSize: 14, fontWeight: 700, color: '#34d399', fontFamily: 'Inter,sans-serif' }}>Quotient Bot</span>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: '#34d399', fontFamily: 'Inter,sans-serif' }}>Jarvis Bot</span>
                                       <span style={{ fontSize: 9.5, fontWeight: 700, background: '#5865f2', color: 'white', padding: '1px 4px', borderRadius: 3 }}>BOT</span>
                                       <span style={{ fontSize: 10.5, color: '#8e919a', fontFamily: 'Inter,sans-serif' }}>Today at 12:00 PM</span>
                                     </div>
@@ -928,7 +928,7 @@ export default function Dashboard() {
                             </Field>
                           </div>
                           <div style={{ marginTop: 14, padding: '12px 16px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)', borderRadius: 11, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                            💡 <strong style={{ color: '#fbbf24' }}>Tip:</strong> Right-click a role in Discord → Copy Role ID. Make sure Quotient Bot's role is above these roles in the hierarchy.
+                            💡 <strong style={{ color: '#fbbf24' }}>Tip:</strong> Right-click a role in Discord → Copy Role ID. Make sure Jarvis Bot's role is above these roles in the hierarchy.
                           </div>
                         </div>
 
