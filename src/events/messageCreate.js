@@ -11,6 +11,8 @@ const { autoMod } = require('../modules/autoMod');
 const { handleEasytag, handleTagcheck } = require('../modules/esportsHandlers');
 const { handleScrimRegistration } = require('../modules/scrimsManager');
 const { handleTourneyRegistration } = require('../modules/tourneyManager');
+const { handleAIChatChannel } = require('../modules/aiAssistant');
+const { handleMessageXP } = require('../modules/leveling');
 
 module.exports = {
   name: 'messageCreate',
@@ -22,6 +24,10 @@ module.exports = {
   async execute(message, client) {
     // Ignore bots and DMs
     if (message.author.bot || !message.guild) return;
+
+    // AI Auto-Chat in designated channel
+    const aiHandled = await handleAIChatChannel(message).catch(console.error);
+    if (aiHandled) return;
 
     // Run esports tag handlers
     const easytagHandled = await handleEasytag(message).catch(console.error);
@@ -36,6 +42,11 @@ module.exports = {
     const tourneyHandled = await handleTourneyRegistration(message).catch(console.error);
     if (tourneyHandled) return; // Processed by tourney manager
 
+    // AutoMod check
     await autoMod(message, client).catch(console.error);
+
+    // Award XP
+    await handleMessageXP(message).catch(console.error);
   },
 };
+

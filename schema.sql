@@ -314,4 +314,90 @@ CREATE POLICY "Bot full access" ON public.user_profiles
 ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS is_nsfw BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS is_embed BOOLEAN DEFAULT FALSE;
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 8. user_levels (XP & Leveling Progression)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.user_levels (
+  id            BIGSERIAL    PRIMARY KEY,
+  guild_id      TEXT         NOT NULL,
+  user_id       TEXT         NOT NULL,
+  xp            BIGINT       DEFAULT 0,
+  level         INT          DEFAULT 1,
+  message_count INT          DEFAULT 0,
+  last_xp_at    TIMESTAMPTZ  DEFAULT NOW(),
+  UNIQUE (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_levels_guild_xp ON public.user_levels (guild_id, xp DESC);
+ALTER TABLE public.user_levels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.user_levels FOR ALL USING (true) WITH CHECK (true);
+
+-- Level Role Rewards
+CREATE TABLE IF NOT EXISTS public.level_rewards (
+  id         BIGSERIAL PRIMARY KEY,
+  guild_id   TEXT NOT NULL,
+  level      INT NOT NULL,
+  role_id    TEXT NOT NULL,
+  UNIQUE (guild_id, level)
+);
+ALTER TABLE public.level_rewards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.level_rewards FOR ALL USING (true) WITH CHECK (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 9. tickets (Interactive Support Ticket System)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.tickets (
+  id              BIGSERIAL    PRIMARY KEY,
+  guild_id        TEXT         NOT NULL,
+  channel_id      TEXT         NOT NULL UNIQUE,
+  user_id         TEXT         NOT NULL,
+  status          TEXT         NOT NULL DEFAULT 'open', -- 'open' | 'closed'
+  claimed_by      TEXT,
+  transcript_text TEXT,
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  closed_at       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_guild ON public.tickets (guild_id);
+ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.tickets FOR ALL USING (true) WITH CHECK (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 10. giveaways (Giveaway Engine)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.giveaways (
+  id            BIGSERIAL    PRIMARY KEY,
+  guild_id      TEXT         NOT NULL,
+  channel_id    TEXT         NOT NULL,
+  message_id    TEXT         NOT NULL UNIQUE,
+  prize         TEXT         NOT NULL,
+  winner_count  INT          NOT NULL DEFAULT 1,
+  end_time      TIMESTAMPTZ  NOT NULL,
+  is_ended      BOOLEAN      NOT NULL DEFAULT FALSE,
+  winners       TEXT[],
+  entries       TEXT[]       DEFAULT '{}',
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_giveaways_active ON public.giveaways (is_ended, end_time);
+ALTER TABLE public.giveaways ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.giveaways FOR ALL USING (true) WITH CHECK (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 11. economy_shop (Server Currency & Role Shop)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.economy_shop (
+  id          BIGSERIAL    PRIMARY KEY,
+  guild_id    TEXT         NOT NULL,
+  item_name   TEXT         NOT NULL,
+  role_id     TEXT,
+  price       BIGINT       NOT NULL DEFAULT 100,
+  description TEXT,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.economy_shop ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.economy_shop FOR ALL USING (true) WITH CHECK (true);
+
+
 

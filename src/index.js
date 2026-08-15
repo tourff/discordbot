@@ -77,6 +77,7 @@ loadDisTube(client);
 const startReminderCron = require('./jobs/reminderJob');
 const startAutopurgeCron = require('./jobs/autopurgeJob');
 const startLockdownCron = require('./jobs/lockdownJob');
+const startGiveawayCron = require('./jobs/giveawayJob');
 
 // Delay startup slightly so the client is ready before the first poll
 client.once('ready', () => {
@@ -85,6 +86,7 @@ client.once('ready', () => {
   startReminderCron(client);
   startAutopurgeCron(client);
   startLockdownCron(client);
+  startGiveawayCron(client);
 });
 
 // ── 5. Login ──────────────────────────────────────────────────────────────────

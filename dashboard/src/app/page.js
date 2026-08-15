@@ -140,18 +140,25 @@ export default function Home() {
 
         {/* Hero Title */}
         <h1 style={{
-          fontSize: 'clamp(44px, 7vw, 76px)',
-          fontWeight: 800, letterSpacing: '-0.04em',
-          lineHeight: 1.05, marginBottom: 24,
+          fontSize: 'clamp(52px, 9vw, 96px)',
+          fontWeight: 900, letterSpacing: '-0.05em',
+          lineHeight: 1.02, marginBottom: 24,
           color: '#ffffff',
-          maxWidth: 900,
+          maxWidth: 950,
         }}>
-          Server Management,<br />
           <span style={{
-            background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #a5b4fc 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>
-            Engineered with Precision.
+            Jarvis Bot
+          </span>
+          <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            filter: 'drop-shadow(0 0 35px rgba(139, 92, 246, 0.4))'
+          }}>
+            Made by trj7
           </span>
         </h1>
 

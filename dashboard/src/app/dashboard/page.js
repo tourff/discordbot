@@ -32,6 +32,32 @@ const Icon = {
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
     </svg>
   ),
+  Brain: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z" />
+      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z" />
+    </svg>
+  ),
+  Level: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34c0-.55.45-1 1-1h2c.55 0 1 .45 1 1Z" /><path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34c0-.55.45-1 1-1h2c.55 0 1 .45 1 1Z" /><path d="M6 4h12v5a6 6 0 0 1-12 0V4Z" />
+    </svg>
+  ),
+  Ticket: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v2" /><path d="M13 17v2" /><path d="M13 11v2" />
+    </svg>
+  ),
+  Gift: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+    </svg>
+  ),
+  Coin: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  ),
   Logs: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
@@ -82,11 +108,6 @@ const Icon = {
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
   ),
-  External: () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
-  ),
   Logout: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -128,30 +149,36 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-// ─── Navigation Categories Config ───────────────────────────────────────────────
+// ─── Modern Category Navigation Groups ──────────────────────────────────────────
 const NAV_SECTIONS = [
   {
     title: 'CORE PLATFORM',
     items: [
-      { id: 'overview', label: 'Overview', icon: <Icon.Dashboard />, desc: 'Server health & system status' },
-      { id: 'permissions', label: 'Permissions', icon: <Icon.Shield />, desc: 'Command access control' },
+      { id: 'overview', label: 'Overview', icon: <Icon.Dashboard /> },
+      { id: 'permissions', label: 'Permissions', icon: <Icon.Shield /> },
+      { id: 'ai', label: 'AI Intelligence', icon: <Icon.Brain /> },
     ]
   },
   {
-    title: 'AUTOMATION & SAFETY',
+    title: 'SAFETY & MODERATION',
     items: [
-      { id: 'automod', label: 'Auto-Moderation', icon: <Icon.Robot />, desc: 'Spam, link & toxicity filter' },
-      { id: 'welcome', label: 'Welcome Suite', icon: <Icon.Sparkles />, desc: 'Custom join/leave broadcasts' },
-      { id: 'logging', label: 'Audit Logs', icon: <Icon.Logs />, desc: 'Moderation & server audit trail' },
-      { id: 'roles', label: 'Role Manager', icon: <Icon.Users />, desc: 'Autoroles & button role assigner' },
+      { id: 'automod', label: 'Auto-Moderation', icon: <Icon.Robot /> },
+      { id: 'antinuke', label: 'Anti-Nuke Shield', icon: <Icon.Shield /> },
+      { id: 'welcome', label: 'Welcome Suite', icon: <Icon.Sparkles /> },
+      { id: 'logging', label: 'Audit Logs', icon: <Icon.Logs /> },
+      { id: 'tickets', label: 'Support Tickets', icon: <Icon.Ticket /> },
     ]
   },
   {
-    title: 'ENGAGEMENT & MEDIA',
+    title: 'ENGAGEMENT & ECONOMY',
     items: [
-      { id: 'social', label: 'Social Notifier', icon: <Icon.Globe />, desc: 'YouTube, Twitch, TikTok feeds' },
-      { id: 'esports', label: 'Esports Verification', icon: <Icon.Gamepad />, desc: 'Screenshot approval workflow' },
-      { id: 'music', label: 'Music Engine', icon: <Icon.Music />, desc: 'Audio playback & queue commands' },
+      { id: 'leveling', label: 'Leveling & XP', icon: <Icon.Level /> },
+      { id: 'giveaways', label: 'Giveaways', icon: <Icon.Gift /> },
+      { id: 'economy', label: 'Economy & Shop', icon: <Icon.Coin /> },
+      { id: 'roles', label: 'Role Manager', icon: <Icon.Users /> },
+      { id: 'social', label: 'Social Notifier', icon: <Icon.Globe /> },
+      { id: 'esports', label: 'Esports Verification', icon: <Icon.Gamepad /> },
+      { id: 'music', label: 'Music Engine', icon: <Icon.Music /> },
     ]
   }
 ];
@@ -174,11 +201,23 @@ export default function Dashboard() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Settings State
+  // Settings States
   const [permissions, setPermissions] = useState([]);
   const [newType, setNewType] = useState('role');
   const [newId, setNewId] = useState('');
   const [isSavingPerm, setIsSavingPerm] = useState(false);
+
+  const [aiSettings, setAiSettings] = useState({ AI_ENABLED: 'true', AI_CHAT_CHANNEL_ID: '', AI_SYSTEM_PROMPT: '' });
+  const [isSavingAi, setIsSavingAi] = useState(false);
+
+  const [leveling, setLeveling] = useState({ LEVELING_ENABLED: 'true', LEVEL_UP_CHANNEL_ID: '' });
+  const [isSavingLeveling, setIsSavingLeveling] = useState(false);
+
+  const [tickets, setTickets] = useState({ TICKET_CATEGORY_ID: '', TICKET_STAFF_ROLE_ID: '', TICKET_WELCOME_MESSAGE: '' });
+  const [isSavingTickets, setIsSavingTickets] = useState(false);
+
+  const [antiNuke, setAntiNuke] = useState({ ANTINUKE_ENABLED: 'true', ANTINUKE_THRESHOLD: '3' });
+  const [isSavingAntiNuke, setIsSavingAntiNuke] = useState(false);
 
   const [welcome, setWelcome] = useState({ WELCOME_CHANNEL_ID: '', WELCOME_MESSAGE: '', GOODBYE_CHANNEL_ID: '', GOODBYE_MESSAGE: '' });
   const [isSavingWelcome, setIsSavingWelcome] = useState(false);
@@ -196,10 +235,10 @@ export default function Dashboard() {
   const [isSavingEsports, setIsSavingEsports] = useState(false);
 
   const [social, setSocial] = useState({
-    YOUTUBE_URL: '', YOUTUBE_CHANNEL_ID: '', YOUTUBE_MESSAGE: '',
-    FACEBOOK_URL: '', FACEBOOK_CHANNEL_ID: '', FACEBOOK_MESSAGE: '',
-    INSTAGRAM_URL: '', INSTAGRAM_CHANNEL_ID: '', INSTAGRAM_MESSAGE: '',
-    TIKTOK_URL: '', TIKTOK_CHANNEL_ID: '', TIKTOK_MESSAGE: '',
+    YOUTUBE_URL: '', YOUTUBE_CHANNEL_ID: '',
+    FACEBOOK_URL: '', FACEBOOK_CHANNEL_ID: '',
+    INSTAGRAM_URL: '', INSTAGRAM_CHANNEL_ID: '',
+    TIKTOK_URL: '', TIKTOK_CHANNEL_ID: '',
   });
   const [isSavingSocial, setIsSavingSocial] = useState(false);
   const [activeSocialKey, setActiveSocialKey] = useState('YOUTUBE');
@@ -243,6 +282,25 @@ export default function Dashboard() {
       if (!setRes.error && setRes.data) {
         const map = {};
         setRes.data.forEach(r => { map[r.key] = r.value; });
+
+        setAiSettings({
+          AI_ENABLED: map.AI_ENABLED ?? 'true',
+          AI_CHAT_CHANNEL_ID: map.AI_CHAT_CHANNEL_ID || '',
+          AI_SYSTEM_PROMPT: map.AI_SYSTEM_PROMPT || ''
+        });
+        setLeveling({
+          LEVELING_ENABLED: map.LEVELING_ENABLED ?? 'true',
+          LEVEL_UP_CHANNEL_ID: map.LEVEL_UP_CHANNEL_ID || ''
+        });
+        setTickets({
+          TICKET_CATEGORY_ID: map.TICKET_CATEGORY_ID || '',
+          TICKET_STAFF_ROLE_ID: map.TICKET_STAFF_ROLE_ID || '',
+          TICKET_WELCOME_MESSAGE: map.TICKET_WELCOME_MESSAGE || ''
+        });
+        setAntiNuke({
+          ANTINUKE_ENABLED: map.ANTINUKE_ENABLED ?? 'true',
+          ANTINUKE_THRESHOLD: map.ANTINUKE_THRESHOLD || '3'
+        });
         setWelcome({
           WELCOME_CHANNEL_ID: map.WELCOME_CHANNEL_ID || '',
           WELCOME_MESSAGE: map.WELCOME_MESSAGE || '',
@@ -269,10 +327,10 @@ export default function Dashboard() {
           SS_VERIFY_ROLE: map.SS_VERIFY_ROLE || ''
         });
         setSocial({
-          YOUTUBE_URL: map.YOUTUBE_URL || '', YOUTUBE_CHANNEL_ID: map.YOUTUBE_CHANNEL_ID || '', YOUTUBE_MESSAGE: map.YOUTUBE_MESSAGE || '',
-          FACEBOOK_URL: map.FACEBOOK_URL || '', FACEBOOK_CHANNEL_ID: map.FACEBOOK_CHANNEL_ID || '', FACEBOOK_MESSAGE: map.FACEBOOK_MESSAGE || '',
-          INSTAGRAM_URL: map.INSTAGRAM_URL || '', INSTAGRAM_CHANNEL_ID: map.INSTAGRAM_CHANNEL_ID || '', INSTAGRAM_MESSAGE: map.INSTAGRAM_MESSAGE || '',
-          TIKTOK_URL: map.TIKTOK_URL || '', TIKTOK_CHANNEL_ID: map.TIKTOK_CHANNEL_ID || '', TIKTOK_MESSAGE: map.TIKTOK_MESSAGE || '',
+          YOUTUBE_URL: map.YOUTUBE_URL || '', YOUTUBE_CHANNEL_ID: map.YOUTUBE_CHANNEL_ID || '',
+          FACEBOOK_URL: map.FACEBOOK_URL || '', FACEBOOK_CHANNEL_ID: map.FACEBOOK_CHANNEL_ID || '',
+          INSTAGRAM_URL: map.INSTAGRAM_URL || '', INSTAGRAM_CHANNEL_ID: map.INSTAGRAM_CHANNEL_ID || '',
+          TIKTOK_URL: map.TIKTOK_URL || '', TIKTOK_CHANNEL_ID: map.TIKTOK_CHANNEL_ID || '',
         });
       }
     }).finally(() => setIsLoadingData(false));
@@ -290,7 +348,38 @@ export default function Dashboard() {
     return !error;
   };
 
-  // Handlers
+  const handleSaveAi = async (e) => {
+    e?.preventDefault();
+    setIsSavingAi(true);
+    const ok = await saveSettings(aiSettings);
+    showToast(ok ? 'Jarvis AI settings saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingAi(false);
+  };
+
+  const handleSaveLeveling = async (e) => {
+    e?.preventDefault();
+    setIsSavingLeveling(true);
+    const ok = await saveSettings(leveling);
+    showToast(ok ? 'Leveling & XP settings saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingLeveling(false);
+  };
+
+  const handleSaveTickets = async (e) => {
+    e?.preventDefault();
+    setIsSavingTickets(true);
+    const ok = await saveSettings(tickets);
+    showToast(ok ? 'Ticket desk configuration saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingTickets(false);
+  };
+
+  const handleSaveAntiNuke = async (e) => {
+    e?.preventDefault();
+    setIsSavingAntiNuke(true);
+    const ok = await saveSettings(antiNuke);
+    showToast(ok ? 'Anti-Nuke Raid Shield updated' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingAntiNuke(false);
+  };
+
   const handleSaveWelcome = async (e) => {
     e?.preventDefault();
     setIsSavingWelcome(true);
@@ -376,17 +465,20 @@ export default function Dashboard() {
     showToast('Server ID copied to clipboard');
   };
 
-  // Compute Active System Count
   const activeSystemsCount = useMemo(() => {
     let count = 0;
-    if (automod.AUTOMOD_ANTI_SPAM === 'true' || automod.AUTOMOD_BLOCK_INVITES === 'true') count++;
+    if (aiSettings.AI_ENABLED === 'true') count++;
+    if (leveling.LEVELING_ENABLED === 'true') count++;
+    if (antiNuke.ANTINUKE_ENABLED === 'true') count++;
+    if (tickets.TICKET_CATEGORY_ID) count++;
+    if (automod.AUTOMOD_ANTI_SPAM === 'true') count++;
     if (welcome.WELCOME_CHANNEL_ID) count++;
     if (logging.MOD_LOGS_CHANNEL_ID) count++;
     if (roles.DEFAULT_MEMBER_ROLE_ID || roles.AUTOROLE_HUMANS_ROLE_ID) count++;
-    if (social.YOUTUBE_URL || social.FACEBOOK_URL || social.INSTAGRAM_URL || social.TIKTOK_URL) count++;
+    if (social.YOUTUBE_URL || social.FACEBOOK_URL) count++;
     if (esports.SS_VERIFY_CHANNEL) count++;
     return count;
-  }, [automod, welcome, logging, roles, social, esports]);
+  }, [aiSettings, leveling, antiNuke, tickets, automod, welcome, logging, roles, social, esports]);
 
   if (status === 'loading') {
     return (
@@ -410,9 +502,7 @@ export default function Dashboard() {
       <div className="ambient-glow-1" style={{ top: '-10%', left: '15%' }} />
       <div className="ambient-glow-2" style={{ bottom: '10%', right: '10%' }} />
 
-      {/* ═══════════════════════════════════════════════════════════════
-          TOP NAVIGATION HEADER (Linear / Vercel Ultra-Clean Style)
-          ═══════════════════════════════════════════════════════════════ */}
+      {/* ─── TOP NAVIGATION HEADER ─── */}
       <header style={{
         height: 60,
         background: 'rgba(8, 10, 15, 0.85)',
@@ -435,7 +525,7 @@ export default function Dashboard() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: '#fff' }}>JARVIS</span>
-              <span className="luxe-badge luxe-badge-indigo" style={{ fontSize: 10, padding: '2px 7px' }}>AI BOT</span>
+              <span className="luxe-badge luxe-badge-indigo" style={{ fontSize: 10, padding: '2px 7px' }}>BY TRJ7</span>
             </div>
           </div>
 
@@ -460,15 +550,13 @@ export default function Dashboard() {
 
         {/* Right: Status & User */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Operational Pill */}
           <div className="luxe-badge luxe-badge-emerald" style={{ fontSize: 11 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-            Shard #1 Active • 22ms
+            Jarvis Core Active • 18ms
           </div>
 
           <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
-          {/* User Profile */}
           {session?.user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {session.user.image ? (
@@ -492,12 +580,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          MAIN APP LAYOUT (Unified Clean Sidebar + Content Canvas)
-          ═══════════════════════════════════════════════════════════════ */}
+      {/* ─── MAIN APP LAYOUT ─── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 60px)' }}>
 
-        {/* ─── SINGLE UNIFIED MASTER SIDEBAR (250px) ─── */}
+        {/* ─── SINGLE UNIFIED MASTER SIDEBAR ─── */}
         <aside style={{
           width: 250,
           background: 'rgba(9, 11, 17, 0.95)',
@@ -508,10 +594,10 @@ export default function Dashboard() {
           justifyContent: 'space-between',
         }}>
           <div>
-            {/* Server Selector Card */}
-            <div style={{ marginBottom: 20 }}>
+            {/* Server Selector */}
+            <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', padding: '0 8px 8px' }}>
-                SELECT SERVER ({guilds.length})
+                SERVERS ({guilds.length})
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -551,8 +637,8 @@ export default function Dashboard() {
 
             <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 4px 16px' }} />
 
-            {/* Navigation Category Groups */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Navigation Groups */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {NAV_SECTIONS.map(section => (
                 <div key={section.title}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', padding: '0 8px 6px' }}>
@@ -580,7 +666,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Footer Metadata */}
+          {/* Footer Meta */}
           <div style={{
             padding: '12px 10px',
             background: 'rgba(255, 255, 255, 0.02)',
@@ -618,12 +704,11 @@ export default function Dashboard() {
             <div>
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 1: OVERVIEW (The Grand Luxury Control Hub)
+                  TAB: OVERVIEW
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-                  {/* Server Hero Banner Card */}
+                  {/* Hero Banner */}
                   <div className="luxe-card" style={{ padding: '24px 28px', overflow: 'hidden' }}>
                     <div className="card-top-accent" />
 
@@ -646,7 +731,7 @@ export default function Dashboard() {
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
                             <button
                               onClick={copyGuildId}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -656,57 +741,30 @@ export default function Dashboard() {
                               <code>ID: {selectedGuild.id}</code>
                               {copiedId && <span style={{ color: '#34d399', fontSize: 11 }}>✓ Copied</span>}
                             </button>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>•</span>
+                            <span style={{ fontSize: 12, color: '#a5b4fc', fontWeight: 600 }}>Jarvis Bot • Made by trj7</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Right Action */}
                       <div style={{ display: 'flex', gap: 10 }}>
                         <button
-                          onClick={() => showToast('Jarvis is actively monitoring this guild')}
+                          onClick={() => showToast('Jarvis AI Core is operational and synchronized')}
                           className="btn-luxe-secondary"
                         >
-                          Diagnostic Ping
+                          Ping Bot Core
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* 4 Minimalist High-End Metric Cards */}
+                  {/* 4 Metric Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                     {[
-                      {
-                        title: 'AutoMod Protection',
-                        value: automod.AUTOMOD_ANTI_SPAM === 'true' ? 'Active' : 'Disabled',
-                        sub: 'Anti-Spam & Invites',
-                        badge: automod.AUTOMOD_ANTI_SPAM === 'true' ? 'luxe-badge-emerald' : 'luxe-badge-muted',
-                        icon: <Icon.Robot />,
-                        onClick: () => setActiveTab('automod'),
-                      },
-                      {
-                        title: 'Command Roles',
-                        value: `${permissions.length} Configured`,
-                        sub: permissions.length === 0 ? 'Admin only' : 'Custom access list',
-                        badge: 'luxe-badge-indigo',
-                        icon: <Icon.Shield />,
-                        onClick: () => setActiveTab('permissions'),
-                      },
-                      {
-                        title: 'Active Modules',
-                        value: `${activeSystemsCount} of 6 Enabled`,
-                        sub: 'System automation matrix',
-                        badge: 'luxe-badge-indigo',
-                        icon: <Icon.Sparkles />,
-                        onClick: null,
-                      },
-                      {
-                        title: 'Social Broadcasts',
-                        value: [social.YOUTUBE_URL, social.FACEBOOK_URL, social.INSTAGRAM_URL, social.TIKTOK_URL].filter(Boolean).length ? 'Connected' : 'None',
-                        sub: 'RSS Feed Sync',
-                        badge: [social.YOUTUBE_URL, social.FACEBOOK_URL].filter(Boolean).length ? 'luxe-badge-emerald' : 'luxe-badge-muted',
-                        icon: <Icon.Globe />,
-                        onClick: () => setActiveTab('social'),
-                      },
+                      { title: 'AI Assistant', value: aiSettings.AI_ENABLED === 'true' ? 'Online' : 'Disabled', sub: 'Gemini AI Integration', icon: <Icon.Brain />, onClick: () => setActiveTab('ai') },
+                      { title: 'Leveling & XP', value: leveling.LEVELING_ENABLED === 'true' ? 'Active' : 'Disabled', sub: 'Progress Tracker', icon: <Icon.Level />, onClick: () => setActiveTab('leveling') },
+                      { title: 'Anti-Nuke Shield', value: antiNuke.ANTINUKE_ENABLED === 'true' ? 'Armed' : 'Disabled', sub: 'Raid & Admin Mitigator', icon: <Icon.Shield />, onClick: () => setActiveTab('antinuke') },
+                      { title: 'Active Modules', value: `${activeSystemsCount} of 10 Enabled`, sub: 'Automation Matrix', icon: <Icon.Sparkles />, onClick: null },
                     ].map((m, i) => (
                       <div
                         key={i}
@@ -726,97 +784,35 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {/* 6 Bento Modules Feature Hub */}
+                  {/* 6 Flagship Feature Quick Cards */}
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 12 }}>
-                      SERVER MODULES & AUTOMATIONS
+                      FLAGSHIP SYSTEMS & EXTENSIONS
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
                       {[
-                        {
-                          id: 'automod',
-                          title: 'Auto-Moderation',
-                          desc: 'Automatically filter spam, blacklisted words, and unauthorized Discord invites.',
-                          icon: <Icon.Robot />,
-                          enabled: automod.AUTOMOD_ANTI_SPAM === 'true',
-                          onToggle: async () => {
-                            const n = automod.AUTOMOD_ANTI_SPAM === 'true' ? 'false' : 'true';
-                            setAutomod(p => ({ ...p, AUTOMOD_ANTI_SPAM: n }));
-                            await saveSettings({ ...automod, AUTOMOD_ANTI_SPAM: n });
-                            showToast(`AutoMod ${n === 'true' ? 'enabled' : 'disabled'}`);
-                          }
-                        },
-                        {
-                          id: 'welcome',
-                          title: 'Welcome & Goodbye',
-                          desc: 'Greet joining members with rich formatted messages and send exit notices.',
-                          icon: <Icon.Sparkles />,
-                          enabled: !!welcome.WELCOME_CHANNEL_ID,
-                          onToggle: () => setActiveTab('welcome'),
-                        },
-                        {
-                          id: 'logging',
-                          title: 'Audit Logging',
-                          desc: 'Record moderation actions (bans, kicks, warns) and server message edits/deletions.',
-                          icon: <Icon.Logs />,
-                          enabled: !!logging.MOD_LOGS_CHANNEL_ID,
-                          onToggle: () => setActiveTab('logging'),
-                        },
-                        {
-                          id: 'roles',
-                          title: 'Role Automation',
-                          desc: 'Instantly give new humans or bots default roles upon joining.',
-                          icon: <Icon.Users />,
-                          enabled: !!(roles.DEFAULT_MEMBER_ROLE_ID || roles.AUTOROLE_HUMANS_ROLE_ID),
-                          onToggle: () => setActiveTab('roles'),
-                        },
-                        {
-                          id: 'social',
-                          title: 'Social Media Notifier',
-                          desc: 'Post YouTube videos, TikToks, and Facebook updates directly to announcement channels.',
-                          icon: <Icon.Globe />,
-                          enabled: !!(social.YOUTUBE_URL || social.FACEBOOK_URL),
-                          onToggle: () => setActiveTab('social'),
-                        },
-                        {
-                          id: 'esports',
-                          title: 'Esports Verification',
-                          desc: 'Staff queue for tournament screenshot verification with one-click role assignment.',
-                          icon: <Icon.Gamepad />,
-                          enabled: !!esports.SS_VERIFY_CHANNEL,
-                          onToggle: () => setActiveTab('esports'),
-                        },
-                      ].map(mod => (
-                        <div key={mod.id} className="luxe-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                            <div style={{ display: 'flex', gap: 12 }}>
-                              <div style={{
-                                width: 36, height: 36, borderRadius: 10,
-                                background: 'rgba(99, 102, 241, 0.1)',
-                                color: '#818cf8',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                              }}>
-                                {mod.icon}
-                              </div>
-                              <div>
-                                <div style={{ fontSize: 14.5, fontWeight: 700, color: 'white' }}>{mod.title}</div>
-                                <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.4 }}>{mod.desc}</div>
-                              </div>
+                        { id: 'ai', title: '🧠 AI Intelligence Suite', desc: 'Converse with Jarvis AI in Discord using Google Gemini.', enabled: aiSettings.AI_ENABLED === 'true' },
+                        { id: 'leveling', title: '📈 Leveling & Custom Rank', desc: 'Award XP for chat activity with leaderboards and role rewards.', enabled: leveling.LEVELING_ENABLED === 'true' },
+                        { id: 'tickets', title: '🎟️ Support Ticket System', desc: 'Deploy interactive ticket panels with isolated channels and transcripts.', enabled: !!tickets.TICKET_CATEGORY_ID },
+                        { id: 'antinuke', title: '🛡️ Anti-Nuke Shield', desc: 'Mitigate mass bans, kicks, or channel deletions by rogue admins.', enabled: antiNuke.ANTINUKE_ENABLED === 'true' },
+                        { id: 'giveaways', title: '🎁 Giveaway Engine', desc: 'Host countdown giveaways with automatic winner selection.', enabled: true },
+                        { id: 'economy', title: '🪙 Virtual Economy & Shop', desc: 'Server coin wallet, gambling games, and purchasable server roles.', enabled: true },
+                      ].map(item => (
+                        <div key={item.id} className="luxe-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#fff' }}>{item.title}</div>
+                              <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3 }}>{item.desc}</div>
                             </div>
-
-                            <span className={`luxe-badge ${mod.enabled ? 'luxe-badge-emerald' : 'luxe-badge-muted'}`} style={{ flexShrink: 0 }}>
-                              {mod.enabled ? 'Active' : 'Off'}
+                            <span className={`luxe-badge ${item.enabled ? 'luxe-badge-emerald' : 'luxe-badge-muted'}`}>
+                              {item.enabled ? 'Active' : 'Config'}
                             </span>
                           </div>
 
                           <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
-                            <button
-                              onClick={() => setActiveTab(mod.id)}
-                              className="btn-luxe-secondary"
-                              style={{ padding: '6px 12px', fontSize: 12 }}
-                            >
-                              Configure <Icon.ChevronRight />
+                            <button onClick={() => setActiveTab(item.id)} className="btn-luxe-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>
+                              Manage <Icon.ChevronRight />
                             </button>
                           </div>
                         </div>
@@ -827,7 +823,278 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 2: PERMISSIONS
+                  TAB: AI INTELLIGENCE
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'ai' && (
+                <form onSubmit={handleSaveAi} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Jarvis AI Assistant Engine</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Powered by Google Gemini. Server members can use <code className="luxe-code">/ask &lt;prompt&gt;</code> or talk directly in the AI Chat Channel.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Enable Jarvis AI Intelligence</div>
+                          <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>Allow members to query AI and get chat summaries</div>
+                        </div>
+                        <label className="luxe-switch">
+                          <input
+                            type="checkbox"
+                            checked={aiSettings.AI_ENABLED === 'true'}
+                            onChange={e => setAiSettings(p => ({ ...p, AI_ENABLED: String(e.target.checked) }))}
+                          />
+                          <span className="luxe-slider" />
+                        </label>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Dedicated AI Channel ID (Optional)</label>
+                        <input
+                          type="text"
+                          value={aiSettings.AI_CHAT_CHANNEL_ID}
+                          onChange={e => setAiSettings(p => ({ ...p, AI_CHAT_CHANNEL_ID: e.target.value }))}
+                          placeholder="e.g. 123456789012345678 (Jarvis auto-replies to any message here)"
+                          className="luxe-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Custom AI Personality & Prompt</label>
+                        <textarea
+                          value={aiSettings.AI_SYSTEM_PROMPT}
+                          onChange={e => setAiSettings(p => ({ ...p, AI_SYSTEM_PROMPT: e.target.value }))}
+                          placeholder="You are Jarvis, a smart AI assistant for this Discord server created by trj7..."
+                          rows={3}
+                          className="luxe-input"
+                          style={{ resize: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingAi} className="btn-luxe-primary">
+                      {isSavingAi ? 'Saving...' : 'Save AI Settings'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: LEVELING & XP
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'leveling' && (
+                <form onSubmit={handleSaveLeveling} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>XP Progression & Leveling</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Reward active chatter with experience points, custom rank cards (<code className="luxe-code">/rank</code>), and <code className="luxe-code">/leaderboard</code>.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Enable Leveling & XP Tracking</div>
+                          <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>Members gain 15–25 XP per message with 60s cooldown</div>
+                        </div>
+                        <label className="luxe-switch">
+                          <input
+                            type="checkbox"
+                            checked={leveling.LEVELING_ENABLED === 'true'}
+                            onChange={e => setLeveling(p => ({ ...p, LEVELING_ENABLED: String(e.target.checked) }))}
+                          />
+                          <span className="luxe-slider" />
+                        </label>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Level-Up Announcements Channel ID</label>
+                        <input
+                          type="text"
+                          value={leveling.LEVEL_UP_CHANNEL_ID}
+                          onChange={e => setLeveling(p => ({ ...p, LEVEL_UP_CHANNEL_ID: e.target.value }))}
+                          placeholder="e.g. 123456789012345678 (leave blank to post in current chat)"
+                          className="luxe-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingLeveling} className="btn-luxe-primary">
+                      {isSavingLeveling ? 'Saving...' : 'Save Leveling Settings'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: SUPPORT TICKETS
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'tickets' && (
+                <form onSubmit={handleSaveTickets} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Support Ticket System</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Deploy interactive ticket desks with <code className="luxe-code">/ticket setup</code> in any text channel.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Ticket Category ID</label>
+                        <input
+                          type="text"
+                          value={tickets.TICKET_CATEGORY_ID}
+                          onChange={e => setTickets(p => ({ ...p, TICKET_CATEGORY_ID: e.target.value }))}
+                          placeholder="Discord Category ID where tickets are created"
+                          className="luxe-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Support Staff Role ID</label>
+                        <input
+                          type="text"
+                          value={tickets.TICKET_STAFF_ROLE_ID}
+                          onChange={e => setTickets(p => ({ ...p, TICKET_STAFF_ROLE_ID: e.target.value }))}
+                          placeholder="Role granted view/reply permissions to tickets"
+                          className="luxe-input"
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Ticket Initial Greeting Message</label>
+                        <textarea
+                          value={tickets.TICKET_WELCOME_MESSAGE}
+                          onChange={e => setTickets(p => ({ ...p, TICKET_WELCOME_MESSAGE: e.target.value }))}
+                          placeholder="Thank you for opening a ticket. Please describe your inquiry below..."
+                          rows={3}
+                          className="luxe-input"
+                          style={{ resize: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingTickets} className="btn-luxe-primary">
+                      {isSavingTickets ? 'Saving...' : 'Save Ticket Settings'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: ANTI-NUKE
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'antinuke' && (
+                <form onSubmit={handleSaveAntiNuke} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Anti-Nuke Raid Shield</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Automatic fail-safe defense against compromised admin accounts rapidly deleting channels or mass-banning members.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Enable Anti-Nuke Automated Mitigation</div>
+                          <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>Instantly bans perpetrator and alerts server owner</div>
+                        </div>
+                        <label className="luxe-switch">
+                          <input
+                            type="checkbox"
+                            checked={antiNuke.ANTINUKE_ENABLED === 'true'}
+                            onChange={e => setAntiNuke(p => ({ ...p, ANTINUKE_ENABLED: String(e.target.checked) }))}
+                          />
+                          <span className="luxe-slider" />
+                        </label>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Action Threshold (Trigger limit in 15 seconds)</label>
+                        <input
+                          type="number"
+                          value={antiNuke.ANTINUKE_THRESHOLD}
+                          onChange={e => setAntiNuke(p => ({ ...p, ANTINUKE_THRESHOLD: e.target.value }))}
+                          placeholder="e.g. 3 (bans/kicks/deletions in &lt;15s)"
+                          className="luxe-input"
+                          min={2}
+                          max={10}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingAntiNuke} className="btn-luxe-primary">
+                      {isSavingAntiNuke ? 'Saving...' : 'Save Anti-Nuke Config'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: GIVEAWAYS
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'giveaways' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Giveaway Engine</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Host interactive giveaways with live countdowns directly in Discord using slash commands.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ padding: '14px 18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Start a Giveaway</div>
+                        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                          Use <code className="luxe-code">/giveaway start prize:Discord Nitro duration_minutes:60 winners:1</code>
+                        </div>
+                      </div>
+
+                      <div style={{ padding: '14px 18px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>End a Giveaway Early</div>
+                        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                          Use <code className="luxe-code">/giveaway end message_id:&lt;MESSAGE_ID&gt;</code> to pick winners immediately.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: ECONOMY & SHOP
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'economy' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Server Economy & Virtual Shop</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Virtual wallet and gambling mini-games for server engagement.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                      {[
+                        { cmd: '/daily', desc: 'Claim +250 free Jarvis coins every 24 hours' },
+                        { cmd: '/balance [user]', desc: 'Check wallet coin balance' },
+                        { cmd: '/coinflip <amount> <choice>', desc: 'Gamble coins on heads or tails' },
+                      ].map(c => (
+                        <div key={c.cmd} style={{ padding: '14px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 10 }}>
+                          <code className="luxe-code" style={{ color: '#fbbf24' }}>{c.cmd}</code>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{c.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: PERMISSIONS
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'permissions' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -867,7 +1134,6 @@ export default function Dashboard() {
                     </form>
                   </div>
 
-                  {/* Active List */}
                   <div className="luxe-card" style={{ padding: '24px' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
                       AUTHORIZED ENTITIES ({permissions.length})
@@ -906,7 +1172,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 3: AUTOMOD
+                  TAB: AUTOMOD
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'automod' && (
                 <form onSubmit={handleSaveAutomod} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -983,7 +1249,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 4: WELCOME SUITE
+                  TAB: WELCOME
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'welcome' && (
                 <form onSubmit={handleSaveWelcome} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1053,7 +1319,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 5: LOGGING
+                  TAB: LOGGING
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'logging' && (
                 <form onSubmit={handleSaveLogging} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1099,7 +1365,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 6: ROLES
+                  TAB: ROLES
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'roles' && (
                 <form onSubmit={handleSaveRoles} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1143,7 +1409,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 7: SOCIAL NOTIFIER
+                  TAB: SOCIAL
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'social' && (
                 <form onSubmit={handleSaveSocial} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1153,7 +1419,6 @@ export default function Dashboard() {
                       Publish instant updates to your Discord channels when new content is posted online.
                     </p>
 
-                    {/* Platform Selector */}
                     <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
                       {SOCIAL_PLATFORMS.map(p => (
                         <button
@@ -1172,7 +1437,6 @@ export default function Dashboard() {
                       ))}
                     </div>
 
-                    {/* Form Fields for Active Platform */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
                       <div>
                         <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
@@ -1211,7 +1475,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 8: ESPORTS
+                  TAB: ESPORTS
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'esports' && (
                 <form onSubmit={handleSaveEsports} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1255,7 +1519,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB 9: MUSIC ENGINE
+                  TAB: MUSIC
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'music' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1263,7 +1527,7 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                       <div>
                         <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white' }}>Jarvis High-Fidelity Music Player</h2>
-                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Lossless YouTube & Spotify voice channel playback.</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Lossless YouTube, SoundCloud & Spotify voice channel playback.</p>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 20 }}>

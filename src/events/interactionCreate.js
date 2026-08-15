@@ -56,7 +56,19 @@ module.exports = {
 
     // ── Button interactions ─────────────────────────────────────────────────
     if (interaction.isButton()) {
-      if (interaction.customId.startsWith('role_')) {
+      if (interaction.customId === 'ticket_create') {
+        const { handleTicketCreate } = require('../modules/ticketManager');
+        return await handleTicketCreate(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_close') {
+        const { handleTicketClose } = require('../modules/ticketManager');
+        return await handleTicketClose(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_delete') {
+        const { handleTicketDelete } = require('../modules/ticketManager');
+        return await handleTicketDelete(interaction).catch(console.error);
+      } else if (interaction.customId === 'giveaway_enter') {
+        const { handleGiveawayJoin } = require('../modules/giveawayManager');
+        return await handleGiveawayJoin(interaction).catch(console.error);
+      } else if (interaction.customId.startsWith('role_')) {
         await handleButtonRole(interaction).catch(console.error);
       } else if (interaction.customId === 'welcome_msg_btn') {
         const { getWelcomeMessage } = require('../modules/settings');
