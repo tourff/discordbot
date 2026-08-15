@@ -429,6 +429,23 @@ CREATE TABLE IF NOT EXISTS public.temp_voice_channels (
 ALTER TABLE public.temp_voice_channels ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Bot full access" ON public.temp_voice_channels FOR ALL USING (true) WITH CHECK (true);
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 14. user_afk (Global & Server AFK System)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.user_afk (
+  id          BIGSERIAL    PRIMARY KEY,
+  guild_id    TEXT         NOT NULL,
+  user_id     TEXT         NOT NULL,
+  reason      TEXT         NOT NULL DEFAULT 'AFK',
+  afk_since   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  UNIQUE (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_afk_lookup ON public.user_afk (guild_id, user_id);
+ALTER TABLE public.user_afk ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.user_afk FOR ALL USING (true) WITH CHECK (true);
+
+
 
 
 

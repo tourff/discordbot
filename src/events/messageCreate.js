@@ -13,6 +13,7 @@ const { handleScrimRegistration } = require('../modules/scrimsManager');
 const { handleTourneyRegistration } = require('../modules/tourneyManager');
 const { handleAIChatChannel } = require('../modules/aiAssistant');
 const { handleMessageXP } = require('../modules/leveling');
+const { handleAFKMessage } = require('../modules/afkManager');
 
 module.exports = {
   name: 'messageCreate',
@@ -24,6 +25,9 @@ module.exports = {
   async execute(message, client) {
     // Ignore bots and DMs
     if (message.author.bot || !message.guild) return;
+
+    // AFK System: check author status & mentioned users
+    await handleAFKMessage(message).catch(console.error);
 
     // AI Auto-Chat in designated channel
     const aiHandled = await handleAIChatChannel(message).catch(console.error);
@@ -49,4 +53,5 @@ module.exports = {
     await handleMessageXP(message).catch(console.error);
   },
 };
+
 
