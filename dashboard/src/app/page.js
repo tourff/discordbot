@@ -2,7 +2,7 @@
 
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const FEATURES = [
   {
@@ -13,6 +13,7 @@ const FEATURES = [
     border: 'rgba(99,102,241,0.22)',
     glow: 'rgba(99,102,241,0.2)',
     accent: '#818cf8',
+    tag: 'Security',
   },
   {
     icon: '🤖',
@@ -22,6 +23,7 @@ const FEATURES = [
     border: 'rgba(239,68,68,0.22)',
     glow: 'rgba(239,68,68,0.2)',
     accent: '#f87171',
+    tag: 'AutoMod',
   },
   {
     icon: '👋',
@@ -31,6 +33,7 @@ const FEATURES = [
     border: 'rgba(16,185,129,0.22)',
     glow: 'rgba(16,185,129,0.2)',
     accent: '#34d399',
+    tag: 'Events',
   },
   {
     icon: '🌐',
@@ -40,6 +43,7 @@ const FEATURES = [
     border: 'rgba(245,158,11,0.22)',
     glow: 'rgba(245,158,11,0.2)',
     accent: '#fbbf24',
+    tag: 'Social',
   },
   {
     icon: '📋',
@@ -49,6 +53,7 @@ const FEATURES = [
     border: 'rgba(139,92,246,0.22)',
     glow: 'rgba(139,92,246,0.2)',
     accent: '#a78bfa',
+    tag: 'Logs',
   },
   {
     icon: '🎵',
@@ -58,19 +63,33 @@ const FEATURES = [
     border: 'rgba(236,72,153,0.22)',
     glow: 'rgba(236,72,153,0.2)',
     accent: '#f472b6',
+    tag: 'Music',
   },
 ];
 
 const STATS = [
-  { value: '99.9%', label: 'Uptime' },
-  { value: '<50ms', label: 'Latency' },
-  { value: '7+', label: 'Features' },
+  { value: '99.9%', label: 'Uptime', icon: '⚡' },
+  { value: '<50ms', label: 'Latency', icon: '🚀' },
+  { value: '7+', label: 'Features', icon: '🔥' },
 ];
 
 const STEPS = [
-  { num: '01', title: 'Login with Discord', desc: 'Authenticate securely via OAuth2. No passwords stored.' },
-  { num: '02', title: 'Select Your Server', desc: 'Choose from servers where you have admin privileges.' },
-  { num: '03', title: 'Configure & Deploy', desc: 'Set permissions, automod, social feeds. Changes apply instantly.' },
+  { num: '01', title: 'Login with Discord', desc: 'Authenticate securely via OAuth2. No passwords stored.', icon: '🔐' },
+  { num: '02', title: 'Select Your Server', desc: 'Choose from servers where you have admin privileges.', icon: '🏠' },
+  { num: '03', title: 'Configure & Deploy', desc: 'Set permissions, automod, social feeds. Changes apply instantly.', icon: '⚡' },
+];
+
+const ALL_COMMANDS = [
+  '/ban', '/kick', '/mute', '/warn', '/play', '/skip', '/queue',
+  '/setup-roles', '/ssverify', '/roleall', '/nowplaying', '/volume',
+  '/modlog', '/welcome', '/goodbye', '/antispam', '/automod',
+  '/permissions', '/pause', '/resume', '/stop', '/seek',
+];
+
+const DISCORD_MESSAGES = [
+  { user: 'Quotient Bot', tag: 'BOT', avatar: '⚡', content: '✅ Ban applied to **@spammer** — Reason: Spam', color: '#818cf8', type: 'mod' },
+  { user: 'Quotient Bot', tag: 'BOT', avatar: '⚡', content: '👋 Welcome to **Quotient Server**, <@user>! You are member #1,337.', color: '#34d399', type: 'welcome' },
+  { user: 'Quotient Bot', tag: 'BOT', avatar: '⚡', content: '🎵 Now playing: **Blinding Lights** by The Weeknd', color: '#f472b6', type: 'music' },
 ];
 
 export default function Home() {
@@ -78,10 +97,24 @@ export default function Home() {
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState(null);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [msgVisible, setMsgVisible] = useState(true);
 
   useEffect(() => {
     if (status === 'authenticated') router.push('/dashboard');
   }, [status, router]);
+
+  // Cycle through Discord messages
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMsgVisible(false);
+      setTimeout(() => {
+        setMsgIndex(prev => (prev + 1) % DISCORD_MESSAGES.length);
+        setMsgVisible(true);
+      }, 400);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -99,16 +132,32 @@ export default function Home() {
     );
   }
 
+  const msg = DISCORD_MESSAGES[msgIndex];
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', overflowX: 'hidden', position: 'relative' }}>
 
       {/* Noise texture */}
       <div className="noise-overlay" />
 
-      {/* Background orbs */}
-      <div className="orb animate-float" style={{ width: 700, height: 700, background: 'radial-gradient(circle, rgba(99,102,241,0.13) 0%, transparent 70%)', top: '-20%', left: '-15%', position: 'fixed' }} />
-      <div className="orb animate-float-delayed" style={{ width: 600, height: 600, background: 'radial-gradient(circle, rgba(139,92,246,0.11) 0%, transparent 70%)', bottom: '-15%', right: '-10%', position: 'fixed' }} />
-      <div className="orb animate-pulse-glow" style={{ width: 350, height: 350, background: 'radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)', top: '45%', right: '18%', position: 'fixed' }} />
+      {/* Aurora background */}
+      <div className="aurora-bg">
+        <div className="aurora-layer animate-float" style={{
+          width: 800, height: 800,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.1) 50%, transparent 70%)',
+          top: '-20%', left: '-15%',
+        }} />
+        <div className="aurora-layer animate-float-delayed" style={{
+          width: 700, height: 700,
+          background: 'radial-gradient(circle, rgba(139,92,246,0.14) 0%, rgba(236,72,153,0.08) 50%, transparent 70%)',
+          bottom: '-10%', right: '-10%',
+        }} />
+        <div className="aurora-layer animate-pulse-glow" style={{
+          width: 400, height: 400,
+          background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)',
+          top: '40%', right: '20%',
+        }} />
+      </div>
 
       {/* Mesh grid */}
       <div className="mesh-grid" style={{ position: 'fixed' }} />
@@ -149,7 +198,7 @@ export default function Home() {
       <section style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '140px 24px 100px', textAlign: 'center',
+        padding: '140px 24px 80px', textAlign: 'center',
         position: 'relative', zIndex: 1,
       }}>
 
@@ -161,13 +210,13 @@ export default function Home() {
 
         {/* Title */}
         <h1 className="animate-slide-up-delay-1" style={{
-          fontSize: 'clamp(48px, 8vw, 88px)',
+          fontSize: 'clamp(48px, 8vw, 96px)',
           fontWeight: 900, letterSpacing: '-0.05em',
-          lineHeight: 1.0, marginBottom: 28, maxWidth: 900,
+          lineHeight: 1.0, marginBottom: 28, maxWidth: 1000,
         }}>
           Meet <span className="shimmer-text">Quotient.</span>
           <br />
-          <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.5em', letterSpacing: '-0.02em', lineHeight: 2.2 }}>
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.48em', letterSpacing: '-0.02em', lineHeight: 2.4 }}>
             Your Discord Server, Supercharged.
           </span>
         </h1>
@@ -183,7 +232,7 @@ export default function Home() {
         </p>
 
         {/* CTA */}
-        <div className="animate-slide-up-delay-3" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 80 }}>
+        <div className="animate-slide-up-delay-3" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 72 }}>
           <button
             id="hero-login-btn"
             onClick={handleSignIn}
@@ -215,19 +264,152 @@ export default function Home() {
         </div>
 
         {/* Stats */}
-        <div className="animate-slide-up-delay-4" style={{ display: 'flex', gap: 64, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="animate-slide-up-delay-4" style={{ display: 'flex', gap: 64, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 80 }}>
           {STATS.map((s, i) => (
             <div key={s.label} className="hero-stat" style={{ paddingRight: i < STATS.length - 1 ? 64 : 0 }}>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>{s.icon}</div>
               <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }} className="gradient-text">{s.value}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.label}</div>
             </div>
           ))}
         </div>
 
+        {/* ── Floating Discord Preview Card ── */}
+        <div className="animate-slide-up-delay-4" style={{ position: 'relative', maxWidth: 560, width: '100%' }}>
+          {/* Glow behind card */}
+          <div style={{
+            position: 'absolute', inset: -40,
+            background: 'radial-gradient(ellipse, rgba(99,102,241,0.2) 0%, transparent 70%)',
+            filter: 'blur(30px)', pointerEvents: 'none',
+          }} />
+
+          <div className="glow-border-card" style={{ width: '100%' }}>
+            <div className="glow-border-card-inner">
+              {/* Discord app header */}
+              <div style={{
+                background: '#1e1f22',
+                padding: '12px 16px',
+                display: 'flex', alignItems: 'center', gap: 8,
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+              }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['#ff5f57','#ffbd2e','#28c840'].map(c => (
+                    <div key={c} style={{ width: 12, height: 12, borderRadius: '50%', background: c, opacity: 0.9 }} />
+                  ))}
+                </div>
+                <div style={{ flex: 1, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+                  Quotient Bot — Dashboard Preview
+                </div>
+              </div>
+
+              {/* Discord layout */}
+              <div style={{ display: 'flex', height: 240 }}>
+
+                {/* Server icons sidebar */}
+                <div style={{ background: '#1e1f22', width: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0', gap: 8, borderRight: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+                  {[
+                    { bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)', letter: 'Q', active: true },
+                    { bg: '#3ba55c', letter: 'G', active: false },
+                    { bg: '#ed4245', letter: 'F', active: false },
+                  ].map((s, i) => (
+                    <div key={i} style={{
+                      width: 40, height: 40, borderRadius: s.active ? 14 : 20,
+                      background: s.bg, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', fontSize: 15, fontWeight: 900, color: 'white',
+                      transition: 'border-radius 0.2s',
+                      boxShadow: s.active ? '0 0 14px rgba(99,102,241,0.4)' : 'none',
+                      outline: s.active ? '2px solid #6366f1' : 'none',
+                      outlineOffset: 2,
+                      flexShrink: 0,
+                    }}>{s.letter}</div>
+                  ))}
+                </div>
+
+                {/* Channel list */}
+                <div style={{ background: '#2b2d31', width: 180, padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#8e919a', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 8px', marginBottom: 6 }}>
+                    Quotient Server
+                  </div>
+                  {['# general','# bot-commands','# logs','# music','🔊 Voice Chat'].map((ch, i) => (
+                    <div key={ch} style={{
+                      padding: '4px 8px', borderRadius: 5, fontSize: 13,
+                      color: i === 1 ? '#fff' : '#8e919a',
+                      background: i === 1 ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      fontFamily: 'Inter, sans-serif',
+                    }}>{ch}</div>
+                  ))}
+                </div>
+
+                {/* Messages area */}
+                <div style={{ flex: 1, background: '#313338', padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 10, overflow: 'hidden' }}>
+                  {/* Faded top messages */}
+                  <div style={{ opacity: 0.3, fontSize: 12.5, color: '#8e919a', fontFamily: 'Inter,sans-serif' }}>
+                    <span style={{ color: '#c4b5fd', fontWeight: 600 }}>@user</span>  !play Blinding Lights
+                  </div>
+
+                  {/* Animated bot message */}
+                  <div style={{
+                    transition: 'opacity 0.35s ease, transform 0.35s ease',
+                    opacity: msgVisible ? 1 : 0,
+                    transform: msgVisible ? 'translateY(0)' : 'translateY(8px)',
+                  }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                        background: 'linear-gradient(135deg,#5865f2,#7289da)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                        boxShadow: '0 0 10px rgba(88,101,242,0.4)',
+                      }}>{msg.avatar}</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: msg.color, fontFamily: 'Inter,sans-serif' }}>{msg.user}</span>
+                          <span style={{ fontSize: 9.5, fontWeight: 700, background: '#5865f2', color: 'white', padding: '0px 4px', borderRadius: 3 }}>BOT</span>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#dbdee1', lineHeight: 1.5, fontFamily: 'Inter,sans-serif' }}
+                          dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff">$1</strong>') }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Typing indicator */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {[0,1,2].map(i => (
+                        <div key={i} style={{
+                          width: 5, height: 5, borderRadius: '50%',
+                          background: '#8e919a',
+                          animation: `blink-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
+                        }} />
+                      ))}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#8e919a', fontFamily: 'Inter,sans-serif' }}>Quotient Bot is active</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Scroll indicator */}
-        <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', opacity: 0.4 }}>
+        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', opacity: 0.4 }}>
           <div style={{ width: 24, height: 38, border: '1.5px solid rgba(99,102,241,0.4)', borderRadius: 12, display: 'flex', justifyContent: 'center', paddingTop: 7 }}>
             <div style={{ width: 4, height: 8, background: '#818cf8', borderRadius: 4, animation: 'float 1.8s ease-in-out infinite' }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── COMMANDS MARQUEE STRIP ─── */}
+      <section style={{ padding: '0', position: 'relative', zIndex: 1, borderTop: '1px solid rgba(99,102,241,0.06)', borderBottom: '1px solid rgba(99,102,241,0.06)', background: 'rgba(5,7,15,0.8)', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--bg-primary) 0%, transparent 10%, transparent 90%, var(--bg-primary) 100%)', zIndex: 2, pointerEvents: 'none' }} />
+        <div style={{ padding: '16px 0', display: 'flex' }}>
+          <div className="marquee-track">
+            {[...ALL_COMMANDS, ...ALL_COMMANDS].map((cmd, i) => (
+              <div key={`${cmd}-${i}`} className="command-chip" style={{ margin: '0 6px' }}>
+                <span className="command-chip-slash">/</span>
+                {cmd.replace('/', '')}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -235,9 +417,7 @@ export default function Home() {
       {/* ─── FEATURES ─── */}
       <section id="features" style={{ padding: '120px 24px', maxWidth: 1280, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 72 }}>
-          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#818cf8', marginBottom: 16 }}>
-            Core Features
-          </div>
+          <div className="section-label" style={{ color: '#818cf8' }}>Core Features</div>
           <h2 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 16 }}>
             Everything your server needs,
             <br /><span className="gradient-text">all in one place.</span>
@@ -247,7 +427,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
           {FEATURES.map((f, i) => (
             <div
               key={f.title}
@@ -256,16 +436,29 @@ export default function Home() {
               onMouseLeave={() => setHoveredFeature(null)}
               style={{ animationDelay: `${0.1 * i}s`, opacity: 0, animationFillMode: 'forwards' }}
             >
+              {/* Top accent line */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, height: 2,
                 background: `linear-gradient(90deg, transparent, ${f.accent}, transparent)`,
                 opacity: hoveredFeature === i ? 1 : 0, transition: 'opacity 0.3s ease',
               }} />
+
+              {/* Hover background */}
               <div style={{
                 position: 'absolute', inset: 0, background: f.gradient,
                 opacity: hoveredFeature === i ? 1 : 0, transition: 'opacity 0.35s ease',
                 borderRadius: 'inherit', pointerEvents: 'none',
               }} />
+
+              {/* Tag */}
+              <div style={{ position: 'absolute', top: 18, right: 18, zIndex: 1 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                  background: `${f.border}`, border: `1px solid ${f.border}`,
+                  borderRadius: 999, color: f.accent, letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>{f.tag}</span>
+              </div>
+
               <div style={{
                 width: 54, height: 54, borderRadius: 16, fontSize: 24,
                 background: f.gradient, border: `1px solid ${f.border}`,
@@ -274,6 +467,7 @@ export default function Home() {
                 boxShadow: hoveredFeature === i ? `0 0 30px ${f.glow}` : 'none',
                 transition: 'box-shadow 0.35s ease',
               }}>{f.icon}</div>
+
               <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 10, letterSpacing: '-0.02em', position: 'relative', zIndex: 1 }}>{f.title}</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: 14.5, lineHeight: 1.65, position: 'relative', zIndex: 1 }}>{f.desc}</p>
             </div>
@@ -283,25 +477,42 @@ export default function Home() {
 
       {/* ─── HOW IT WORKS ─── */}
       <section style={{ padding: '100px 24px', position: 'relative', zIndex: 1, borderTop: '1px solid rgba(99,102,241,0.07)', borderBottom: '1px solid rgba(99,102,241,0.07)', background: 'rgba(10,14,28,0.4)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#a78bfa', marginBottom: 16 }}>How It Works</div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 64 }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center' }}>
+          <div className="section-label" style={{ color: '#a78bfa' }}>How It Works</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 72 }}>
             Get started in <span className="shimmer-text">3 simple steps</span>
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32 }}>
-            {STEPS.map((step) => (
-              <div key={step.num}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: 16,
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))',
-                  border: '1px solid rgba(99,102,241,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 20px',
-                  fontSize: 16, fontWeight: 800, color: '#818cf8',
-                  fontFamily: "'Inter', monospace",
-                  boxShadow: '0 0 30px rgba(99,102,241,0.12)',
-                }}>{step.num}</div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>{step.title}</h3>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 32, position: 'relative' }}>
+            {/* Connector line */}
+            <div style={{
+              position: 'absolute', top: 30, left: '16%', right: '16%', height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.2), rgba(139,92,246,0.2), transparent)',
+              pointerEvents: 'none', display: 'none',
+            }} />
+
+            {STEPS.map((step, i) => (
+              <div key={step.num} style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 24 }}>
+                  <div style={{
+                    width: 64, height: 64, borderRadius: 20,
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))',
+                    border: '1px solid rgba(99,102,241,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto',
+                    fontSize: 26,
+                    boxShadow: '0 0 40px rgba(99,102,241,0.12)',
+                  }}>{step.icon}</div>
+                  <div style={{
+                    position: 'absolute', bottom: -4, right: -4,
+                    width: 22, height: 22, borderRadius: 999,
+                    background: 'linear-gradient(135deg,#6366f1,#a855f7)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 800, color: 'white',
+                    boxShadow: '0 0 12px rgba(99,102,241,0.5)',
+                  }}>{step.num}</div>
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>{step.title}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.65 }}>{step.desc}</p>
               </div>
             ))}
@@ -309,17 +520,55 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── TRUST / SOCIAL PROOF ─── */}
+      <section style={{ padding: '80px 24px', position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 28 }}>
+            Trusted by servers worldwide
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+            {[
+              { letter: 'Q', bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)', name: 'Quotient HQ' },
+              { letter: 'G', bg: '#3ba55c', name: 'GamersHub' },
+              { letter: 'F', bg: '#ed4245', name: 'Fragnatics' },
+              { letter: 'M', bg: '#faa61a', name: 'MetaVerse' },
+              { letter: 'C', bg: '#5865f2', name: 'CyberNexus' },
+              { letter: 'P', bg: '#f472b6', name: 'ProZone' },
+            ].map((s, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div
+                  className="trust-avatar"
+                  style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: s.bg, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white',
+                  }}
+                >{s.letter}</div>
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, maxWidth: 70, textAlign: 'center', lineHeight: 1.3 }}>{s.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA ─── */}
-      <section style={{ padding: '120px 24px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+      <section style={{ padding: '100px 24px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          {/* Background glow */}
           <div style={{
             position: 'absolute', top: '30%', left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 500, height: 300,
-            background: 'radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%)',
+            width: 600, height: 300,
+            background: 'radial-gradient(ellipse, rgba(99,102,241,0.15) 0%, transparent 70%)',
             filter: 'blur(40px)', pointerEvents: 'none',
           }} />
-          <h2 style={{ fontSize: 'clamp(36px, 5.5vw, 64px)', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1.0, marginBottom: 24, position: 'relative' }}>
+
+          <div className="pill-badge" style={{ marginBottom: 24, display: 'inline-flex' }}>
+            <span style={{ fontSize: 14 }}>🚀</span>
+            Free to use · No credit card required
+          </div>
+
+          <h2 style={{ fontSize: 'clamp(36px, 5.5vw, 68px)', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1.0, marginBottom: 24, position: 'relative' }}>
             Ready to power up<br /><span className="shimmer-text">your server?</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 17, lineHeight: 1.7, marginBottom: 44 }}>
@@ -330,23 +579,23 @@ export default function Home() {
             onClick={handleSignIn}
             disabled={isSigningIn}
             className="btn-primary"
-            style={{ padding: '18px 44px', fontSize: 17, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 13, borderRadius: 16 }}
+            style={{ padding: '18px 48px', fontSize: 17, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 13, borderRadius: 16 }}
           >
             <DiscordIcon size={24} />
             <span>{isSigningIn ? 'Connecting…' : 'Get Started Free'}</span>
           </button>
-          <p style={{ marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>No credit card required · Free forever</p>
+          <p style={{ marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>No credit card required · Free forever · Instant setup</p>
         </div>
       </section>
 
       {/* ─── FOOTER ─── */}
       <footer style={{
         borderTop: '1px solid rgba(99,102,241,0.07)',
-        padding: '28px 48px',
+        padding: '32px 48px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: 16,
         position: 'relative', zIndex: 1,
-        background: 'rgba(5, 7, 15, 0.6)',
+        background: 'rgba(5, 7, 15, 0.8)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 15, borderRadius: 8 }}>
