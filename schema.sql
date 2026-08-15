@@ -399,5 +399,36 @@ CREATE TABLE IF NOT EXISTS public.economy_shop (
 ALTER TABLE public.economy_shop ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Bot full access" ON public.economy_shop FOR ALL USING (true) WITH CHECK (true);
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 12. user_birthdays (Birthday Celebration Suite)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.user_birthdays (
+  id          BIGSERIAL    PRIMARY KEY,
+  guild_id    TEXT         NOT NULL,
+  user_id     TEXT         NOT NULL,
+  birth_day   INT          NOT NULL, -- 1-31
+  birth_month INT          NOT NULL, -- 1-12
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  UNIQUE (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_birthdays_date ON public.user_birthdays (birth_month, birth_day);
+ALTER TABLE public.user_birthdays ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.user_birthdays FOR ALL USING (true) WITH CHECK (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 13. temp_voice_channels (Dynamic Temp Voice Rooms)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.temp_voice_channels (
+  channel_id  TEXT         PRIMARY KEY,
+  guild_id    TEXT         NOT NULL,
+  owner_id    TEXT         NOT NULL,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.temp_voice_channels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot full access" ON public.temp_voice_channels FOR ALL USING (true) WITH CHECK (true);
+
+
 
 
