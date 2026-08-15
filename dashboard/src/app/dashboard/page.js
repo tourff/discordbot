@@ -7,21 +7,21 @@ import { supabase } from '@/lib/supabase';
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = {
-  Shield:   () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  Settings: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-  Server:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
-  Logout:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-  Plus:     () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Trash:    () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-  Check:    () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  Hash:     () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
-  Robot:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M12 2a3 3 0 0 0-3 3v6h6V5a3 3 0 0 0-3-3z"/><line x1="8" y1="22" x2="8" y2="16"/><line x1="16" y1="22" x2="16" y2="16"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg>,
-  Logs:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
-  Roles:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  Globe:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
-  Music:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
-  Discord:  ({ size = 16 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink:0 }}><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>,
-  Quotient:   ({ size = 18 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M8.5 8.5l7 7"/></svg>,
+  Shield:       () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Server:       () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
+  Logout:       () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  Plus:         () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Trash:        () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Check:        () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Hash:         () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
+  Robot:        () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M12 2a3 3 0 0 0-3 3v6h6V5a3 3 0 0 0-3-3z"/><line x1="8" y1="22" x2="8" y2="16"/><line x1="16" y1="22" x2="16" y2="16"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/></svg>,
+  Logs:         () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+  Roles:        () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  Globe:        () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  Music:        () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  Gamepad:      () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="18" cy="10" r="1" fill="currentColor"/><path d="M17.5 7H6.5a5 5 0 0 0-5 5 5 5 0 0 0 5 5h11a5 5 0 0 0 5-5 5 5 0 0 0-5-5z"/></svg>,
+  ChevronRight: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  Quotient:     ({ size = 18 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><path d="M8.5 8.5l7 7"/></svg>,
 };
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
@@ -45,25 +45,32 @@ function Toast({ message, type, onClose }) {
 // ─── Toggle Switch ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange, label, desc, accent = '#818cf8' }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(5,7,15,0.5)', border: `1px solid ${checked ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.08)'}`, borderRadius: 13, transition: 'all 0.25s ease' }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '16px 20px',
+      background: checked ? 'rgba(99,102,241,0.05)' : 'rgba(5,7,15,0.5)',
+      border: `1px solid ${checked ? `${accent}33` : 'rgba(255,255,255,0.05)'}`,
+      borderRadius: 14, transition: 'all 0.3s ease',
+    }}>
       <div>
         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{label}</div>
-        {desc && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>}
+        {desc && <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3 }}>{desc}</div>}
       </div>
       <button
         type="button"
         onClick={() => onChange(!checked)}
         style={{
-          width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+          width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
           background: checked ? accent : 'rgba(255,255,255,0.1)',
-          position: 'relative', flexShrink: 0, transition: 'background 0.25s ease',
-          boxShadow: checked ? `0 0 16px ${accent}55` : 'none',
+          position: 'relative', flexShrink: 0, transition: 'all 0.3s ease',
+          boxShadow: checked ? `0 0 20px ${accent}55` : 'none',
         }}
         aria-pressed={checked}
       >
         <span style={{
-          position: 'absolute', top: 2, left: checked ? 22 : 2, width: 20, height: 20,
-          background: 'white', borderRadius: 10, transition: 'left 0.25s cubic-bezier(0.16,1,0.3,1)',
+          position: 'absolute', top: 3, left: checked ? 25 : 3, width: 20, height: 20,
+          background: 'white', borderRadius: 10,
+          transition: 'left 0.3s cubic-bezier(0.16,1,0.3,1)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
         }} />
       </button>
@@ -87,26 +94,57 @@ function Field({ label, hint, children }) {
 // ─── Section Heading ────────────────────────────────────────────────────────────
 function SectionHeading({ icon, iconBg, iconColor, title, subtitle }) {
   return (
-    <div className="section-header">
-      <div className="section-icon" style={{ background: iconBg, border: `1px solid ${iconColor}33`, color: iconColor }}>{icon}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 13,
+        background: iconBg, border: `1px solid ${iconColor}33`, color: iconColor,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18, flexShrink: 0,
+      }}>{icon}</div>
       <div>
-        <h2 style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{title}</h2>
         <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</p>
       </div>
     </div>
   );
 }
 
+// ─── Save Footer ────────────────────────────────────────────────────────────────
+function SaveFooter({ isSaving, label, hint }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '16px 24px',
+      background: 'rgba(5,7,15,0.6)',
+      border: '1px solid rgba(99,102,241,0.08)',
+      borderRadius: 16,
+    }}>
+      <div style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{hint || 'Changes saved to database'}</div>
+      <button
+        type="submit"
+        disabled={isSaving}
+        className="btn-primary"
+        style={{ padding: '11px 28px', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 9, borderRadius: 12 }}
+      >
+        {isSaving
+          ? <><span className="spinner-sm" /><span>Saving…</span></>
+          : <><Icon.Check /><span>{label || 'Save Settings'}</span></>
+        }
+      </button>
+    </div>
+  );
+}
+
 // ─── Tabs config ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'permissions', label: 'Permissions',     icon: <Icon.Shield />,   color: '#818cf8' },
-  { id: 'welcome',     label: 'Welcome',          icon: '👋',              color: '#34d399' },
-  { id: 'automod',     label: 'AutoMod',          icon: <Icon.Robot />,    color: '#f87171' },
-  { id: 'logging',     label: 'Logging',          icon: <Icon.Logs />,     color: '#a78bfa' },
-  { id: 'roles',       label: 'Roles & Auto',     icon: <Icon.Roles />,    color: '#fbbf24' },
-  { id: 'esports',     label: 'Esports & SS',     icon: '🎮',              color: '#10b981' },
-  { id: 'social',      label: 'Social Notifier',  icon: <Icon.Globe />,    color: '#38bdf8' },
-  { id: 'music',       label: 'Music',            icon: <Icon.Music />,    color: '#f472b6' },
+  { id: 'permissions', label: 'Permissions',     icon: <Icon.Shield />,   color: '#818cf8', bg: 'rgba(99,102,241,0.12)',   desc: 'Manage bot access' },
+  { id: 'welcome',     label: 'Welcome',          icon: '👋',              color: '#34d399', bg: 'rgba(16,185,129,0.12)',   desc: 'Join & leave messages' },
+  { id: 'automod',     label: 'AutoMod',          icon: <Icon.Robot />,    color: '#f87171', bg: 'rgba(239,68,68,0.12)',    desc: 'Auto moderation' },
+  { id: 'logging',     label: 'Logging',          icon: <Icon.Logs />,     color: '#a78bfa', bg: 'rgba(139,92,246,0.12)',   desc: 'Audit & event logs' },
+  { id: 'roles',       label: 'Roles & Auto',     icon: <Icon.Roles />,    color: '#fbbf24', bg: 'rgba(245,158,11,0.12)',   desc: 'Auto role assignment' },
+  { id: 'esports',     label: 'Esports & SS',     icon: <Icon.Gamepad />,  color: '#10b981', bg: 'rgba(16,185,129,0.12)',   desc: 'Screenshot verify' },
+  { id: 'social',      label: 'Social Notifier',  icon: <Icon.Globe />,    color: '#38bdf8', bg: 'rgba(56,189,248,0.12)',   desc: 'Social media feeds' },
+  { id: 'music',       label: 'Music',            icon: <Icon.Music />,    color: '#f472b6', bg: 'rgba(244,114,182,0.12)',  desc: 'Music player' },
 ];
 
 const SOCIAL_PLATFORMS = [
@@ -336,49 +374,64 @@ export default function Dashboard() {
   }
 
   const guildIcon = selectedGuild?.icon ? `https://cdn.discordapp.com/icons/${selectedGuild.id}/${selectedGuild.icon}.png` : null;
-  const inputStyle = { padding: '10px 14px', width: '100%', className: 'input-field' };
+  const activeTabConfig = TABS.find(t => t.id === activeTab);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Background */}
-      <div className="orb animate-pulse-glow" style={{ width: 500, height: 500, background: 'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)', top: '-10%', right: '-5%', position: 'fixed', pointerEvents: 'none' }} />
-      <div className="orb animate-pulse-glow" style={{ width: 400, height: 400, background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)', bottom: '5%', left: '-5%', position: 'fixed', pointerEvents: 'none', animationDelay: '2.5s' }} />
-      <div className="mesh-grid" style={{ position: 'fixed', opacity: 0.4 }} />
+      {/* Background ambience */}
+      <div style={{ position: 'fixed', top: '-20%', right: '-10%', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(60px)', zIndex: 0 }} />
+      <div style={{ position: 'fixed', bottom: '-10%', left: '-10%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(60px)', zIndex: 0 }} />
+      <div className="mesh-grid" style={{ position: 'fixed', opacity: 0.35, zIndex: 0 }} />
 
       {/* ─── TOP NAVBAR ─── */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px', background: 'rgba(5,7,15,0.93)', backdropFilter: 'blur(32px)', borderBottom: '1px solid rgba(255,255,255,0.04)', boxShadow: '0 1px 0 rgba(99,102,241,0.06), 0 4px 24px rgba(0,0,0,0.3)' }}>
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 62,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 24px',
+        background: 'rgba(5,7,15,0.95)',
+        backdropFilter: 'blur(40px)',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        boxShadow: '0 1px 0 rgba(99,102,241,0.06), 0 4px 32px rgba(0,0,0,0.4)',
+      }}>
+        {/* Left: Logo + breadcrumbs */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="logo-icon" style={{ width: 34, height: 34, borderRadius: 10 }}>
-            <Icon.Quotient size={18} />
+          <div className="logo-icon" style={{ width: 36, height: 36, borderRadius: 10 }}>
+            <Icon.Quotient size={19} />
           </div>
-          <div>
-            <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.03em' }}>
-              <span className="gradient-text">Quotient</span>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> Bot</span>
-            </span>
-          </div>
+          <span style={{ fontWeight: 800, fontSize: 15.5, letterSpacing: '-0.03em' }}>
+            <span className="gradient-text">Quotient</span>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> Bot</span>
+          </span>
+          {selectedGuild && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 8 }}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)' }}>/</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedGuild.name}</span>
+              {activeTabConfig && <>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)' }}>/</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: activeTabConfig.color }}>{activeTabConfig.label}</span>
+              </>}
+            </div>
+          )}
         </div>
 
-        {selectedGuild && (
-          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Dashboard</span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>/</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedGuild.name}</span>
-          </div>
-        )}
-
+        {/* Right: Status + User */}
         {session && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="badge-live" style={{ fontSize: 10.5 }}>
+              <span className="badge-live-dot" />
+              Online
+            </span>
+            <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.07)' }} />
             <div style={{ position: 'relative' }}>
               {session.user?.image
-                ? <img src={session.user.image} alt="" style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.35)', boxShadow: '0 0 12px rgba(99,102,241,0.2)' }} />
-                : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white' }}>{session.user?.name?.charAt(0)}</div>
+                ? <img src={session.user.image} alt="" style={{ width: 34, height: 34, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.4)', boxShadow: '0 0 14px rgba(99,102,241,0.2)' }} />
+                : <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white' }}>{session.user?.name?.charAt(0)}</div>
               }
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 9, height: 9, background: '#34d399', borderRadius: '50%', border: '2px solid var(--bg-primary)', boxShadow: '0 0 6px #34d399' }} />
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, background: '#34d399', borderRadius: '50%', border: '2px solid var(--bg-primary)', boxShadow: '0 0 6px #34d399' }} />
             </div>
             <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.07)' }} />
-            <button onClick={() => signOut({ callbackUrl: '/' })} className="btn-ghost" style={{ padding: '6px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => signOut({ callbackUrl: '/' })} className="btn-ghost" style={{ padding: '7px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 7 }}>
               <Icon.Logout /> Logout
             </button>
           </div>
@@ -386,30 +439,39 @@ export default function Dashboard() {
       </header>
 
       {/* ─── MAIN LAYOUT ─── */}
-      <div style={{ display: 'flex', flex: 1, paddingTop: 60 }}>
+      <div style={{ display: 'flex', flex: 1, paddingTop: 62 }}>
 
-        {/* ─── SIDEBAR ─── */}
-        <aside className="glass-sidebar" style={{ width: 256, flexShrink: 0, position: 'fixed', top: 60, bottom: 0, left: 0, overflowY: 'auto', padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: 3, zIndex: 40 }}>
-          
-          <div style={{ padding: '4px 10px 12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-              <div style={{ color: 'var(--text-muted)' }}><Icon.Server /></div>
-              <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)' }}>Your Servers</span>
-            </div>
-            {guilds.length > 0 && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 999, fontSize: 11, color: '#818cf8', fontWeight: 600 }}>
-                <span style={{ width: 5, height: 5, background: '#818cf8', borderRadius: '50%', display: 'inline-block' }} />
-                {guilds.length} server{guilds.length !== 1 ? 's' : ''}
+        {/* ─── LEFT SIDEBAR: Server list ─── */}
+        <aside style={{
+          width: 260, flexShrink: 0,
+          position: 'fixed', top: 62, bottom: 0, left: 0,
+          overflowY: 'auto',
+          padding: '20px 12px',
+          display: 'flex', flexDirection: 'column', gap: 2,
+          zIndex: 40,
+          background: 'rgba(5,7,15,0.98)',
+          backdropFilter: 'blur(40px)',
+          borderRight: '1px solid rgba(255,255,255,0.03)',
+        }}>
+          <div style={{ padding: '0 8px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ color: 'rgba(99,102,241,0.6)' }}><Icon.Server /></div>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-muted)' }}>Your Servers</span>
               </div>
-            )}
+              {guilds.length > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 999, fontSize: 10.5, color: '#818cf8', fontWeight: 700 }}>
+                  {guilds.length}
+                </div>
+              )}
+            </div>
+            <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(99,102,241,0.15), transparent)' }} />
           </div>
 
-          <div style={{ height: 1, background: 'rgba(99,102,241,0.08)', margin: '0 4px 6px' }} />
-
           {guilds.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '36px 14px', color: 'var(--text-muted)', fontSize: 12.5, lineHeight: 1.65 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, margin: '0 auto 12px' }}>🌐</div>
-              <div style={{ fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4 }}>No servers found</div>
+            <div style={{ textAlign: 'center', padding: '40px 14px', color: 'var(--text-muted)', fontSize: 12.5, lineHeight: 1.65 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(99,102,241,0.07)', border: '1px dashed rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, margin: '0 auto 14px' }}>🌐</div>
+              <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 5 }}>No servers found</div>
               You need admin privileges to manage a server.
             </div>
           ) : (
@@ -417,62 +479,78 @@ export default function Dashboard() {
               const icon = guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : null;
               const isActive = selectedGuild?.id === guild.id;
               return (
-                <button key={guild.id} onClick={() => setSelectedGuild(guild)} className={`nav-item${isActive ? ' active' : ''}`}
-                  style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'none', fontFamily: 'inherit' }}>
+                <button
+                  key={guild.id}
+                  onClick={() => { setSelectedGuild(guild); setActiveTab('permissions'); }}
+                  style={{
+                    width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                    background: isActive ? 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 100%)' : 'transparent',
+                    fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 11,
+                    padding: '10px 12px', borderRadius: 12,
+                    color: isActive ? '#a5b4fc' : 'var(--text-secondary)',
+                    fontWeight: 600, fontSize: 13.5,
+                    transition: 'all 0.22s ease',
+                    borderWidth: 1, borderStyle: 'solid',
+                    borderColor: isActive ? 'rgba(99,102,241,0.25)' : 'transparent',
+                    position: 'relative', letterSpacing: '-0.01em',
+                  }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                >
+                  {isActive && <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, background: 'linear-gradient(180deg, #6366f1, #a855f7)', borderRadius: '0 4px 4px 0' }} />}
                   {icon
-                    ? <img src={icon} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, boxShadow: isActive ? '0 0 12px rgba(99,102,241,0.3)' : 'none' }} />
-                    : <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: isActive ? 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.2))' : 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: isActive ? '#a5b4fc' : 'var(--text-muted)' }}>{guild.name.charAt(0)}</div>
+                    ? <img src={icon} alt="" style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, boxShadow: isActive ? '0 0 12px rgba(99,102,241,0.35)' : 'none' }} />
+                    : <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: isActive ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: isActive ? 'white' : 'var(--text-muted)' }}>{guild.name.charAt(0)}</div>
                   }
-                  <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, letterSpacing: '-0.01em' }}>{guild.name}</span>
-                  {isActive && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#818cf8', flexShrink: 0, boxShadow: '0 0 8px #818cf8' }} />}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{guild.name}</span>
+                  {isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#818cf8', flexShrink: 0, boxShadow: '0 0 8px #818cf8' }} />}
                 </button>
               );
             })
           )}
 
-          {/* Bottom user info */}
           {session && (
-            <div style={{ marginTop: 'auto', padding: '12px 8px 4px', borderTop: '1px solid rgba(99,102,241,0.07)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <div style={{ marginTop: 'auto', padding: '14px 10px 4px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.08)', borderRadius: 12 }}>
                 {session.user?.image
-                  ? <img src={session.user.image} alt="" style={{ width: 30, height: 30, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.3)' }} />
-                  : <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'white' }}>{session.user?.name?.charAt(0)}</div>
+                  ? <img src={session.user.image} alt="" style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.3)', flexShrink: 0 }} />
+                  : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white', flexShrink: 0 }}>{session.user?.name?.charAt(0)}</div>
                 }
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user?.name}</div>
-                  <div style={{ fontSize: 10.5, color: '#818cf8', fontWeight: 600 }}>Administrator · trj7</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user?.name}</div>
+                  <div style={{ fontSize: 10.5, color: '#818cf8', fontWeight: 600 }}>Administrator</div>
                 </div>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399', flexShrink: 0 }} />
               </div>
             </div>
           )}
         </aside>
 
         {/* ─── MAIN CONTENT ─── */}
-        <main style={{ flex: 1, marginLeft: 256, padding: '28px 32px', minWidth: 0 }}>
+        <main style={{ flex: 1, marginLeft: 260, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 
           {!selectedGuild ? (
-            // Empty State
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 130px)', textAlign: 'center' }} className="animate-fade-in">
-              <div style={{ width: 110, height: 110, borderRadius: 28, background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, marginBottom: 28, boxShadow: '0 0 60px rgba(99,102,241,0.1), 0 24px 64px rgba(0,0,0,0.4)', position: 'relative' }}>
-                <span style={{ animation: 'float 4s ease-in-out infinite' }}>⚡</span>
-                <div style={{ position: 'absolute', inset: -16, borderRadius: 44, border: '1px dashed rgba(99,102,241,0.15)', animation: 'spin-slow 20s linear infinite' }} />
+            // ─── EMPTY / WELCOME STATE ───
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 62px)', textAlign: 'center', padding: '40px 24px' }} className="animate-fade-in">
+              <div style={{ position: 'relative', marginBottom: 36 }}>
+                <div style={{ width: 120, height: 120, borderRadius: 32, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, boxShadow: '0 0 80px rgba(99,102,241,0.12), 0 32px 80px rgba(0,0,0,0.4)' }}>
+                  <span style={{ animation: 'float 4s ease-in-out infinite' }}>⚡</span>
+                </div>
+                <div style={{ position: 'absolute', inset: -20, borderRadius: 52, border: '1px dashed rgba(99,102,241,0.12)', animation: 'spin-slow 25s linear infinite' }} />
+                <div style={{ position: 'absolute', inset: -40, borderRadius: 68, border: '1px dashed rgba(139,92,246,0.07)', animation: 'spin-slow 40s linear infinite reverse' }} />
               </div>
-              <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 10, letterSpacing: '-0.03em' }}>Select a Server</h2>
-              <p style={{ color: 'var(--text-secondary)', maxWidth: 380, lineHeight: 1.7, fontSize: 15, marginBottom: 28 }}>
+              <h2 style={{ fontSize: 30, fontWeight: 900, marginBottom: 12, letterSpacing: '-0.04em' }}>Select a <span className="gradient-text">Server</span></h2>
+              <p style={{ color: 'var(--text-secondary)', maxWidth: 400, lineHeight: 1.75, fontSize: 15.5, marginBottom: 36 }}>
                 Choose one of your admin servers from the sidebar to start managing Quotient Bot settings.
               </p>
               {guilds.length > 0 && (
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 500 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 540 }}>
                   {guilds.slice(0, 4).map((g) => {
                     const icon = g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null;
                     return (
-                      <button key={g.id} onClick={() => setSelectedGuild(g)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', background: 'rgba(10,14,28,0.8)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, transition: 'all 0.25s ease', fontFamily: 'inherit' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.35)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.15)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                        {icon
-                          ? <img src={icon} alt="" style={{ width: 20, height: 20, borderRadius: 6 }} />
-                          : <div style={{ width: 20, height: 20, borderRadius: 6, background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#818cf8' }}>{g.name.charAt(0)}</div>
-                        }
+                      <button key={g.id} onClick={() => setSelectedGuild(g)} className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 18px', fontSize: 13.5, fontWeight: 600, borderRadius: 13 }}>
+                        {icon ? <img src={icon} alt="" style={{ width: 22, height: 22, borderRadius: 7 }} /> : <div style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#818cf8' }}>{g.name.charAt(0)}</div>}
                         {g.name}
                       </button>
                     );
@@ -481,57 +559,85 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            <div className="animate-fade-in">
+            <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 62px)' }}>
 
-              {/* ─── Server Header ─── */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  {guildIcon
-                    ? <img src={guildIcon} alt="" style={{ width: 54, height: 54, borderRadius: 16, border: '2px solid rgba(99,102,241,0.3)', boxShadow: '0 0 24px rgba(99,102,241,0.2)' }} />
-                    : <div style={{ width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: 'white', boxShadow: '0 0 24px rgba(99,102,241,0.35)' }}>{selectedGuild.name.charAt(0)}</div>
-                  }
-                  <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 5 }}>{selectedGuild.name}</h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className="badge-live" style={{ fontSize: 10 }}><span className="badge-live-dot" />Active</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
-                        <Icon.Hash /><code style={{ fontFamily: 'monospace' }}>{selectedGuild.id}</code>
-                      </div>
+              {/* ─── SETTINGS NAV (vertical module tabs) ─── */}
+              <div style={{ width: 220, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.03)', background: 'rgba(8,11,22,0.7)', display: 'flex', flexDirection: 'column' }}>
+
+                {/* Server header in nav */}
+                <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                    {guildIcon
+                      ? <img src={guildIcon} alt="" style={{ width: 40, height: 40, borderRadius: 12, border: '2px solid rgba(99,102,241,0.3)', boxShadow: '0 0 20px rgba(99,102,241,0.15)' }} />
+                      : <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}>{selectedGuild.name.charAt(0)}</div>
+                    }
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedGuild.name}</div>
+                      <span className="badge-live" style={{ fontSize: 9.5, padding: '2px 7px', marginTop: 3, display: 'inline-flex' }}><span className="badge-live-dot" />Active</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                    <div style={{ flex: 1, padding: '8px 10px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 10, textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }} className="gradient-text">{permissions.length}</div>
+                      <div style={{ fontSize: 9.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Perms</div>
+                    </div>
+                    <div style={{ flex: 1, padding: '8px 10px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 10, textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: '#a78bfa' }}>{TABS.length}</div>
+                      <div style={{ fontSize: 9.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Modules</div>
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <div style={{ padding: '10px 20px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 13, textAlign: 'center', minWidth: 85 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1 }} className="gradient-text">{permissions.length}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Permissions</div>
-                  </div>
-                  <div style={{ padding: '10px 20px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 13, textAlign: 'center', minWidth: 85 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1, color: '#a78bfa' }}>{TABS.length}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Features</div>
-                  </div>
+
+                {/* Module list */}
+                <div style={{ flex: 1, padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+                  <div style={{ padding: '8px 6px 6px', fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)' }}>Modules</div>
+                  {TABS.map(tab => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                          width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '10px 12px', borderRadius: 11,
+                          background: isActive ? `linear-gradient(135deg, ${tab.bg}, rgba(99,102,241,0.03))` : 'transparent',
+                          color: isActive ? tab.color : 'var(--text-muted)',
+                          fontWeight: 600, fontSize: 13,
+                          transition: 'all 0.2s ease',
+                          borderWidth: 1, borderStyle: 'solid',
+                          borderColor: isActive ? `${tab.color}30` : 'transparent',
+                          position: 'relative', letterSpacing: '-0.01em',
+                        }}
+                        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; } }}
+                      >
+                        {isActive && <div style={{ position: 'absolute', left: 0, top: '25%', bottom: '25%', width: 3, background: tab.color, borderRadius: '0 3px 3px 0', boxShadow: `0 0 8px ${tab.color}` }} />}
+                        <span style={{ display: 'flex', alignItems: 'center', fontSize: typeof tab.icon === 'string' ? 16 : 18, flexShrink: 0 }}>{tab.icon}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{tab.label}</span>
+                        {isActive && <Icon.ChevronRight />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* ─── Tabs ─── */}
-              <div style={{ display: 'flex', gap: 3, marginBottom: 24, flexWrap: 'wrap', background: 'rgba(5,7,15,0.7)', border: '1px solid rgba(99,102,241,0.1)', borderRadius: 16, padding: '4px 6px', width: 'fit-content' }}>
-                {TABS.map(tab => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 7,
-                      padding: '8px 16px', borderRadius: 10,
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
-                      transition: 'all 0.22s ease', fontFamily: 'inherit',
-                      background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.14))' : 'transparent',
-                      color: activeTab === tab.id ? tab.color : 'var(--text-muted)',
-                      boxShadow: activeTab === tab.id ? '0 0 20px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.05)' : 'none',
-                    }}>
-                    <span style={{ transition: 'color 0.22s', display: 'flex', alignItems: 'center' }}>
-                      {typeof tab.icon === 'string' ? tab.icon : tab.icon}
-                    </span>
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
+              {/* ─── TAB CONTENT ─── */}
+              <div style={{ flex: 1, padding: '28px 32px', overflowY: 'auto', minWidth: 0 }}>
+
+                {/* Active tab heading */}
+                {activeTabConfig && (
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 14, background: activeTabConfig.bg, border: `1px solid ${activeTabConfig.color}33`, color: activeTabConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 0 30px ${activeTabConfig.color}22` }}>{activeTabConfig.icon}</div>
+                      <div>
+                        <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>{activeTabConfig.label}</h1>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{activeTabConfig.desc}</p>
+                      </div>
+                    </div>
+                    <div style={{ height: 1, background: `linear-gradient(90deg, ${activeTabConfig.color}30, transparent)`, marginTop: 16 }} />
+                  </div>
+                )}
 
               {/* Loading */}
               {isLoadingData ? (
@@ -630,13 +736,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Changes apply instantly</span>
-                        <button type="submit" disabled={isSavingWelcome} className="btn-primary" style={{ padding: '11px 28px', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 9, borderRadius: 12 }}>
-                          {isSavingWelcome ? <span className="spinner-sm" /> : <Icon.Check />}
-                          <span>{isSavingWelcome ? 'Saving…' : 'Save Settings'}</span>
-                        </button>
-                      </div>
+                      <SaveFooter isSaving={isSavingWelcome} label="Save Welcome Settings" hint="Changes apply instantly to new joins" />
                     </form>
                   )}
 
@@ -922,6 +1022,7 @@ export default function Dashboard() {
                   )}
                 </>
               )}
+              </div>
             </div>
           )}
         </main>
