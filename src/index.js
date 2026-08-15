@@ -78,6 +78,8 @@ const startReminderCron = require('./jobs/reminderJob');
 const startAutopurgeCron = require('./jobs/autopurgeJob');
 const startLockdownCron = require('./jobs/lockdownJob');
 const startGiveawayCron = require('./jobs/giveawayJob');
+const startStatsCron = require('./jobs/statsJob');
+const startBirthdayCron = require('./jobs/birthdayJob');
 
 // Delay startup slightly so the client is ready before the first poll
 client.once('ready', () => {
@@ -87,6 +89,8 @@ client.once('ready', () => {
   startAutopurgeCron(client);
   startLockdownCron(client);
   startGiveawayCron(client);
+  startStatsCron(client);
+  startBirthdayCron(client);
 });
 
 // ── 5. Login ──────────────────────────────────────────────────────────────────

@@ -68,6 +68,15 @@ module.exports = {
       } else if (interaction.customId === 'giveaway_enter') {
         const { handleGiveawayJoin } = require('../modules/giveawayManager');
         return await handleGiveawayJoin(interaction).catch(console.error);
+      } else if (interaction.customId === 'captcha_verify') {
+        const { getSetting } = require('../modules/autoMod');
+        const roleId = await getSetting(interaction.guild.id, 'CAPTCHA_VERIFIED_ROLE_ID');
+        if (roleId && interaction.guild.roles.cache.has(roleId)) {
+          await interaction.member.roles.add(roleId).catch(console.error);
+          return await interaction.reply({ content: '✅ Verification successful! Welcome to the server!', ephemeral: true });
+        } else {
+          return await interaction.reply({ content: '⚠️ Verified role has not been configured by server administrators yet.', ephemeral: true });
+        }
       } else if (interaction.customId.startsWith('role_')) {
         await handleButtonRole(interaction).catch(console.error);
       } else if (interaction.customId === 'welcome_msg_btn') {

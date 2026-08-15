@@ -48,9 +48,29 @@ const Icon = {
       <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v2" /><path d="M13 17v2" /><path d="M13 11v2" />
     </svg>
   ),
+  Voice: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  ),
+  Cake: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" /><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" /><path d="M2 21h20" /><path d="M7 8v3" /><path d="M12 8v3" /><path d="M17 8v3" />
+    </svg>
+  ),
+  Stats: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  ),
+  Lock: () => (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ),
   Gift: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+      <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
     </svg>
   ),
   Coin: () => (
@@ -60,22 +80,22 @@ const Icon = {
   ),
   Logs: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" />
     </svg>
   ),
   Users: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" />
     </svg>
   ),
   Globe: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
     </svg>
   ),
   Gamepad: () => (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="6" y1="12" x2="10" y2="12" /><line x1="8" y1="10" x2="8" y2="14" /><line x1="15" y1="13" x2="15.01" y2="13" strokeWidth="3" /><line x1="18" y1="11" x2="18.01" y2="11" strokeWidth="3" /><rect x="2" y="6" width="20" height="12" rx="6" />
+      <line x1="6" y1="12" x2="10" y2="12" /><rect x="2" y="6" width="20" height="12" rx="6" />
     </svg>
   ),
   Music: () => (
@@ -115,7 +135,7 @@ const Icon = {
   ),
 };
 
-// ─── Luxury Toast Notification ──────────────────────────────────────────────────
+// ─── Toast Notification ────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3500);
@@ -149,7 +169,7 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-// ─── Modern Category Navigation Groups ──────────────────────────────────────────
+// ─── 14 Modular Nav Sections ───────────────────────────────────────────────────
 const NAV_SECTIONS = [
   {
     title: 'CORE PLATFORM',
@@ -164,14 +184,18 @@ const NAV_SECTIONS = [
     items: [
       { id: 'automod', label: 'Auto-Moderation', icon: <Icon.Robot /> },
       { id: 'antinuke', label: 'Anti-Nuke Shield', icon: <Icon.Shield /> },
+      { id: 'captcha', label: 'Captcha Verification', icon: <Icon.Lock /> },
       { id: 'welcome', label: 'Welcome Suite', icon: <Icon.Sparkles /> },
       { id: 'logging', label: 'Audit Logs', icon: <Icon.Logs /> },
       { id: 'tickets', label: 'Support Tickets', icon: <Icon.Ticket /> },
     ]
   },
   {
-    title: 'ENGAGEMENT & ECONOMY',
+    title: 'COMMUNITY & VOICE',
     items: [
+      { id: 'tempvoice', label: 'Temp Voice Rooms', icon: <Icon.Voice /> },
+      { id: 'stats', label: 'Server Counters', icon: <Icon.Stats /> },
+      { id: 'birthdays', label: 'Birthdays', icon: <Icon.Cake /> },
       { id: 'leveling', label: 'Leveling & XP', icon: <Icon.Level /> },
       { id: 'giveaways', label: 'Giveaways', icon: <Icon.Gift /> },
       { id: 'economy', label: 'Economy & Shop', icon: <Icon.Coin /> },
@@ -201,7 +225,7 @@ export default function Dashboard() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Settings States
+  // States
   const [permissions, setPermissions] = useState([]);
   const [newType, setNewType] = useState('role');
   const [newId, setNewId] = useState('');
@@ -218,6 +242,15 @@ export default function Dashboard() {
 
   const [antiNuke, setAntiNuke] = useState({ ANTINUKE_ENABLED: 'true', ANTINUKE_THRESHOLD: '3' });
   const [isSavingAntiNuke, setIsSavingAntiNuke] = useState(false);
+
+  const [tempVoice, setTempVoice] = useState({ TEMP_VOICE_HUB_CHANNEL_ID: '' });
+  const [isSavingTempVoice, setIsSavingTempVoice] = useState(false);
+
+  const [birthdays, setBirthdays] = useState({ BIRTHDAY_CHANNEL_ID: '', BIRTHDAY_ROLE_ID: '' });
+  const [isSavingBirthdays, setIsSavingBirthdays] = useState(false);
+
+  const [captcha, setCaptcha] = useState({ CAPTCHA_VERIFIED_ROLE_ID: '' });
+  const [isSavingCaptcha, setIsSavingCaptcha] = useState(false);
 
   const [welcome, setWelcome] = useState({ WELCOME_CHANNEL_ID: '', WELCOME_MESSAGE: '', GOODBYE_CHANNEL_ID: '', GOODBYE_MESSAGE: '' });
   const [isSavingWelcome, setIsSavingWelcome] = useState(false);
@@ -301,6 +334,16 @@ export default function Dashboard() {
           ANTINUKE_ENABLED: map.ANTINUKE_ENABLED ?? 'true',
           ANTINUKE_THRESHOLD: map.ANTINUKE_THRESHOLD || '3'
         });
+        setTempVoice({
+          TEMP_VOICE_HUB_CHANNEL_ID: map.TEMP_VOICE_HUB_CHANNEL_ID || ''
+        });
+        setBirthdays({
+          BIRTHDAY_CHANNEL_ID: map.BIRTHDAY_CHANNEL_ID || '',
+          BIRTHDAY_ROLE_ID: map.BIRTHDAY_ROLE_ID || ''
+        });
+        setCaptcha({
+          CAPTCHA_VERIFIED_ROLE_ID: map.CAPTCHA_VERIFIED_ROLE_ID || ''
+        });
         setWelcome({
           WELCOME_CHANNEL_ID: map.WELCOME_CHANNEL_ID || '',
           WELCOME_MESSAGE: map.WELCOME_MESSAGE || '',
@@ -378,6 +421,30 @@ export default function Dashboard() {
     const ok = await saveSettings(antiNuke);
     showToast(ok ? 'Anti-Nuke Raid Shield updated' : 'Failed to save', ok ? 'success' : 'error');
     setIsSavingAntiNuke(false);
+  };
+
+  const handleSaveTempVoice = async (e) => {
+    e?.preventDefault();
+    setIsSavingTempVoice(true);
+    const ok = await saveSettings(tempVoice);
+    showToast(ok ? 'Temp Voice settings saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingTempVoice(false);
+  };
+
+  const handleSaveBirthdays = async (e) => {
+    e?.preventDefault();
+    setIsSavingBirthdays(true);
+    const ok = await saveSettings(birthdays);
+    showToast(ok ? 'Birthday celebrations saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingBirthdays(false);
+  };
+
+  const handleSaveCaptcha = async (e) => {
+    e?.preventDefault();
+    setIsSavingCaptcha(true);
+    const ok = await saveSettings(captcha);
+    showToast(ok ? 'Captcha verification role saved' : 'Failed to save', ok ? 'success' : 'error');
+    setIsSavingCaptcha(false);
   };
 
   const handleSaveWelcome = async (e) => {
@@ -470,6 +537,9 @@ export default function Dashboard() {
     if (aiSettings.AI_ENABLED === 'true') count++;
     if (leveling.LEVELING_ENABLED === 'true') count++;
     if (antiNuke.ANTINUKE_ENABLED === 'true') count++;
+    if (tempVoice.TEMP_VOICE_HUB_CHANNEL_ID) count++;
+    if (birthdays.BIRTHDAY_CHANNEL_ID) count++;
+    if (captcha.CAPTCHA_VERIFIED_ROLE_ID) count++;
     if (tickets.TICKET_CATEGORY_ID) count++;
     if (automod.AUTOMOD_ANTI_SPAM === 'true') count++;
     if (welcome.WELCOME_CHANNEL_ID) count++;
@@ -478,7 +548,7 @@ export default function Dashboard() {
     if (social.YOUTUBE_URL || social.FACEBOOK_URL) count++;
     if (esports.SS_VERIFY_CHANNEL) count++;
     return count;
-  }, [aiSettings, leveling, antiNuke, tickets, automod, welcome, logging, roles, social, esports]);
+  }, [aiSettings, leveling, antiNuke, tempVoice, birthdays, captcha, tickets, automod, welcome, logging, roles, social, esports]);
 
   if (status === 'loading') {
     return (
@@ -498,7 +568,6 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-main)', display: 'flex', flexDirection: 'column', position: 'relative' }} className="bg-grid-mesh">
 
-      {/* Ambient background glows */}
       <div className="ambient-glow-1" style={{ top: '-10%', left: '15%' }} />
       <div className="ambient-glow-2" style={{ bottom: '10%', right: '10%' }} />
 
@@ -512,7 +581,6 @@ export default function Dashboard() {
         padding: '0 24px',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        {/* Left: Brand Identity */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
@@ -531,7 +599,6 @@ export default function Dashboard() {
 
           <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
-          {/* Server Switcher Pill */}
           {selectedGuild && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: 999, padding: '4px 12px 4px 6px' }}>
               {guildIconUrl ? (
@@ -548,7 +615,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Right: Status & User */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div className="luxe-badge luxe-badge-emerald" style={{ fontSize: 11 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
@@ -638,7 +704,7 @@ export default function Dashboard() {
             <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 4px 16px' }} />
 
             {/* Navigation Groups */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {NAV_SECTIONS.map(section => (
                 <div key={section.title}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', padding: '0 8px 6px' }}>
@@ -666,7 +732,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Footer Meta */}
           <div style={{
             padding: '12px 10px',
             background: 'rgba(255, 255, 255, 0.02)',
@@ -708,7 +773,6 @@ export default function Dashboard() {
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                  {/* Hero Banner */}
                   <div className="luxe-card" style={{ padding: '24px 28px', overflow: 'hidden' }}>
                     <div className="card-top-accent" />
 
@@ -748,10 +812,7 @@ export default function Dashboard() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 10 }}>
-                        <button
-                          onClick={() => showToast('Jarvis AI Core is operational and synchronized')}
-                          className="btn-luxe-secondary"
-                        >
+                        <button onClick={() => showToast('Jarvis AI Core is synchronized')} className="btn-luxe-secondary">
                           Ping Bot Core
                         </button>
                       </div>
@@ -763,8 +824,8 @@ export default function Dashboard() {
                     {[
                       { title: 'AI Assistant', value: aiSettings.AI_ENABLED === 'true' ? 'Online' : 'Disabled', sub: 'Gemini AI Integration', icon: <Icon.Brain />, onClick: () => setActiveTab('ai') },
                       { title: 'Leveling & XP', value: leveling.LEVELING_ENABLED === 'true' ? 'Active' : 'Disabled', sub: 'Progress Tracker', icon: <Icon.Level />, onClick: () => setActiveTab('leveling') },
-                      { title: 'Anti-Nuke Shield', value: antiNuke.ANTINUKE_ENABLED === 'true' ? 'Armed' : 'Disabled', sub: 'Raid & Admin Mitigator', icon: <Icon.Shield />, onClick: () => setActiveTab('antinuke') },
-                      { title: 'Active Modules', value: `${activeSystemsCount} of 10 Enabled`, sub: 'Automation Matrix', icon: <Icon.Sparkles />, onClick: null },
+                      { title: 'Temp Voice', value: tempVoice.TEMP_VOICE_HUB_CHANNEL_ID ? 'Enabled' : 'Disabled', sub: 'Join-to-Create Hub', icon: <Icon.Voice />, onClick: () => setActiveTab('tempvoice') },
+                      { title: 'Active Modules', value: `${activeSystemsCount} of 14 Enabled`, sub: 'Full System Matrix', icon: <Icon.Sparkles />, onClick: null },
                     ].map((m, i) => (
                       <div
                         key={i}
@@ -784,20 +845,20 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {/* 6 Flagship Feature Quick Cards */}
+                  {/* 6 Feature Quick Cards */}
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 12 }}>
-                      FLAGSHIP SYSTEMS & EXTENSIONS
+                      SYSTEM EXTENSIONS & AUTOMATIONS
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
                       {[
-                        { id: 'ai', title: '🧠 AI Intelligence Suite', desc: 'Converse with Jarvis AI in Discord using Google Gemini.', enabled: aiSettings.AI_ENABLED === 'true' },
-                        { id: 'leveling', title: '📈 Leveling & Custom Rank', desc: 'Award XP for chat activity with leaderboards and role rewards.', enabled: leveling.LEVELING_ENABLED === 'true' },
-                        { id: 'tickets', title: '🎟️ Support Ticket System', desc: 'Deploy interactive ticket panels with isolated channels and transcripts.', enabled: !!tickets.TICKET_CATEGORY_ID },
-                        { id: 'antinuke', title: '🛡️ Anti-Nuke Shield', desc: 'Mitigate mass bans, kicks, or channel deletions by rogue admins.', enabled: antiNuke.ANTINUKE_ENABLED === 'true' },
-                        { id: 'giveaways', title: '🎁 Giveaway Engine', desc: 'Host countdown giveaways with automatic winner selection.', enabled: true },
-                        { id: 'economy', title: '🪙 Virtual Economy & Shop', desc: 'Server coin wallet, gambling games, and purchasable server roles.', enabled: true },
+                        { id: 'ai', title: '🧠 AI Intelligence & /imagine', desc: 'Google Gemini AI chat + AI Image generation in chat.', enabled: aiSettings.AI_ENABLED === 'true' },
+                        { id: 'tempvoice', title: '🔊 Dynamic Temp Voice', desc: 'Auto-create private voice rooms on join & auto-cleanup.', enabled: !!tempVoice.TEMP_VOICE_HUB_CHANNEL_ID },
+                        { id: 'birthdays', title: '🎂 Birthday Celebrations', desc: 'Announce member birthdays with special roles and greetings.', enabled: !!birthdays.BIRTHDAY_CHANNEL_ID },
+                        { id: 'captcha', title: '🛡️ Captcha Verification', desc: 'Protect server with interactive click verification desk.', enabled: !!captcha.CAPTCHA_VERIFIED_ROLE_ID },
+                        { id: 'tickets', title: '🎟️ Support Ticket Desk', desc: 'Deploy private support rooms with staff transcripts.', enabled: !!tickets.TICKET_CATEGORY_ID },
+                        { id: 'antinuke', title: '🛡️ Anti-Nuke Shield', desc: 'Mitigate mass bans, kicks, or channel deletions.', enabled: antiNuke.ANTINUKE_ENABLED === 'true' },
                       ].map(item => (
                         <div key={item.id} className="luxe-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -823,14 +884,141 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
+                  TAB: TEMP VOICE
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'tempvoice' && (
+                <form onSubmit={handleSaveTempVoice} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Dynamic Temporary Voice Channels</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      When a member connects to the Hub Channel, Jarvis creates a private room (e.g. <code className="luxe-code">🔊 User's Lounge</code>), moves them in, and deletes it when empty.
+                    </p>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>"Join to Create" Hub Voice Channel ID</label>
+                      <input
+                        type="text"
+                        value={tempVoice.TEMP_VOICE_HUB_CHANNEL_ID}
+                        onChange={e => setTempVoice({ TEMP_VOICE_HUB_CHANNEL_ID: e.target.value })}
+                        placeholder="Voice Channel ID (e.g. 123456789012345678)"
+                        className="luxe-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingTempVoice} className="btn-luxe-primary">
+                      {isSavingTempVoice ? 'Saving...' : 'Save Temp Voice Config'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: SERVER STATS
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'stats' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Live Server Stats Counters</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Create locked voice counters at the top of your server (Total Members, Online Members, Nitro Boosts) updated every 10 minutes.
+                    </p>
+
+                    <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Deploy Counters via Discord</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+                        Run <code className="luxe-code">/stats-setup</code> in any channel with Administrator permissions to auto-create category & channels.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: BIRTHDAYS
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'birthdays' && (
+                <form onSubmit={handleSaveBirthdays} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Birthday Celebration Suite</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Members register with <code className="luxe-code">/birthday set &lt;day&gt; &lt;month&gt;</code>. Jarvis sends celebratory wishes and awards a temporary role at midnight.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Birthday Announcement Channel ID</label>
+                        <input
+                          type="text"
+                          value={birthdays.BIRTHDAY_CHANNEL_ID}
+                          onChange={e => setBirthdays(p => ({ ...p, BIRTHDAY_CHANNEL_ID: e.target.value }))}
+                          placeholder="e.g. 123456789012345678"
+                          className="luxe-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Birthday Star Role ID (Optional)</label>
+                        <input
+                          type="text"
+                          value={birthdays.BIRTHDAY_ROLE_ID}
+                          onChange={e => setBirthdays(p => ({ ...p, BIRTHDAY_ROLE_ID: e.target.value }))}
+                          placeholder="Role assigned on birthday"
+                          className="luxe-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingBirthdays} className="btn-luxe-primary">
+                      {isSavingBirthdays ? 'Saving...' : 'Save Birthday Settings'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
+                  TAB: CAPTCHA
+                  ═══════════════════════════════════════════════════════════════ */}
+              {activeTab === 'captcha' && (
+                <form onSubmit={handleSaveCaptcha} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '24px' }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Captcha & Member Verification</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                      Deploy an interactive button verification panel with <code className="luxe-code">/captcha-setup</code>.
+                    </p>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Verified Member Role ID</label>
+                      <input
+                        type="text"
+                        value={captcha.CAPTCHA_VERIFIED_ROLE_ID}
+                        onChange={e => setCaptcha({ CAPTCHA_VERIFIED_ROLE_ID: e.target.value })}
+                        placeholder="Role unlocked upon clicking Verify button"
+                        className="luxe-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" disabled={isSavingCaptcha} className="btn-luxe-primary">
+                      {isSavingCaptcha ? 'Saving...' : 'Save Verification Role'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════════════
                   TAB: AI INTELLIGENCE
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'ai' && (
                 <form onSubmit={handleSaveAi} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div className="luxe-card" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Jarvis AI Assistant Engine</h2>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Jarvis AI Assistant & /imagine</h2>
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-                      Powered by Google Gemini. Server members can use <code className="luxe-code">/ask &lt;prompt&gt;</code> or talk directly in the AI Chat Channel.
+                      Powered by Google Gemini. Use <code className="luxe-code">/ask</code>, <code className="luxe-code">/imagine</code>, or <code className="luxe-code">/summarize</code>.
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -855,7 +1043,7 @@ export default function Dashboard() {
                           type="text"
                           value={aiSettings.AI_CHAT_CHANNEL_ID}
                           onChange={e => setAiSettings(p => ({ ...p, AI_CHAT_CHANNEL_ID: e.target.value }))}
-                          placeholder="e.g. 123456789012345678 (Jarvis auto-replies to any message here)"
+                          placeholder="e.g. 123456789012345678"
                           className="luxe-input"
                         />
                       </div>
@@ -883,7 +1071,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB: LEVELING & XP
+                  TAB: LEVELING
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'leveling' && (
                 <form onSubmit={handleSaveLeveling} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -915,7 +1103,7 @@ export default function Dashboard() {
                           type="text"
                           value={leveling.LEVEL_UP_CHANNEL_ID}
                           onChange={e => setLeveling(p => ({ ...p, LEVEL_UP_CHANNEL_ID: e.target.value }))}
-                          placeholder="e.g. 123456789012345678 (leave blank to post in current chat)"
+                          placeholder="Channel ID (leave blank to post in current chat)"
                           className="luxe-input"
                         />
                       </div>
@@ -931,7 +1119,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB: SUPPORT TICKETS
+                  TAB: TICKETS
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'tickets' && (
                 <form onSubmit={handleSaveTickets} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -948,7 +1136,7 @@ export default function Dashboard() {
                           type="text"
                           value={tickets.TICKET_CATEGORY_ID}
                           onChange={e => setTickets(p => ({ ...p, TICKET_CATEGORY_ID: e.target.value }))}
-                          placeholder="Discord Category ID where tickets are created"
+                          placeholder="Discord Category ID"
                           className="luxe-input"
                         />
                       </div>
@@ -959,7 +1147,7 @@ export default function Dashboard() {
                           type="text"
                           value={tickets.TICKET_STAFF_ROLE_ID}
                           onChange={e => setTickets(p => ({ ...p, TICKET_STAFF_ROLE_ID: e.target.value }))}
-                          placeholder="Role granted view/reply permissions to tickets"
+                          placeholder="Staff Role ID"
                           className="luxe-input"
                         />
                       </div>
@@ -1019,7 +1207,7 @@ export default function Dashboard() {
                           type="number"
                           value={antiNuke.ANTINUKE_THRESHOLD}
                           onChange={e => setAntiNuke(p => ({ ...p, ANTINUKE_THRESHOLD: e.target.value }))}
-                          placeholder="e.g. 3 (bans/kicks/deletions in &lt;15s)"
+                          placeholder="e.g. 3"
                           className="luxe-input"
                           min={2}
                           max={10}
@@ -1067,7 +1255,7 @@ export default function Dashboard() {
               )}
 
               {/* ═══════════════════════════════════════════════════════════════
-                  TAB: ECONOMY & SHOP
+                  TAB: ECONOMY
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'economy' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1082,6 +1270,8 @@ export default function Dashboard() {
                         { cmd: '/daily', desc: 'Claim +250 free Jarvis coins every 24 hours' },
                         { cmd: '/balance [user]', desc: 'Check wallet coin balance' },
                         { cmd: '/coinflip <amount> <choice>', desc: 'Gamble coins on heads or tails' },
+                        { cmd: '/trivia', desc: 'Answer quiz questions to win +50 coins' },
+                        { cmd: '/truthordare', desc: 'Party mini-game for text & voice channels' },
                       ].map(c => (
                         <div key={c.cmd} style={{ padding: '14px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 10 }}>
                           <code className="luxe-code" style={{ color: '#fbbf24' }}>{c.cmd}</code>
