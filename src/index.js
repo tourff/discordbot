@@ -17,7 +17,7 @@ const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js'
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { SoundCloudPlugin } = require('@distube/soundcloud');
-const { YtDlpPlugin } = require('@distube/yt-dlp');
+const { YtDlpPlugin, searchYt } = require('./plugins/ytDlpPlugin');
 
 const loadCommands    = require('./handlers/commandHandler');
 const loadEvents      = require('./handlers/eventHandler');
@@ -70,6 +70,7 @@ client.distube = new DisTube(client, {
     new YtDlpPlugin(),
   ],
 });
+client.distube.search = searchYt;
 
 loadDisTube(client);
 

@@ -4,11 +4,16 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('skip')
     .setDescription('Skips the currently playing song.'),
-  
+
   async execute(interaction) {
-    const voiceChannel = interaction.member.voice.channel;
-    if (!voiceChannel) {
+    const memberVoice = interaction.member.voice?.channel;
+    if (!memberVoice) {
       return interaction.reply({ content: '❌ You must be in a voice channel!', ephemeral: true });
+    }
+
+    const botVoice = interaction.guild.members.me?.voice?.channel;
+    if (botVoice && botVoice.id !== memberVoice.id) {
+      return interaction.reply({ content: `❌ You must be in <#${botVoice.id}> to control the music!`, ephemeral: true });
     }
 
     const queue = interaction.client.distube.getQueue(interaction);
@@ -17,16 +22,21 @@ module.exports = {
     }
 
     try {
-      if (queue.songs.length === 1 && queue.autoplay === false) {
-        queue.stop();
-        await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.' });
-      } else {
-        await queue.skip();
-        await interaction.reply({ content: '⏭️ Skipped to the next song!' });
+      if (queue.songs.length <= 1 && !queue.autoplay) {
+        await queue.stop();
+        return await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.' });
       }
+
+      const nextSong = await queue.skip();
+      await interaction.reply({ content: `⏭️ Skipped! Now playing: **${nextSong?.name || 'next song'}**` });
     } catch (e) {
-      console.error(e);
-      await interaction.reply({ content: '❌ An error occurred while skipping.', ephemeral: true });
+      // If skip threw because there were no more songs, stop cleanly
+      try {
+        await queue.stop();
+        await interaction.reply({ content: '⏭️ Skipped! Queue has ended.' });
+      } catch {
+        await interaction.reply({ content: '❌ Could not skip to a next song.', ephemeral: true });
+      }
     }
   },
 };

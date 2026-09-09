@@ -144,52 +144,69 @@ module.exports = {
         const queue = client.distube.getQueue(interaction);
         if (!queue) return interaction.reply({ content: '❌ There is no music playing right now!', ephemeral: true });
 
-        const memberVoice = interaction.member.voice.channel;
-        if (!memberVoice || memberVoice.id !== queue.voice.channel.id) {
+        const memberVoice = interaction.member.voice?.channel;
+        const botVoice = interaction.guild.members.me?.voice?.channel || queue.voice?.channel;
+        if (!memberVoice || !botVoice || memberVoice.id !== botVoice.id) {
           return interaction.reply({ content: '❌ You must be in the same voice channel to use these buttons!', ephemeral: true });
         }
 
-        switch (interaction.customId) {
-          case 'music_pause':
-            if (queue.paused) {
-              queue.resume();
-              await interaction.reply({ content: '▶️ Music resumed.', ephemeral: true });
-            } else {
-              queue.pause();
-              await interaction.reply({ content: '⏸️ Music paused.', ephemeral: true });
+        try {
+          switch (interaction.customId) {
+            case 'music_pause': {
+              const isPaused = typeof queue.isPaused === 'function' ? queue.isPaused() : Boolean(queue.paused);
+              if (isPaused) {
+                await queue.resume();
+                await interaction.reply({ content: '▶️ Music resumed.', ephemeral: true });
+              } else {
+                await queue.pause();
+                await interaction.reply({ content: '⏸️ Music paused.', ephemeral: true });
+              }
+              break;
             }
-            break;
-          case 'music_skip':
-            if (queue.songs.length === 1 && !queue.autoplay) {
-              queue.stop();
-              await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.', ephemeral: true });
-            } else {
-              await queue.skip();
-              await interaction.reply({ content: '⏭️ Skipped to the next song.', ephemeral: true });
+            case 'music_skip': {
+              if (queue.songs.length <= 1 && !queue.autoplay) {
+                await queue.stop();
+                await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.', ephemeral: true });
+              } else {
+                try {
+                  await queue.skip();
+                  await interaction.reply({ content: '⏭️ Skipped to the next song.', ephemeral: true });
+                } catch {
+                  await queue.stop();
+                  await interaction.reply({ content: '⏭️ Skipped! Queue is now empty.', ephemeral: true });
+                }
+              }
+              break;
             }
-            break;
-          case 'music_stop':
-            queue.stop();
-            await interaction.reply({ content: '⏹️ Music stopped.', ephemeral: true });
-            break;
-          case 'music_loop':
-            const mode = queue.repeatMode;
-            // Modes: 0 = disabled, 1 = repeat song, 2 = repeat queue
-            const nextMode = mode === 0 ? 1 : (mode === 1 ? 2 : 0);
-            queue.setRepeatMode(nextMode);
-            const modeName = nextMode === 0 ? 'Off' : (nextMode === 1 ? 'Song' : 'Queue');
-            await interaction.reply({ content: `🔁 Loop mode set to: **${modeName}**`, ephemeral: true });
-            break;
-          case 'music_rewind':
-            const newTimeBack = Math.max(0, queue.currentTime - 15);
-            queue.seek(newTimeBack);
-            await interaction.reply({ content: `⏪ Rewound 15 seconds.`, ephemeral: true });
-            break;
-          case 'music_forward':
-            const newTimeFwd = queue.currentTime + 15;
-            queue.seek(newTimeFwd);
-            await interaction.reply({ content: `⏩ Skipped forward 15 seconds.`, ephemeral: true });
-            break;
+            case 'music_stop': {
+              await queue.stop();
+              await interaction.reply({ content: '⏹️ Music stopped.', ephemeral: true });
+              break;
+            }
+            case 'music_loop': {
+              const nextMode = queue.setRepeatMode();
+              const modeName = nextMode === 0 ? 'Off' : (nextMode === 1 ? 'Song' : 'Queue');
+              await interaction.reply({ content: `🔁 Loop mode set to: **${modeName}**`, ephemeral: true });
+              break;
+            }
+            case 'music_rewind': {
+              const newTimeBack = Math.max(0, queue.currentTime - 15);
+              await queue.seek(newTimeBack);
+              await interaction.reply({ content: '⏪ Rewound 15 seconds.', ephemeral: true });
+              break;
+            }
+            case 'music_forward': {
+              const newTimeFwd = queue.currentTime + 15;
+              await queue.seek(newTimeFwd);
+              await interaction.reply({ content: '⏩ Skipped forward 15 seconds.', ephemeral: true });
+              break;
+            }
+          }
+        } catch (err) {
+          console.error('[Music button interaction error]', err);
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: `❌ Action failed: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
         }
       } else if (interaction.customId.startsWith('smanager_')) {
         const { handleSManagerButtons } = require('../modules/smanagerUI');

@@ -1,3 +1,10 @@
+// src/handlers/distubeHandler.js
+// ─────────────────────────────────────────────────────────────────────────────
+// DisTube event listeners for playing songs, queueing tracks, and errors.
+// ─────────────────────────────────────────────────────────────────────────────
+
+'use strict';
+
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = (client) => {
@@ -5,11 +12,14 @@ module.exports = (client) => {
 
   // ── 1. Play Song ────────────────────────────────────────────────────────────
   distube.on('playSong', (queue, song) => {
+    if (!queue.textChannel) return;
+
+    const userTag = song.user?.tag || song.member?.user?.tag || (song.user ? `${song.user}` : 'Someone');
     const embed = new EmbedBuilder()
       .setColor(0xff00a6) // Diva Pink
       .setTitle('Now Playing')
-      .setDescription(`[**${song.name}**](${song.url})\n\n**Duration:** \`${song.formattedDuration}\`\n**Requested by:** ${song.user}`)
-      .setThumbnail(song.thumbnail)
+      .setDescription(`[**${song.name}**](${song.url})\n\n**Duration:** \`${song.formattedDuration || 'N/A'}\`\n**Requested by:** ${song.user || userTag}`)
+      .setThumbnail(song.thumbnail || null)
       .setFooter({ text: `Volume: ${queue.volume}% | Loop: ${queue.repeatMode ? (queue.repeatMode === 2 ? 'Queue' : 'Song') : 'Off'}` });
 
     const row = new ActionRowBuilder().addComponents(
@@ -53,23 +63,31 @@ module.exports = (client) => {
 
   // ── 2. Add Song ─────────────────────────────────────────────────────────────
   distube.on('addSong', (queue, song) => {
+    if (!queue.textChannel) return;
+
+    const userTag = song.user?.tag || song.member?.user?.tag || 'User';
+    const avatar = song.user?.displayAvatarURL?.() || song.member?.user?.displayAvatarURL?.() || null;
+
     const embed = new EmbedBuilder()
       .setColor(0x2f3136) // Dark grey
-      .setDescription(`✅ **Track queued - Position #${queue.songs.length}**\n\nAdded [**${song.name}**](${song.url}) (\`${song.formattedDuration}\`) to the queue`)
-      .setFooter({ text: `Requested by ${song.user.tag}`, iconURL: song.user.displayAvatarURL() });
+      .setDescription(`✅ **Track queued - Position #${queue.songs.length}**\n\nAdded [**${song.name}**](${song.url}) (\`${song.formattedDuration || 'N/A'}\`) to the queue`)
+      .setFooter({ text: `Requested by ${userTag}`, iconURL: avatar });
 
     queue.textChannel.send({ embeds: [embed] }).catch(console.error);
   });
 
   // ── 3. Add Playlist ─────────────────────────────────────────────────────────
   distube.on('addList', (queue, playlist) => {
+    if (!queue.textChannel) return;
+
+    const requester = playlist.user || playlist.member?.user || 'User';
     const embed = new EmbedBuilder()
       .setColor(0x57f287)
       .setTitle('✅ Playlist Added')
       .setDescription(`[${playlist.name}](${playlist.url})`)
       .addFields(
         { name: 'Songs', value: `${playlist.songs.length}`, inline: true },
-        { name: 'Requested by', value: `${playlist.user}`, inline: true }
+        { name: 'Requested by', value: `${requester}`, inline: true }
       );
 
     queue.textChannel.send({ embeds: [embed] }).catch(console.error);
@@ -77,31 +95,35 @@ module.exports = (client) => {
 
   // ── 4. Empty Queue (Finished) ───────────────────────────────────────────────
   distube.on('finish', (queue) => {
-    const embed = new EmbedBuilder()
-      .setColor(0xed4245)
-      .setDescription('🏁 The queue has ended. Leaving the voice channel...');
-    queue.textChannel.send({ embeds: [embed] }).catch(console.error);
+    if (queue.textChannel) {
+      const embed = new EmbedBuilder()
+        .setColor(0xed4245)
+        .setDescription('🏁 The queue has ended. Leaving the voice channel...');
+      queue.textChannel.send({ embeds: [embed] }).catch(console.error);
+    }
     if (queue.voice) queue.voice.leave();
   });
 
   // ── 5. Empty Channel ────────────────────────────────────────────────────────
   distube.on('empty', (queue) => {
-    const embed = new EmbedBuilder()
-      .setColor(0xed4245)
-      .setDescription('👻 The voice channel is empty. Leaving...');
-    queue.textChannel.send({ embeds: [embed] }).catch(console.error);
+    if (queue.textChannel) {
+      const embed = new EmbedBuilder()
+        .setColor(0xed4245)
+        .setDescription('👻 The voice channel is empty. Leaving...');
+      queue.textChannel.send({ embeds: [embed] }).catch(console.error);
+    }
     if (queue.voice) queue.voice.leave();
   });
 
   // ── 6. Error Handling ───────────────────────────────────────────────────────
   distube.on('error', (error, queue, song) => {
-    console.error('[DisTube]', error);
+    console.error('[DisTube Error]', error);
     const channel = queue?.textChannel || song?.metadata?.textChannel;
     if (channel) {
       const embed = new EmbedBuilder()
         .setColor(0xed4245)
-        .setTitle('❌ An error occurred')
-        .setDescription(`\`\`\`js\n${String(error).slice(0, 2000)}\n\`\`\``);
+        .setTitle('❌ Playback Error')
+        .setDescription(`\`\`\`js\n${String(error.message || error).slice(0, 1900)}\n\`\`\``);
       channel.send({ embeds: [embed] }).catch(console.error);
     }
   });
