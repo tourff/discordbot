@@ -20,40 +20,54 @@ async function generateAIResponse(prompt, systemPrompt = 'You are Jarvis, a high
     return '⚡ **Jarvis AI**: AI features require a `GEMINI_API_KEY` in the bot environment. Please add your key to `.env` to activate AI chat.';
   }
 
-  try {
-    // Call Google Gemini API (Free Tier endpoint)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }]
+  const modelCandidates = [
+    process.env.GEMINI_MODEL,
+    'gemini-flash-lite-latest',
+    'gemini-flash-latest',
+    'gemini-3.5-flash',
+  ].filter(Boolean);
+
+  let lastError = null;
+
+  for (const model of modelCandidates) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ]
-      })
-    });
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ]
+        }),
+        signal: AbortSignal.timeout(12000)
+      });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('[AI Assistant] API Error:', errText);
-      return '⚠️ **Jarvis AI**: Sorry, I encountered an issue communicating with the AI service. Please verify your API key.';
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`[AI Assistant] Model ${model} returned ${response.status}:`, errText);
+        lastError = errText;
+        continue;
+      }
+
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+    } catch (err) {
+      console.warn(`[AI Assistant] Model ${model} request error:`, err.message);
+      lastError = err.message;
     }
-
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return reply || '⚡ **Jarvis AI**: I processed your request but received an empty response.';
-  } catch (err) {
-    console.error('[AI Assistant] Error:', err);
-    return '⚠️ **Jarvis AI**: An error occurred while generating a response.';
   }
+
+  console.error('[AI Assistant] All candidate models failed. Last error:', lastError);
+  return '⚠️ **Jarvis AI**: Sorry, I encountered an issue communicating with the AI service. Please try again in a moment.';
 }
 
 /**
