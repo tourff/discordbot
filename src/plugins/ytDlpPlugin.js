@@ -199,14 +199,8 @@ class YtDlpPlugin extends PlayableExtractorPlugin {
       throw new DisTubeError('YTDLP_PLUGIN_INVALID_SONG', 'Cannot get stream url from invalid song.');
     }
 
-    const info = await runYtDlpJson(song.url, {
-      format: 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/ba/best',
-    }).catch((err) => {
-      throw new DisTubeError('YTDLP_ERROR', err.message);
-    });
-
-    if (info.url) return info.url;
-    throw new DisTubeError('YTDLP_ERROR', 'No playable audio stream URL returned by yt-dlp.');
+    const port = process.env.PORT || 3000;
+    return `http://127.0.0.1:${port}/stream?url=${encodeURIComponent(song.url)}`;
   }
 
   getRelatedSongs() {

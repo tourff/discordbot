@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const express  = require('express');
 const path     = require('path');
+const { spawn } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
 process.env.FFMPEG_PATH = ffmpegPath;
 
@@ -17,7 +18,7 @@ const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js'
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { SoundCloudPlugin } = require('@distube/soundcloud');
-const { YtDlpPlugin, searchYt } = require('./plugins/ytDlpPlugin');
+const { YtDlpPlugin, searchYt, getYtDlpPath } = require('./plugins/ytDlpPlugin');
 
 const loadCommands    = require('./handlers/commandHandler');
 const loadEvents      = require('./handlers/eventHandler');
@@ -30,6 +31,35 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (_req, res) => res.send('✅ Discord bot is online.'));
+
+// Internal audio streaming proxy: yt-dlp pipes directly to localhost, eliminating
+// YouTube CDN connection drops, 403 Forbidden, and FFmpeg code 251 crashes on datacenter IPs.
+app.get('/stream', (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) return res.status(400).send('Missing url parameter');
+
+  res.setHeader('Content-Type', 'audio/webm');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
+  const proc = spawn(getYtDlpPath(), [
+    targetUrl,
+    '-f', 'ba/ba*',
+    '-o', '-',
+    '--no-warnings',
+    '--quiet',
+  ], { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  proc.stdout.pipe(res);
+
+  proc.on('error', (err) => {
+    console.error('[Stream Proxy Error]', err.message);
+    if (!res.headersSent) res.status(500).send('Streaming error');
+  });
+
+  req.on('close', () => {
+    if (!proc.killed) proc.kill();
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`[Express] Listening on port ${PORT}`);
