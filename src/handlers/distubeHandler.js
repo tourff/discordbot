@@ -115,15 +115,42 @@ module.exports = (client) => {
     if (queue.voice) queue.voice.leave();
   });
 
-  // ── 6. Error Handling ───────────────────────────────────────────────────────
+  // ── 6. Error & Debug Handling ──────────────────────────────────────────────
+  distube.on('ffmpegDebug', (debugMessage) => {
+    // Only log warnings and errors to keep terminal output clean
+    if (debugMessage && (debugMessage.includes('error') || debugMessage.includes('warning') || debugMessage.includes('failed'))) {
+      console.warn('[FFmpeg Debug]', debugMessage);
+    }
+  });
+
   distube.on('error', (error, queue, song) => {
     console.error('[DisTube Error]', error);
+
+    const errorMessage = String(error?.message || error || '');
+    
+    // Ignore benign pipe-closure errors during track transitions, skips, or stops
+    const isTransitionError = 
+      errorMessage.includes('code 251') || 
+      errorMessage.includes('code 255') ||
+      errorMessage.includes('ERR_STREAM_PREMATURE_CLOSE') ||
+      error?.code === 'ERR_STREAM_PREMATURE_CLOSE';
+
+    // If a new song is actively playing or queued, don't spam Discord with previous stream exit codes
+    if (isTransitionError && queue?.songs?.length > 0) {
+      console.log('[DisTube] Ignored benign stream abort code during track playback transition.');
+      return;
+    }
+
     const channel = queue?.textChannel || song?.metadata?.textChannel;
     if (channel) {
+      const displayMsg = errorMessage.includes('code 251')
+        ? 'The audio stream connection was temporarily interrupted. Please try re-adding the track.'
+        : errorMessage.slice(0, 1900);
+
       const embed = new EmbedBuilder()
         .setColor(0xed4245)
         .setTitle('❌ Playback Error')
-        .setDescription(`\`\`\`js\n${String(error.message || error).slice(0, 1900)}\n\`\`\``);
+        .setDescription(`\`\`\`\n${displayMsg}\n\`\`\``);
       channel.send({ embeds: [embed] }).catch(console.error);
     }
   });

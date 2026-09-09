@@ -63,7 +63,20 @@ loadEvents(client);
 
 // ── 3.5 Setup DisTube ────────────────────────────────────────────────────────
 client.distube = new DisTube(client, {
-  ffmpeg: { path: ffmpegPath },
+  ffmpeg: {
+    path: ffmpegPath,
+    args: {
+      global: {
+        loglevel: 'warning',
+      },
+      input: {
+        reconnect: 1,
+        reconnect_streamed: 1,
+        reconnect_delay_max: 5,
+        user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+      },
+    },
+  },
   plugins: [
     new SpotifyPlugin(),
     new SoundCloudPlugin(),

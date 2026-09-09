@@ -200,7 +200,7 @@ class YtDlpPlugin extends PlayableExtractorPlugin {
     }
 
     const info = await runYtDlpJson(song.url, {
-      format: 'ba/ba*',
+      format: 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/ba/best',
     }).catch((err) => {
       throw new DisTubeError('YTDLP_ERROR', err.message);
     });
