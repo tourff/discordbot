@@ -135,6 +135,10 @@ const Icon = {
   ),
 };
 
+// ─── Bot OAuth2 Invite URL ───────────────────────────────────────────────────
+const BOT_CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1534625126098669609';
+const BOT_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${BOT_CLIENT_ID}&permissions=8&integration_type=0&scope=bot+applications.commands`;
+
 // ─── Toast Notification ────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -641,6 +645,27 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <a
+            href={BOT_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-luxe-primary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 600,
+              textDecoration: 'none',
+              borderRadius: 8,
+              boxShadow: '0 0 16px rgba(99, 102, 241, 0.25)',
+            }}
+            title="Invite Jarvis Bot to another Discord server"
+          >
+            <Icon.Plus /> Add to Server
+          </a>
+
           <div className="luxe-badge luxe-badge-emerald" style={{ fontSize: 11 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
             Jarvis Core Active • 18ms
@@ -677,7 +702,7 @@ export default function Dashboard() {
         {/* ─── SINGLE UNIFIED MASTER SIDEBAR ─── */}
         <aside style={{
           width: 250,
-          background: 'rgba(9, 11, 17, 0.95)',
+          background: 'rgba(99, 102, 241, 0.03)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex', flexDirection: 'column',
           flexShrink: 0,
@@ -687,8 +712,39 @@ export default function Dashboard() {
           <div>
             {/* Server Selector */}
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', padding: '0 8px 8px' }}>
-                SERVERS ({guilds.length})
+              <div style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.08em',
+                padding: '0 8px 8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <span>SERVERS ({guilds.length})</span>
+                <a
+                  href={BOT_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#a5b4fc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    fontSize: 11,
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    padding: '2px 7px',
+                    borderRadius: 5,
+                    background: 'rgba(99, 102, 241, 0.12)',
+                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Add Jarvis Bot to another Discord server"
+                >
+                  <Icon.Plus /> Add
+                </a>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -723,6 +779,43 @@ export default function Dashboard() {
                     </button>
                   );
                 })}
+
+                {/* Add to Server Button directly in server list */}
+                <a
+                  href={BOT_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '7px 10px',
+                    marginTop: 4,
+                    borderRadius: 8,
+                    background: 'rgba(99, 102, 241, 0.06)',
+                    border: '1px dashed rgba(99, 102, 241, 0.35)',
+                    color: '#a5b4fc',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textDecoration: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Invite Jarvis Bot to another Discord server"
+                >
+                  <div style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 6,
+                    background: 'rgba(99, 102, 241, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#818cf8',
+                  }}>
+                    <Icon.Plus />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, flex: 1 }}>+ Add to Server</span>
+                </a>
               </div>
             </div>
 

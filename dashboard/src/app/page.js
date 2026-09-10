@@ -50,6 +50,9 @@ const COMMANDS = [
   '/permissions', '/pause', '/resume', '/stop', '/seek',
 ];
 
+const BOT_CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1534625126098669609';
+const BOT_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${BOT_CLIENT_ID}&permissions=8&integration_type=0&scope=bot+applications.commands`;
+
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -182,6 +185,27 @@ export default function Home() {
           >
             {isSigningIn ? 'Connecting to Discord...' : 'Open Dashboard →'}
           </button>
+
+          <a
+            href={BOT_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-luxe-secondary"
+            style={{
+              padding: '14px 28px',
+              fontSize: 15,
+              borderRadius: 12,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add to Discord
+          </a>
         </div>
 
         {/* ─── MOCK WINDOW PREVIEW ─── */}
