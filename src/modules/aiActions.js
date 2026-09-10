@@ -57,8 +57,184 @@ async function executeServerAction(message, actionType, params = {}) {
   try {
     switch (actionType) {
       // ─────────────────────────────────────────────────────────────────────
-      // 1. CREATE CHANNEL
+      // 0. REVAMP / REBUILD SERVER (Batch Category & Channel Template Engine)
       // ─────────────────────────────────────────────────────────────────────
+      case 'revamp_server':
+      case 'setup_server_template': {
+        const cleanOld = Boolean(params.clean_old || params.clean_empty_or_old || params.remove_unused);
+        const categories = Array.isArray(params.categories) ? params.categories : [];
+        const deletedChannels = [];
+        const createdCategories = [];
+        const createdChannels = [];
+
+        // 1. Clean old channels if user requested to remove them
+        if (cleanOld) {
+          const currentChannelId = message.channel.id;
+          const channelsToKeep = new Set([
+            currentChannelId,
+            guild.systemChannelId,
+            guild.rulesChannelId,
+            guild.publicUpdatesChannelId,
+          ].filter(Boolean));
+
+          const allChannels = await guild.channels.fetch();
+          for (const [id, ch] of allChannels) {
+            if (!ch) continue;
+            // Protect current interaction channel and system defaults
+            if (channelsToKeep.has(id)) continue;
+            const nameLower = ch.name.toLowerCase();
+            // Protect essential bot and log channels
+            if (nameLower.includes('tryout') || nameLower.includes('bot-command') || nameLower.includes('log')) {
+              continue;
+            }
+
+            try {
+              const oldName = ch.name;
+              await ch.delete(`Server revamp by ${message.author.tag}`);
+              deletedChannels.push(oldName);
+              await new Promise(r => setTimeout(r, 250)); // rate-limit safety
+            } catch (err) {
+              console.warn(`[aiActions] Could not delete channel ${ch.name}:`, err.message);
+            }
+          }
+        }
+
+        // 2. Create categories and nested channels in batch
+        for (const cat of categories) {
+          if (!cat.name) continue;
+          let createdCat = null;
+          try {
+            createdCat = await guild.channels.create({
+              name: cat.name.slice(0, 100),
+              type: ChannelType.GuildCategory,
+              reason: `Server revamp by ${message.author.tag}`,
+            });
+            createdCategories.push(createdCat.name);
+            await new Promise(r => setTimeout(r, 250));
+          } catch (err) {
+            console.error(`[aiActions] Failed to create category ${cat.name}:`, err);
+            continue;
+          }
+
+          if (Array.isArray(cat.channels) && cat.channels.length > 0) {
+            for (const ch of cat.channels) {
+              const chName = typeof ch === 'string' ? ch : (ch.name || 'channel');
+              const isVoice = typeof ch === 'object' && ch.type === 'voice';
+              try {
+                const newCh = await guild.channels.create({
+                  name: chName.slice(0, 100),
+                  type: isVoice ? ChannelType.GuildVoice : ChannelType.GuildText,
+                  parent: createdCat.id,
+                  reason: `Server revamp by ${message.author.tag}`,
+                });
+                createdChannels.push(`${isVoice ? '🔊' : '💬'} <#${newCh.id}>`);
+                await new Promise(r => setTimeout(r, 250));
+              } catch (err) {
+                console.error(`[aiActions] Failed to create channel ${chName}:`, err);
+              }
+            }
+          }
+        }
+
+        const summaryLines = [];
+        if (createdCategories.length > 0) {
+          summaryLines.push(`**Categories Created (${createdCategories.length}):**\n${createdCategories.map(c => `📁 \`${c}\``).join('\n')}`);
+        }
+        if (createdChannels.length > 0) {
+          summaryLines.push(`**Channels Created (${createdChannels.length}):**\n${createdChannels.join(', ')}`);
+        }
+        if (deletedChannels.length > 0) {
+          summaryLines.push(`**Old Channels Cleaned (${deletedChannels.length}):**\n${deletedChannels.slice(0, 10).map(c => `\`#${c}\``).join(', ')}${deletedChannels.length > 10 ? ` ...and ${deletedChannels.length - 10} more` : ''}`);
+        }
+
+        return {
+          success: true,
+          message: `🏰 **Server Remake & Beautification Complete!**\n\n${summaryLines.join('\n\n')}`,
+          details: `Categories: ${createdCategories.length} | Channels: ${createdChannels.length} | Removed: ${deletedChannels.length}`,
+        };
+      }
+
+      // ─────────────────────────────────────────────────────────────────────
+      // BATCH EXECUTION
+      // ─────────────────────────────────────────────────────────────────────
+      case 'batch': {
+        const actions = Array.isArray(params.actions) ? params.actions : [];
+        if (actions.length === 0) {
+          return { success: false, message: 'No actions provided in batch request.' };
+        }
+
+        const results = [];
+        let successCount = 0;
+        for (const act of actions) {
+          if (!act.action) continue;
+          const res = await executeServerAction(message, act.action, act.parameters || {});
+          if (res.success) successCount++;
+          results.push(`• ${res.message}`);
+          await new Promise(r => setTimeout(r, 250));
+        }
+
+        return {
+          success: successCount > 0,
+          message: `⚡ **Executed ${successCount}/${actions.length} Actions in Batch:**\n\n${results.slice(0, 15).join('\n')}`,
+          details: `Total Actions: ${actions.length} | Succeeded: ${successCount}`,
+        };
+      }
+
+      // ─────────────────────────────────────────────────────────────────────
+      // CREATE CATEGORY WITH CHANNELS
+      // ─────────────────────────────────────────────────────────────────────
+      case 'create_category_with_channels': {
+        const catName = params.name || params.category || 'Category';
+        const channels = Array.isArray(params.channels) ? params.channels : [];
+
+        const category = await guild.channels.create({
+          name: catName.slice(0, 100),
+          type: ChannelType.GuildCategory,
+          reason: `Created via Jarvis AI by ${message.author.tag}`,
+        });
+
+        const created = [];
+        for (const ch of channels) {
+          const chName = typeof ch === 'string' ? ch : (ch.name || 'channel');
+          const isVoice = typeof ch === 'object' && ch.type === 'voice';
+          const newCh = await guild.channels.create({
+            name: chName.slice(0, 100),
+            type: isVoice ? ChannelType.GuildVoice : ChannelType.GuildText,
+            parent: category.id,
+            reason: `Created via Jarvis AI by ${message.author.tag}`,
+          });
+          created.push(`<#${newCh.id}>`);
+          await new Promise(r => setTimeout(r, 250));
+        }
+
+        return {
+          success: true,
+          message: `📁 Created category **${category.name}** with ${created.length} channels: ${created.join(', ')}`,
+          details: `Category ID: ${category.id} | Channels: ${created.length}`,
+        };
+      }
+
+      // ─────────────────────────────────────────────────────────────────────
+      // DELETE MULTIPLE CHANNELS
+      // ─────────────────────────────────────────────────────────────────────
+      case 'delete_multiple_channels': {
+        const list = Array.isArray(params.channels) ? params.channels : [];
+        const deleted = [];
+        for (const chQuery of list) {
+          const ch = findChannel(guild, chQuery);
+          if (ch && ch.id !== message.channel.id) {
+            const name = ch.name;
+            await ch.delete(`Batch delete by ${message.author.tag}`);
+            deleted.push(name);
+            await new Promise(r => setTimeout(r, 250));
+          }
+        }
+
+        return {
+          success: true,
+          message: `🧹 Deleted **${deleted.length}** channels: ${deleted.map(n => `\`#${n}\``).join(', ')}`,
+        };
+      }
       case 'create_channel': {
         const name = (params.name || 'new-channel').toLowerCase().replace(/\s+/g, '-').slice(0, 100);
         const typeStr = (params.type || 'text').toLowerCase();

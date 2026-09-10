@@ -16,29 +16,75 @@ const { canManageBot } = require('./permissions');
 const { executeServerAction } = require('./aiActions');
 
 const ACTION_SYSTEM_INSTRUCTIONS = `
-You have advanced Discord server operator capabilities. When a user asks you to perform a server maintenance task (in Bengali, Banglish, or English), you can execute it!
+You have advanced Discord server operator capabilities. When a user asks you to perform server maintenance tasks (in Bengali, Banglish, or English), you can execute them directly!
+
+CRITICAL RULE FOR MULTIPLE ACTIONS / REVAMPS / SERVER SETUP:
+When the user asks you to:
+- Revamp, beautify, remodel, or redesign the server (e.g. "full server sundor kore onek gula channel ar category create koro", "server ta sajay dao", "server remake koro")
+- Create multiple channels or categories at once (e.g. "5 ta channel create koro", "notun category ar channel banao")
+- Remove old/unused channels and build a new layout
+DO NOT create just one channel! NEVER do it one by one! You MUST execute ALL of them together in a single "revamp_server" or "batch" action!
 
 Supported Action Types:
-1. create_channel: { "name": string, "type": "text"|"voice"|"category" }
-   - Example phrases: "announcements channel create koro", "notun voice channel banao gaming", "create a category Staff"
-2. delete_channel: { "name": string }
-   - Example phrases: "spam channel ta delete koro", "delete channel general-2"
-3. setup_welcome: { "channel"?: string, "message"?: string }
-   - Example phrases: "welcome message setup koro: Hey {user} welcome to {server}!", "welcome channel #general e set koro"
-4. setup_goodbye: { "channel"?: string, "message"?: string }
-   - Example phrases: "goodbye message set koro: {user} left"
-5. lock_channel: { "channel"?: string }
-   - Example phrases: "channel lock koro", "lock this channel", "general channel ta lock koro"
-6. unlock_channel: { "channel"?: string }
-   - Example phrases: "channel unlock koro", "unlock this channel"
-7. purge_messages: { "amount": number }
-   - Example phrases: "20 ta message delete koro", "purge 50 messages"
-8. create_role: { "name": string, "color"?: string }
-   - Example phrases: "VIP role create koro", "create role Moderator with blue color"
-9. create_tournament: { "name": string, "slots"?: number }
-   - Example phrases: "tournament create koro PUBG Cup", "create a tournament called Valorant 50 slots"
-10. set_bot_mode: { "mode": "public"|"restricted"|"admins_only" }
-   - Example phrases: "bot access mode restricted koro", "make bot public"
+1. revamp_server: Set up a complete layout with multiple categories and nested channels all at once, and optionally clean old unused channels.
+   Parameters:
+   {
+     "clean_old": boolean, // true if user asked to remove old/unused channels
+     "categories": [
+       {
+         "name": "📜 ┊ INFORMATION",
+         "channels": [
+           { "name": "📌・rules", "type": "text" },
+           { "name": "📢・announcements", "type": "text" },
+           { "name": "🎉・giveaways", "type": "text" }
+         ]
+       },
+       {
+         "name": "💬 ┊ COMMUNITY HUB",
+         "channels": [
+           { "name": "💬・general-chat", "type": "text" },
+           { "name": "🤖・bot-commands", "type": "text" },
+           { "name": "📸・media-share", "type": "text" },
+           { "name": "🐸・memes", "type": "text" }
+         ]
+       },
+       {
+         "name": "🔊 ┊ VOICE LOUNGES",
+         "channels": [
+           { "name": "🔊・General Voice", "type": "voice" },
+           { "name": "🎮・Gaming Lounge", "type": "voice" }
+         ]
+       }
+     ]
+   }
+
+2. batch: Execute multiple different actions in one go.
+   Parameters:
+   {
+     "actions": [
+       { "action": "create_channel", "parameters": { "name": "rules", "type": "text" } },
+       { "action": "create_channel", "parameters": { "name": "announcements", "type": "text" } }
+     ]
+   }
+
+3. create_category_with_channels: Create a category with multiple channels inside it at once.
+   Parameters:
+   {
+     "name": string,
+     "channels": Array<string | { name: string, type: "text"|"voice" }>
+   }
+
+4. create_channel: { "name": string, "type": "text"|"voice"|"category" }
+5. delete_channel: { "name": string }
+6. delete_multiple_channels: { "channels": string[] }
+7. setup_welcome: { "channel"?: string, "message"?: string }
+8. setup_goodbye: { "channel"?: string, "message"?: string }
+9. lock_channel: { "channel"?: string }
+10. unlock_channel: { "channel"?: string }
+11. purge_messages: { "amount": number }
+12. create_role: { "name": string, "color"?: string }
+13. create_tournament: { "name": string, "slots"?: number }
+14. set_bot_mode: { "mode": "public"|"restricted"|"admins_only" }
 
 RULE FOR SERVER ACTIONS:
 If the user's message is asking you to perform one of these actions, YOU MUST:
@@ -50,23 +96,28 @@ If the user's message is asking you to perform one of these actions, YOU MUST:
   "parameters": { ... }
 }
 \`\`\`
+If the user asks to create multiple channels, categories, or remake/revamp the server, ALWAYS use "revamp_server" to do ALL categories and channels at once!
 If the user is NOT asking to perform a server action (they are just chatting, asking questions, or discussing ideas), DO NOT output any JSON block. Just respond naturally.
 `;
 
 /**
  * Extracts action payload from AI reply if present.
+ * Supports both single action and batch actions.
  * @param {string} text
  * @returns {{ cleanText: string, actionData: object|null }}
  */
 function extractActionPayload(text) {
   if (!text) return { cleanText: text, actionData: null };
 
-  const jsonBlockRegex = /```(?:json)?\s*(\{[\s\S]*?"action"\s*:[\s\S]*?\})\s*```/i;
+  const jsonBlockRegex = /```(?:json)?\s*(\{[\s\S]*?(?:"action"|"actions")[\s\S]*?\})\s*```/i;
   const match = text.match(jsonBlockRegex);
 
   if (match) {
     try {
-      const actionData = JSON.parse(match[1]);
+      let actionData = JSON.parse(match[1]);
+      if (Array.isArray(actionData.actions) && !actionData.action) {
+        actionData = { action: 'batch', parameters: { actions: actionData.actions } };
+      }
       const cleanText = text.replace(match[0], '').trim();
       return { cleanText, actionData };
     } catch (e) {
@@ -74,11 +125,14 @@ function extractActionPayload(text) {
     }
   }
 
-  const rawJsonMatch = /(\{[\s\n\r]*"action"[\s\S]*?\})$/i;
+  const rawJsonMatch = /(\{[\s\n\r]*"(?:action|actions)"[\s\S]*?\})$/i;
   const rawMatch = text.match(rawJsonMatch);
   if (rawMatch) {
     try {
-      const actionData = JSON.parse(rawMatch[1]);
+      let actionData = JSON.parse(rawMatch[1]);
+      if (Array.isArray(actionData.actions) && !actionData.action) {
+        actionData = { action: 'batch', parameters: { actions: actionData.actions } };
+      }
       const cleanText = text.replace(rawMatch[0], '').trim();
       return { cleanText, actionData };
     } catch (e) {
@@ -116,9 +170,10 @@ async function generateAIResponse(
   if (geminiKey) {
     const modelCandidates = [
       process.env.GEMINI_MODEL,
+      'gemini-flash-lite-latest',
       'gemini-flash-latest',
       'gemini-3.6-flash',
-      'gemini-pro-latest',
+      'gemini-3.5-flash',
     ].filter(Boolean);
 
     // Build multi-turn contents for Gemini
