@@ -276,6 +276,10 @@ export default function Dashboard() {
   const [isSavingSocial, setIsSavingSocial] = useState(false);
   const [activeSocialKey, setActiveSocialKey] = useState('YOUTUBE');
 
+  const [accessMode, setAccessMode] = useState('public');
+  const [botAdderId, setBotAdderId] = useState('');
+  const [isSavingAccessMode, setIsSavingAccessMode] = useState(false);
+
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
   // Auth Guard
@@ -315,6 +319,9 @@ export default function Dashboard() {
       if (!setRes.error && setRes.data) {
         const map = {};
         setRes.data.forEach(r => { map[r.key] = r.value; });
+
+        setAccessMode(map.BOT_ACCESS_MODE || 'public');
+        setBotAdderId(map.BOT_ADDER_ID || '');
 
         setAiSettings({
           AI_ENABLED: map.AI_ENABLED ?? 'true',
@@ -522,6 +529,24 @@ export default function Dashboard() {
     } else {
       showToast('Failed to remove', 'error');
     }
+  };
+
+  const handleUpdateAccessMode = async (newMode) => {
+    if (!selectedGuild) return;
+    setIsSavingAccessMode(true);
+    setAccessMode(newMode);
+    const { error } = await supabase.from('bot_settings').upsert({
+      guild_id: selectedGuild.id,
+      key: 'BOT_ACCESS_MODE',
+      value: newMode,
+    }, { onConflict: 'guild_id,key' });
+
+    if (!error) {
+      showToast(`Access mode set to ${newMode}`);
+    } else {
+      showToast('Failed to update access mode', 'error');
+    }
+    setIsSavingAccessMode(false);
   };
 
   const copyGuildId = () => {
@@ -1289,9 +1314,65 @@ export default function Dashboard() {
               {activeTab === 'permissions' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div className="luxe-card" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                      <div>
+                        <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Bot Access Mode</h2>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                          Configure who can execute commands from this bot on your server.
+                        </p>
+                      </div>
+                      {botAdderId && (
+                        <div style={{ fontSize: 12, padding: '6px 12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                          🤖 Added By: <span className="luxe-code" style={{ color: 'var(--accent-emerald)' }}>{botAdderId}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 16 }}>
+                      {[
+                        {
+                          id: 'public',
+                          title: '🌐 Public (Community)',
+                          desc: 'All members can use general & music commands. Setup and mod commands are protected.',
+                        },
+                        {
+                          id: 'restricted',
+                          title: '🔒 Restricted (Exclusivity)',
+                          desc: 'Only the Bot Adder, Server Owner, and authorized roles/users can use any bot commands.',
+                        },
+                        {
+                          id: 'admins_only',
+                          title: '🛡️ Admins Only',
+                          desc: 'Only Server Administrators and authorized roles/users can use the bot.',
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => handleUpdateAccessMode(item.id)}
+                          style={{
+                            padding: '16px',
+                            borderRadius: 12,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            border: accessMode === item.id ? '2px solid var(--accent-indigo)' : '1px solid var(--border-subtle)',
+                            background: accessMode === item.id ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 0, 0, 0.2)',
+                          }}
+                        >
+                          <div style={{ fontSize: 14, fontWeight: 700, color: accessMode === item.id ? 'white' : 'var(--text-muted)', marginBottom: 6 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                            {item.desc}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="luxe-card" style={{ padding: '24px' }}>
                     <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Command Access Permissions</h2>
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-                      By default, only Server Administrators can use Jarvis bot commands. Grant access to specific roles or users below.
+                      Grant access to specific roles or users to authorize them for bot commands.
                     </p>
 
                     <form onSubmit={handleAddPermission} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

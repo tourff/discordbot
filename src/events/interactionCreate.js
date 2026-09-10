@@ -8,7 +8,7 @@
 'use strict';
 
 const { handleButtonRole } = require('../modules/buttonRoles');
-const { hasPermission } = require('../modules/permissions');
+const { checkPermission } = require('../modules/permissions');
 
 module.exports = {
   name: 'interactionCreate',
@@ -25,9 +25,10 @@ module.exports = {
       if (!command) return;
 
       try {
-        const canUse = await hasPermission(interaction.member);
-        if (!canUse) {
-          return interaction.reply({ content: '🚫 You do not have permission to use this bot.', ephemeral: true });
+        const permCheck = await checkPermission(interaction.member, command);
+        if (!permCheck.allowed) {
+          const content = permCheck.reason || "You don't have admin or manage guild permission for this guild.";
+          return interaction.reply({ content, ephemeral: true });
         }
         
         await command.execute(interaction, client);

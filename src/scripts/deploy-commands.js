@@ -51,23 +51,37 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
   try {
-    console.log(`Deploying ${commands.length} slash command(s)...`);
+    const args = process.argv.slice(2);
+    const isGuildSpecific = args.includes('--guild') || (args[0] === 'guild');
+    const targetGuildId = process.env.GUILD_ID;
 
-    let data;
-    if (process.env.GUILD_ID) {
-      // Guild-scoped (instant, dev only)
-      data = await rest.put(
-        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+    if (isGuildSpecific && targetGuildId) {
+      console.log(`Deploying ${commands.length} slash command(s) specifically to guild: ${targetGuildId}...`);
+      const data = await rest.put(
+        Routes.applicationGuildCommands(process.env.CLIENT_ID, targetGuildId),
         { body: commands }
       );
-      console.log(`✅ Registered ${data.length} command(s) to guild ${process.env.GUILD_ID}.`);
+      console.log(`✅ Registered ${data.length} command(s) to guild ${targetGuildId}.`);
     } else {
-      // Global (production)
-      data = await rest.put(
+      console.log(`Deploying ${commands.length} slash command(s) GLOBALLY across all Discord servers...`);
+      const data = await rest.put(
         Routes.applicationCommands(process.env.CLIENT_ID),
         { body: commands }
       );
-      console.log(`✅ Registered ${data.length} command(s) globally (may take up to 1 hour).`);
+      console.log(`✅ Registered ${data.length} command(s) globally (available in every server the bot joins).`);
+
+      // If a development guild ID exists, clean up guild-level commands to prevent duplicates
+      if (targetGuildId) {
+        try {
+          await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, targetGuildId),
+            { body: [] }
+          );
+          console.log(`🧹 Cleaned up guild-specific commands in dev guild (${targetGuildId}) to prevent duplicates.`);
+        } catch (cleanupErr) {
+          // Non-fatal, guild commands might already be empty
+        }
+      }
     }
   } catch (err) {
     console.error('Failed to deploy commands:', err);

@@ -26,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_mod_cases_guild_user
 ALTER TABLE public.mod_cases ENABLE ROW LEVEL SECURITY;
 
 -- Allow service_role full access (the bot uses anon key, adjust if using service key)
+DROP POLICY IF EXISTS "Bot full access" ON public.mod_cases;
 CREATE POLICY "Bot full access" ON public.mod_cases
   FOR ALL
   USING (true)
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.social_config (
 
 ALTER TABLE public.social_config ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.social_config;
 CREATE POLICY "Bot full access" ON public.social_config
   FOR ALL
   USING (true)
@@ -71,6 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_bot_settings_guild
 
 ALTER TABLE public.bot_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.bot_settings;
 CREATE POLICY "Bot full access" ON public.bot_settings
   FOR ALL
   USING (true)
@@ -88,10 +91,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_bot_settings_updated_at ON public.bot_settings;
 CREATE TRIGGER update_bot_settings_updated_at
   BEFORE UPDATE ON public.bot_settings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_social_config_updated_at ON public.social_config;
 CREATE TRIGGER update_social_config_updated_at
   BEFORE UPDATE ON public.social_config
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -115,6 +120,7 @@ CREATE INDEX IF NOT EXISTS idx_bot_permissions_guild
 
 ALTER TABLE public.bot_permissions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.bot_permissions;
 CREATE POLICY "Bot full access" ON public.bot_permissions
   FOR ALL
   USING (true)
@@ -242,7 +248,7 @@ CREATE TABLE IF NOT EXISTS public.tourney_slots (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
-5. lockdowns
+-- 5. lockdowns
 --    Stores active lockdowns (channels, categories, servers) with optional
 --    expiration timers.
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -263,6 +269,7 @@ CREATE INDEX IF NOT EXISTS idx_lockdowns_guild
 
 ALTER TABLE public.lockdowns ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.lockdowns;
 CREATE POLICY "Bot full access" ON public.lockdowns
   FOR ALL
   USING (true)
@@ -283,6 +290,7 @@ CREATE TABLE IF NOT EXISTS public.votes (
 
 ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.votes;
 CREATE POLICY "Bot full access" ON public.votes
   FOR ALL
   USING (true)
@@ -302,6 +310,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
 
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Bot full access" ON public.user_profiles;
 CREATE POLICY "Bot full access" ON public.user_profiles
   FOR ALL
   USING (true)
@@ -330,6 +339,7 @@ CREATE TABLE IF NOT EXISTS public.user_levels (
 
 CREATE INDEX IF NOT EXISTS idx_user_levels_guild_xp ON public.user_levels (guild_id, xp DESC);
 ALTER TABLE public.user_levels ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.user_levels;
 CREATE POLICY "Bot full access" ON public.user_levels FOR ALL USING (true) WITH CHECK (true);
 
 -- Level Role Rewards
@@ -341,6 +351,7 @@ CREATE TABLE IF NOT EXISTS public.level_rewards (
   UNIQUE (guild_id, level)
 );
 ALTER TABLE public.level_rewards ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.level_rewards;
 CREATE POLICY "Bot full access" ON public.level_rewards FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -360,6 +371,7 @@ CREATE TABLE IF NOT EXISTS public.tickets (
 
 CREATE INDEX IF NOT EXISTS idx_tickets_guild ON public.tickets (guild_id);
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.tickets;
 CREATE POLICY "Bot full access" ON public.tickets FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -381,6 +393,7 @@ CREATE TABLE IF NOT EXISTS public.giveaways (
 
 CREATE INDEX IF NOT EXISTS idx_giveaways_active ON public.giveaways (is_ended, end_time);
 ALTER TABLE public.giveaways ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.giveaways;
 CREATE POLICY "Bot full access" ON public.giveaways FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -397,6 +410,7 @@ CREATE TABLE IF NOT EXISTS public.economy_shop (
 );
 
 ALTER TABLE public.economy_shop ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.economy_shop;
 CREATE POLICY "Bot full access" ON public.economy_shop FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -414,6 +428,7 @@ CREATE TABLE IF NOT EXISTS public.user_birthdays (
 
 CREATE INDEX IF NOT EXISTS idx_birthdays_date ON public.user_birthdays (birth_month, birth_day);
 ALTER TABLE public.user_birthdays ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.user_birthdays;
 CREATE POLICY "Bot full access" ON public.user_birthdays FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -427,6 +442,7 @@ CREATE TABLE IF NOT EXISTS public.temp_voice_channels (
 );
 
 ALTER TABLE public.temp_voice_channels ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.temp_voice_channels;
 CREATE POLICY "Bot full access" ON public.temp_voice_channels FOR ALL USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -443,6 +459,7 @@ CREATE TABLE IF NOT EXISTS public.user_afk (
 
 CREATE INDEX IF NOT EXISTS idx_user_afk_lookup ON public.user_afk (guild_id, user_id);
 ALTER TABLE public.user_afk ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Bot full access" ON public.user_afk;
 CREATE POLICY "Bot full access" ON public.user_afk FOR ALL USING (true) WITH CHECK (true);
 
 

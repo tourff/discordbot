@@ -35,13 +35,7 @@ async function getSetting(guildId, key) {
     }
   }
 
-  // ── 2. Check environment variable fallback ─────────────────────────────────
-  // Env var names map 1:1 with setting keys (e.g. key='WELCOME_CHANNEL_ID')
-  if (process.env[key]) {
-    return process.env[key];
-  }
-
-  // ── 3. Fetch from Supabase ─────────────────────────────────────────────────
+  // ── 2. Fetch from Supabase ─────────────────────────────────────────────────
   const { data, error } = await supabase
     .from('bot_settings')
     .select('value')
@@ -54,7 +48,15 @@ async function getSetting(guildId, key) {
     return null;
   }
 
-  const value = data?.value ?? null;
+  let value = data?.value ?? null;
+
+  // ── 3. Check environment variable fallback (ONLY for primary dev guild) ───────
+  // Server-specific IDs (channels, roles) must NEVER leak into other guilds
+  if (value === null && process.env[key]) {
+    if (!process.env.GUILD_ID || guildId === process.env.GUILD_ID) {
+      value = process.env[key];
+    }
+  }
 
   // Store in cache
   if (!cache.has(guildId)) cache.set(guildId, new Map());

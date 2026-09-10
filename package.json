@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "deploy-commands": "node src/scripts/deploy-commands.js"
+    "deploy-commands": "node src/scripts/deploy-commands.js",
+    "deploy-commands:guild": "node src/scripts/deploy-commands.js --guild"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
