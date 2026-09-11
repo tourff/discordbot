@@ -250,6 +250,9 @@ async function executeServerAction(message, actionType, params = {}) {
     return { success: false, message: 'This command can only be used inside a Discord server.' };
   }
 
+  const userTag = (message.author || message.user)?.tag || 'Server Admin';
+  const messageChannelId = message.channel?.id || message.channelId;
+
   try {
     switch (actionType) {
       // ─────────────────────────────────────────────────────────────────────
@@ -271,7 +274,7 @@ async function executeServerAction(message, actionType, params = {}) {
             createdCat = await guild.channels.create({
               name: cat.name.slice(0, 100),
               type: ChannelType.GuildCategory,
-              reason: `Server revamp by ${message.author.tag}`,
+              reason: `Server revamp by ${userTag}`,
             });
             createdCategories.push(createdCat.name);
             await new Promise(r => setTimeout(r, 250));
@@ -289,7 +292,7 @@ async function executeServerAction(message, actionType, params = {}) {
                   name: chName.slice(0, 100),
                   type: isVoice ? ChannelType.GuildVoice : ChannelType.GuildText,
                   parent: createdCat.id,
-                  reason: `Server revamp by ${message.author.tag}`,
+                  reason: `Server revamp by ${userTag}`,
                 });
                 createdChannels.push(`${isVoice ? '🔊' : '💬'} <#${newCh.id}>`);
                 await new Promise(r => setTimeout(r, 250));
@@ -351,7 +354,7 @@ async function executeServerAction(message, actionType, params = {}) {
         const category = await guild.channels.create({
           name: catName.slice(0, 100),
           type: ChannelType.GuildCategory,
-          reason: `Created via Jarvis AI by ${message.author.tag}`,
+          reason: `Created via Jarvis AI by ${userTag}`,
         });
 
         const created = [];
@@ -362,7 +365,7 @@ async function executeServerAction(message, actionType, params = {}) {
             name: chName.slice(0, 100),
             type: isVoice ? ChannelType.GuildVoice : ChannelType.GuildText,
             parent: category.id,
-            reason: `Created via Jarvis AI by ${message.author.tag}`,
+            reason: `Created via Jarvis AI by ${userTag}`,
           });
           created.push(`<#${newCh.id}>`);
           await new Promise(r => setTimeout(r, 250));
@@ -383,7 +386,7 @@ async function executeServerAction(message, actionType, params = {}) {
         const deleted = [];
         for (const chQuery of list) {
           const ch = findChannel(guild, chQuery);
-          if (!ch || ch.id === message.channel.id) continue;
+          if (!ch || ch.id === messageChannelId) continue;
           if (ch.id === guild.systemChannelId || ch.id === guild.rulesChannelId) continue;
 
           // If category has children, do not delete it to prevent accidental wiping
@@ -396,7 +399,7 @@ async function executeServerAction(message, actionType, params = {}) {
           }
 
           const name = ch.name;
-          await ch.delete(`Batch delete by ${message.author.tag}`);
+          await ch.delete(`Batch delete by ${userTag}`);
           deleted.push(name);
           await new Promise(r => setTimeout(r, 250));
         }
@@ -420,7 +423,7 @@ async function executeServerAction(message, actionType, params = {}) {
         const newChannel = await guild.channels.create({
           name,
           type: channelType,
-          reason: `Created via Jarvis AI command by ${message.author.tag}`,
+          reason: `Created via Jarvis AI command by ${userTag}`,
         });
 
         return {
@@ -440,7 +443,7 @@ async function executeServerAction(message, actionType, params = {}) {
         }
 
         const channelName = target.name;
-        await target.delete(`Deleted via Jarvis AI command by ${message.author.tag}`);
+        await target.delete(`Deleted via Jarvis AI command by ${userTag}`);
 
         return {
           success: true,
@@ -513,7 +516,7 @@ async function executeServerAction(message, actionType, params = {}) {
 
         await target.permissionOverwrites.edit(guild.roles.everyone, {
           SendMessages: false,
-        }, { reason: `Locked via Jarvis AI command by ${message.author.tag}` });
+        }, { reason: `Locked via Jarvis AI command by ${userTag}` });
 
         return {
           success: true,
@@ -532,7 +535,7 @@ async function executeServerAction(message, actionType, params = {}) {
 
         await target.permissionOverwrites.edit(guild.roles.everyone, {
           SendMessages: null, // Reset to default
-        }, { reason: `Unlocked via Jarvis AI command by ${message.author.tag}` });
+        }, { reason: `Unlocked via Jarvis AI command by ${userTag}` });
 
         return {
           success: true,
@@ -563,7 +566,7 @@ async function executeServerAction(message, actionType, params = {}) {
 
         const roleOptions = {
           name: roleName,
-          reason: `Created via Jarvis AI command by ${message.author.tag}`,
+          reason: `Created via Jarvis AI command by ${userTag}`,
         };
         if (color) roleOptions.color = color;
 
@@ -587,7 +590,7 @@ async function executeServerAction(message, actionType, params = {}) {
           name: `${tourneyName.toLowerCase().replace(/\s+/g, '-')}-reg`,
           type: ChannelType.GuildText,
           topic: `Registration channel for ${tourneyName}`,
-          reason: `Auto-created for tournament by ${message.author.tag}`,
+          reason: `Auto-created for tournament by ${userTag}`,
         });
 
         const { data, error } = await supabase

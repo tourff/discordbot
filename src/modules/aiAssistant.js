@@ -159,6 +159,63 @@ const activeSessions = new Map();
 const SESSION_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 /**
+ * Constructs the master system prompt for Jarvis AI, incorporating bilingual & Banglish mastery,
+ * server context, conversational memory, and architectural proposal guidelines.
+ * @param {object} options
+ * @param {import('discord.js').Guild} [options.guild]
+ * @param {import('discord.js').GuildMember} [options.member]
+ * @param {string} [options.customPrompt]
+ * @param {boolean} [options.includeActions]
+ * @returns {string}
+ */
+function buildAssistantSystemPrompt({ guild = null, member = null, customPrompt = null, includeActions = true } = {}) {
+  const guildName = guild?.name || 'Discord Server';
+  const userName = member?.displayName || member?.user?.username || 'User';
+
+  return `
+You are Jarvis, a highly intelligent, proactive, and friendly Discord AI assistant and server architect created by trj7 (falcon_trj7).
+Server: "${guildName}"
+Current User: "${userName}"
+
+🧠 CRITICAL LINGUISTIC INSTRUCTIONS — BANGLISH & BILINGUAL MASTERY:
+1. Native Comprehension of Banglish (Romanized / Phonetic Bengali):
+   - Users frequently communicate in "Banglish" (Bengali words written phonetically using the English/Latin alphabet, e.g. "koekta chanel create korte hobe", "kemon acho", "amar kotha thik moto bujhe na", "server ta arektu sundor koro").
+   - You must ALWAYS decode phonetic Bengali instantly and understand the user's underlying intent without confusion or asking what it means.
+   - Core Banglish vocabulary to recognize effortlessly:
+     • "korte hobe" / "kora lagbe" / "korte chai" / "dorkar" -> Need or want to do something.
+     • "banaw" / "banaye dao" / "khule dao" / "create koro" / "koro" -> Create, build, or open something (channels, roles, categories).
+     • "koekta" / "koyekta" / "kichu" -> A few / some / several.
+     • "chanel" / "chenel" / "channel" -> Discord channel.
+     • "shajaw" / "sundor koro" / "organize koro" / "revamp koro" -> Beautify, organize, or restructure.
+     • "muche dao" / "delete koro" / "bad dao" -> Delete or remove.
+     • "bujhe na" / "bujhteso na" / "amar kotha thik moto bujho na" -> You aren't understanding my words / I need you to understand me better.
+     • "thik koro" / "thik kore dao" / "improve koro" -> Fix, correct, or enhance.
+     • "ki kora jay" / "ki korbo" / "amake bolo" -> What should be done / advice.
+     • "amake help koro" / "sahajjo koro" -> Help me.
+     • "arektu" / "aaro" -> A bit more / additional.
+     • "shob" / "shobgula" -> All of them.
+     • "kemon acho" / "ki obostha" -> How are you / what's up.
+     • "valo" / "bhalo" / "sera" -> Good / awesome / great.
+2. Natural, Engaging Response Tone:
+   - When spoken to in Banglish, reply in warm, respectful, and natural Bengali (বাংলা লিপি) or matching friendly conversational tone.
+   - Address the user politely and enthusiastically (e.g., "আরে বস!", "অবশ্যই!", "আমি আছি তো, একদম চিন্তা করবেন না!").
+   - Keep technical Discord terms, channel names, role names, and slash commands in clean English with stylish emojis (e.g. \`#general-chat\`, \`📌・rules\`, \`🔊・Gaming Lounge\`, \`/play\`).
+   - If spoken to in English, reply in fluent English.
+   - If the user says you didn't understand them ("amar kotha bujhe na"), acknowledge it warmly, reassure them, and ask them what specific channels or tasks they want so you can execute it perfectly!
+
+🚀 PROACTIVE INTENT HANDLING:
+- If the user says something like "koekta chanel create korte hobe" or asks about channels:
+  • Do NOT give a dry generic instruction like "right click and click create channel".
+  • Instantly recognize their goal: they want to establish a clean, aesthetic channel structure for their server!
+  • Present a well-organized, attractive layout recommendation with emojis across categories (Information, Community, Voice, Gaming, Admin).
+  • Offer to create them right away!
+
+${includeActions ? ACTION_SYSTEM_INSTRUCTIONS : ''}
+${customPrompt ? `\nServer Custom Prompt:\n${customPrompt}` : ''}
+`.trim();
+}
+
+/**
  * Send a prompt to the AI provider (Gemini or OpenAI) with conversation history
  * @param {string} prompt
  * @param {string} [systemPrompt]
@@ -167,7 +224,7 @@ const SESSION_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
  */
 async function generateAIResponse(
   prompt,
-  systemPrompt = 'You are Jarvis, a highly intelligent and helpful Discord AI assistant created by trj7. Respond concisely and cleanly in Markdown.',
+  systemPrompt = null,
   history = []
 ) {
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -177,14 +234,15 @@ async function generateAIResponse(
     return '⚡ **Jarvis AI**: AI features require a `GEMINI_API_KEY` (or `OPENAI_API_KEY`) in the bot environment `.env`. Please add your key to activate AI chat.';
   }
 
+  const activeSystemPrompt = systemPrompt || buildAssistantSystemPrompt({ includeActions: false });
+
   // ── 1. Try Google Gemini API ────────────────────────────────────────────────
   if (geminiKey) {
     const modelCandidates = [
       process.env.GEMINI_MODEL,
-      'gemini-flash-latest',
+      'gemini-3.5-flash',
       'gemini-flash-lite-latest',
-      'gemini-2.5-flash',
-      'gemini-1.5-flash',
+      'gemini-flash-latest',
     ].filter(Boolean);
 
     // Build multi-turn contents for Gemini ensuring valid alternations
@@ -225,11 +283,11 @@ async function generateAIResponse(
           },
           body: JSON.stringify({
             system_instruction: {
-              parts: [{ text: systemPrompt }],
+              parts: [{ text: activeSystemPrompt }],
             },
             contents,
           }),
-          signal: AbortSignal.timeout(20000),
+          signal: AbortSignal.timeout(18000),
         });
 
         if (!response.ok) {
@@ -249,15 +307,15 @@ async function generateAIResponse(
     // Fallback: If multi-turn history caused API rejection, retry with standalone prompt
     if (contents.length > 1) {
       try {
-        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`;
+        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiKey}`;
         const fbRes = await fetch(fallbackUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
+            system_instruction: { parts: [{ text: activeSystemPrompt }] },
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
           }),
-          signal: AbortSignal.timeout(20000),
+          signal: AbortSignal.timeout(15000),
         });
         if (fbRes.ok) {
           const fbData = await fbRes.json();
@@ -419,13 +477,12 @@ async function handleAIChatChannel(message) {
 
   try {
     const customSystemPrompt = await getSetting(message.guild.id, 'AI_SYSTEM_PROMPT');
-    const systemPrompt =
-      (customSystemPrompt ? `${customSystemPrompt}\n\n` : '') +
-      `You are Jarvis, a smart, friendly, and helpful Discord AI assistant created by trj7 for the server "${message.guild.name}". ` +
-      `The user chatting with you is "${message.member?.displayName || message.author.username}". ` +
-      `You are in an active ongoing 15-minute conversation session with this user. ` +
-      `If the user speaks to you in Bengali or any other language, always reply naturally in that same language.\n\n` +
-      ACTION_SYSTEM_INSTRUCTIONS;
+    const systemPrompt = buildAssistantSystemPrompt({
+      guild: message.guild,
+      member: message.member,
+      customPrompt: customSystemPrompt,
+      includeActions: true,
+    });
 
     // Use conversation history for multi-turn context
     const currentHistory = isSessionActive && existingSession?.history ? [...existingSession.history] : [];
@@ -751,6 +808,8 @@ async function handleProposalButton(interaction) {
 
 module.exports = {
   generateAIResponse,
+  buildAssistantSystemPrompt,
+  extractActionPayload,
   handleAIChatChannel,
   handleProposalButton,
   pendingProposals,
