@@ -10,26 +10,51 @@
 
 'use strict';
 
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const {
+  EmbedBuilder,
+  PermissionFlagsBits,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+} = require('discord.js');
 const { getSetting } = require('./settings');
 const { canManageBot } = require('./permissions');
-const { executeServerAction } = require('./aiActions');
+const { executeServerAction, formatActionPreview, findChannel } = require('./aiActions');
+
+// Pending AI server action proposals awaiting interactive confirmation button click
+const pendingProposals = new Map();
 
 const ACTION_SYSTEM_INSTRUCTIONS = `
-You have advanced Discord server operator capabilities. When a user asks you to perform server maintenance tasks (in Bengali, Banglish, or English), you can execute them directly!
+You are Jarvis, an expert Discord server architect and assistant.
+When a user asks you to revamp, beautify, redesign, organize, create, or delete channels or categories:
 
-CRITICAL RULE FOR MULTIPLE ACTIONS / REVAMPS / SERVER SETUP:
-When the user asks you to:
-- Revamp, beautify, remodel, or redesign the server (e.g. "full server sundor kore onek gula channel ar category create koro", "server ta sajay dao", "server remake koro")
-- Create multiple channels or categories at once (e.g. "5 ta channel create koro", "notun category ar channel banao")
-- Remove old/unused channels and build a new layout
-DO NOT create just one channel! NEVER do it one by one! You MUST execute ALL of them together in a single "revamp_server" or "batch" action!
+🤝 CONVERSATIONAL DESIGN & PLANNING PROTOCOL:
+1. DISCUSS & PROPOSE FIRST:
+   - Talk to the user in Bengali (or their language). Discuss ideas, layout recommendations, and theme suggestions.
+   - Present a well-structured, beautiful markdown list of proposed categories and channels with attractive emojis (e.g., 📁, 💬, 🔊, 📌, 📢).
+   - Inform the user clearly: "আমি আপনার সার্ভারের জন্য একটি খসড়া লেআউট তৈরি করেছি। নিচে খসড়াটি দেখে নিন। আপনি চাইলে যেকোনো নাম পরিবর্তন, নতুন চ্যানেল যোগ বা বাদ দিতে পারেন। সব পছন্দ হলে নিচের 'Confirm & Apply' বাটনে ক্লিক করলে তা সার্ভারে তৈরি হবে।"
+2. NEVER CLAIM IMMEDIATE EXECUTION:
+   - Since every action requires the user to click a confirmation button, NEVER say "আমি এখনই তৈরি করে দিয়েছি" or "ডিলিট করে দিলাম". Always say "আমি খসড়া তৈরি করেছি, বাটনে ক্লিক করলেই কার্যকর হবে।"
+3. ITERATIVE REFINEMENTS:
+   - When the user asks to modify the draft (e.g., "rules er naam change koro", "voice lounge e arekta channel add koro", "tournament zone ta bad dao"), update the layout and present the updated list!
+4. DESTRUCTIVE DELETION SAFETY:
+   - NEVER mass delete channels automatically!
+   - If the user asks to delete channels or categories, clearly list the specific channels targeted for deletion in your message, and output the deletion action JSON so an interactive confirmation button is provided.
+
+FORMAT FOR PROPOSAL PAYLOAD:
+When you have formulated a concrete channel layout, creation, or deletion plan, output the JSON block at the VERY END of your message:
+\`\`\`json
+{
+  "action": "<action_name>",
+  "parameters": { ... }
+}
+\`\`\`
 
 Supported Action Types:
-1. revamp_server: Set up a complete layout with multiple categories and nested channels all at once, and optionally clean old unused channels.
+1. revamp_server: Propose a complete layout with multiple categories and nested channels in batch. (Existing channels are preserved; nothing is deleted).
    Parameters:
    {
-     "clean_old": boolean, // true if user asked to remove old/unused channels
      "categories": [
        {
          "name": "📜 ┊ INFORMATION",
@@ -44,8 +69,7 @@ Supported Action Types:
          "channels": [
            { "name": "💬・general-chat", "type": "text" },
            { "name": "🤖・bot-commands", "type": "text" },
-           { "name": "📸・media-share", "type": "text" },
-           { "name": "🐸・memes", "type": "text" }
+           { "name": "📸・media-share", "type": "text" }
          ]
        },
        {
@@ -58,8 +82,7 @@ Supported Action Types:
      ]
    }
 
-2. batch: Execute multiple different actions in one go.
-   Parameters:
+2. batch: Execute multiple actions in one go:
    {
      "actions": [
        { "action": "create_channel", "parameters": { "name": "rules", "type": "text" } },
@@ -67,16 +90,15 @@ Supported Action Types:
      ]
    }
 
-3. create_category_with_channels: Create a category with multiple channels inside it at once.
-   Parameters:
+3. create_category_with_channels:
    {
      "name": string,
      "channels": Array<string | { name: string, type: "text"|"voice" }>
    }
 
 4. create_channel: { "name": string, "type": "text"|"voice"|"category" }
-5. delete_channel: { "name": string }
-6. delete_multiple_channels: { "channels": string[] }
+5. delete_channel: { "name": string } // ONLY when user explicitly asks to delete a specific channel
+6. delete_multiple_channels: { "channels": string[] } // ONLY when user explicitly asks to delete specific channels
 7. setup_welcome: { "channel"?: string, "message"?: string }
 8. setup_goodbye: { "channel"?: string, "message"?: string }
 9. lock_channel: { "channel"?: string }
@@ -86,18 +108,7 @@ Supported Action Types:
 13. create_tournament: { "name": string, "slots"?: number }
 14. set_bot_mode: { "mode": "public"|"restricted"|"admins_only" }
 
-RULE FOR SERVER ACTIONS:
-If the user's message is asking you to perform one of these actions, YOU MUST:
-1. Write a short friendly natural reply in the user's language (Bengali or English) confirming you are doing it.
-2. AT THE VERY END OF YOUR RESPONSE, output a JSON block with the action:
-\`\`\`json
-{
-  "action": "<action_name>",
-  "parameters": { ... }
-}
-\`\`\`
-If the user asks to create multiple channels, categories, or remake/revamp the server, ALWAYS use "revamp_server" to do ALL categories and channels at once!
-If the user is NOT asking to perform a server action (they are just chatting, asking questions, or discussing ideas), DO NOT output any JSON block. Just respond naturally.
+If the user is only chatting, asking general questions, discussing server concepts, or not ready for a proposal payload, DO NOT output any JSON block. Just respond naturally.
 `;
 
 /**
@@ -170,28 +181,39 @@ async function generateAIResponse(
   if (geminiKey) {
     const modelCandidates = [
       process.env.GEMINI_MODEL,
-      'gemini-flash-lite-latest',
       'gemini-flash-latest',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
     ].filter(Boolean);
 
-    // Build multi-turn contents for Gemini
+    // Build multi-turn contents for Gemini ensuring valid alternations
     const contents = [];
     if (Array.isArray(history) && history.length > 0) {
       for (const msg of history) {
-        if (msg.text) {
-          contents.push({
-            role: msg.role === 'model' || msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.text }],
-          });
+        if (msg.text && typeof msg.text === 'string') {
+          const role = msg.role === 'model' || msg.role === 'assistant' ? 'model' : 'user';
+          // Prevent consecutive duplicate roles
+          if (contents.length > 0 && contents[contents.length - 1].role === role) {
+            contents[contents.length - 1].parts[0].text += `\n${msg.text}`;
+          } else {
+            contents.push({
+              role,
+              parts: [{ text: msg.text }],
+            });
+          }
         }
       }
     }
-    contents.push({
-      role: 'user',
-      parts: [{ text: prompt }],
-    });
+    // Final user prompt
+    if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+      contents[contents.length - 1].parts[0].text += `\n${prompt}`;
+    } else {
+      contents.push({
+        role: 'user',
+        parts: [{ text: prompt }],
+      });
+    }
 
     for (const model of modelCandidates) {
       try {
@@ -207,7 +229,7 @@ async function generateAIResponse(
             },
             contents,
           }),
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(20000),
         });
 
         if (!response.ok) {
@@ -221,6 +243,29 @@ async function generateAIResponse(
         if (reply) return reply.trim();
       } catch (err) {
         console.warn(`[AI Assistant] Model ${model} request error:`, err.message);
+      }
+    }
+
+    // Fallback: If multi-turn history caused API rejection, retry with standalone prompt
+    if (contents.length > 1) {
+      try {
+        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`;
+        const fbRes = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          }),
+          signal: AbortSignal.timeout(20000),
+        });
+        if (fbRes.ok) {
+          const fbData = await fbRes.json();
+          const reply = fbData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (reply) return reply.trim();
+        }
+      } catch (fbErr) {
+        console.warn('[AI Assistant] Standalone fallback error:', fbErr.message);
       }
     }
   }
@@ -405,30 +450,179 @@ async function handleAIChatChannel(message) {
         return true;
       }
 
-      // Execute the server action
-      const result = await executeServerAction(message, actionData.action, actionData.parameters || {});
+      // ── 7.1 Format Proposal Preview & Require User Confirmation ───────────
+      const proposalId = `prop_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      const preview = formatActionPreview(message.guild, actionData.action, actionData.parameters || {});
+
+      // Save proposal in memory map
+      pendingProposals.set(proposalId, {
+        id: proposalId,
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+        authorId: message.author.id,
+        authorTag: message.author.tag,
+        action: actionData.action,
+        parameters: actionData.parameters || {},
+        cleanText,
+        preview,
+        messageRef: message,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      });
+
+      // Construct Proposal Embed
+      const proposalDesc = [
+        cleanText ? `${cleanText}\n` : '',
+        preview.description,
+        '\n────────────────────────────────',
+        '**📌 আপনার করণীয়:**',
+        '• ড্রাফট পরিবর্তন করতে চাইলে চ্যাটে মেসেজ লিখে জানান।',
+        `• সার্ভারে কার্যকর করতে নিচের **${preview.isDestructive ? 'Confirm & Delete' : 'Confirm & Apply'}** বাটনে ক্লিক করুন।`,
+      ].filter(Boolean).join('\n');
+
+      const safeDesc = proposalDesc.length > 4000 ? proposalDesc.slice(0, 3950) + '\n\n*(...truncated)*' : proposalDesc;
 
       const embed = new EmbedBuilder()
-        .setColor(result.success ? 0x57F287 : 0xED4245)
-        .setTitle(result.success ? '🛠️ Server Maintenance Action' : '⚠️ Action Notice')
-        .setDescription(`${cleanText ? `${cleanText}\n\n` : ''}${result.message}`)
-        .setFooter({ text: `Requested by ${message.author.tag} • 15m Session Active` })
+        .setColor(preview.isDestructive ? 0xED4245 : 0x5865F2)
+        .setTitle(preview.title)
+        .setDescription(safeDesc)
+        .setFooter({ text: `Proposal ID: ${proposalId} • 10m to confirm • Requested by ${message.author.tag}` })
         .setTimestamp();
 
-      if (result.details) {
-        embed.addFields({ name: '📋 Action Info', value: result.details });
+      if (preview.summary) {
+        embed.addFields({ name: '📊 Plan Summary', value: `\`${preview.summary}\`` });
+      }
+
+      // Buttons
+      const confirmButton = new ButtonBuilder()
+        .setCustomId(`ai_prop_confirm_${proposalId}`)
+        .setLabel(preview.isDestructive ? 'Confirm & Delete' : 'Confirm & Apply')
+        .setStyle(preview.isDestructive ? ButtonStyle.Danger : ButtonStyle.Success)
+        .setEmoji(preview.isDestructive ? '🗑️' : '✅');
+
+      const cancelButton = new ButtonBuilder()
+        .setCustomId(`ai_prop_cancel_${proposalId}`)
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('❌');
+
+      const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+      let replyMsg;
+      try {
+        replyMsg = await message.reply({
+          embeds: [embed],
+          components: [row],
+          allowedMentions: { repliedUser: true },
+        });
+      } catch (sendErr) {
+        replyMsg = await message.reply({
+          content: safeDesc.slice(0, 1950),
+          components: [row],
+          allowedMentions: { repliedUser: true },
+        }).catch(console.error);
       }
 
       // Update session timer and history
       currentHistory.push({ role: 'user', text: cleanPrompt });
-      currentHistory.push({ role: 'model', text: result.message });
+      currentHistory.push({ role: 'model', text: cleanText || preview.title });
       if (currentHistory.length > 10) currentHistory.splice(0, currentHistory.length - 10);
       activeSessions.set(sessionKey, {
         expiresAt: Date.now() + SESSION_DURATION,
         history: currentHistory,
       });
 
-      await message.reply({ embeds: [embed] }).catch(console.error);
+      if (!replyMsg) return true;
+
+      // ── 7.2 Attach Interactive Component Collector ─────────────────────────
+      const collector = replyMsg.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 10 * 60 * 1000,
+      });
+
+      collector.on('collect', async (btnInteraction) => {
+        // Gated to the requesting admin or guild owner
+        const canClick = btnInteraction.user.id === message.author.id || btnInteraction.user.id === message.guild.ownerId;
+        if (!canClick) {
+          return btnInteraction.reply({
+            content: '❌ Only the administrator who initiated this proposal can confirm or cancel it.',
+            ephemeral: true,
+          });
+        }
+
+        const prop = pendingProposals.get(proposalId);
+        if (!prop) {
+          collector.stop('already_handled');
+          return btnInteraction.reply({
+            content: '⚠️ This proposal has already been handled or has expired.',
+            ephemeral: true,
+          });
+        }
+
+        if (btnInteraction.customId === `ai_prop_cancel_${proposalId}`) {
+          pendingProposals.delete(proposalId);
+          collector.stop('cancelled');
+
+          const cancelEmbed = EmbedBuilder.from(embed)
+            .setColor(0x747F8D)
+            .setTitle('🚫 Action Cancelled')
+            .setDescription(`${cleanText ? `${cleanText}\n\n` : ''}❌ **Proposal was cancelled by ${btnInteraction.user}.** No changes were made to the server.`)
+            .setFields([]);
+
+          return btnInteraction.update({
+            embeds: [cancelEmbed],
+            components: [],
+          }).catch(console.error);
+        }
+
+        if (btnInteraction.customId === `ai_prop_confirm_${proposalId}`) {
+          pendingProposals.delete(proposalId);
+          collector.stop('confirmed');
+
+          // Notify user execution is in progress
+          await btnInteraction.update({
+            embeds: [
+              EmbedBuilder.from(embed)
+                .setColor(0xFEE75C)
+                .setTitle('⏳ Executing Server Actions...')
+                .setDescription('Applying the requested modifications to the server. Please wait a moment...')
+                .setFields([]),
+            ],
+            components: [],
+          }).catch(console.error);
+
+          // Execute verified server action
+          const result = await executeServerAction(message, prop.action, prop.parameters);
+
+          const resultEmbed = new EmbedBuilder()
+            .setColor(result.success ? 0x57F287 : 0xED4245)
+            .setTitle(result.success ? '✅ Server Action Complete' : '⚠️ Action Notice')
+            .setDescription(result.message)
+            .setFooter({ text: `Confirmed & applied by ${btnInteraction.user.tag}` })
+            .setTimestamp();
+
+          if (result.details) {
+            resultEmbed.addFields({ name: '📋 Action Info', value: String(result.details).slice(0, 1000) });
+          }
+
+          return replyMsg.edit({
+            embeds: [resultEmbed],
+            components: [],
+          }).catch(console.error);
+        }
+      });
+
+      collector.on('end', (collected, reason) => {
+        if (reason === 'time' && pendingProposals.has(proposalId)) {
+          pendingProposals.delete(proposalId);
+          const disabledRow = new ActionRowBuilder().addComponents(
+            ButtonBuilder.from(confirmButton).setDisabled(true).setLabel('Expired'),
+            ButtonBuilder.from(cancelButton).setDisabled(true)
+          );
+          replyMsg.edit({ components: [disabledRow] }).catch(() => null);
+        }
+      });
+
       return true;
     }
 
@@ -477,9 +671,89 @@ async function handleAIChatChannel(message) {
   }
 }
 
+/**
+ * Fallback handler for proposal buttons if interaction arrives via interactionCreate event.
+ * @param {import('discord.js').ButtonInteraction} interaction
+ * @returns {Promise<boolean>}
+ */
+async function handleProposalButton(interaction) {
+  const customId = interaction.customId;
+  const isConfirm = customId.startsWith('ai_prop_confirm_');
+  const isCancel = customId.startsWith('ai_prop_cancel_');
+  if (!isConfirm && !isCancel) return false;
+
+  const proposalId = customId.replace(/^ai_prop_(?:confirm|cancel)_/, '');
+  const prop = pendingProposals.get(proposalId);
+
+  if (!prop) {
+    await interaction.reply({
+      content: '⚠️ This proposal has already been handled, cancelled, or expired.',
+      ephemeral: true,
+    }).catch(() => null);
+    return true;
+  }
+
+  // Check authorization (author or server owner or admin)
+  const isAuthor = interaction.user.id === prop.authorId;
+  const isOwner = interaction.user.id === interaction.guild?.ownerId;
+  const isAdmin = interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+
+  if (!isAuthor && !isOwner && !isAdmin) {
+    await interaction.reply({
+      content: '❌ Only the administrator who initiated this proposal can confirm or cancel it.',
+      ephemeral: true,
+    }).catch(() => null);
+    return true;
+  }
+
+  pendingProposals.delete(proposalId);
+
+  if (isCancel) {
+    const cancelEmbed = new EmbedBuilder()
+      .setColor(0x747F8D)
+      .setTitle('🚫 Action Cancelled')
+      .setDescription(`❌ **Proposal was cancelled by ${interaction.user}.** No changes were made to the server.`);
+
+    await interaction.update({ embeds: [cancelEmbed], components: [] }).catch(console.error);
+    return true;
+  }
+
+  if (isConfirm) {
+    await interaction.update({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xFEE75C)
+          .setTitle('⏳ Executing Server Actions...')
+          .setDescription('Applying the requested modifications to the server. Please wait a moment...'),
+      ],
+      components: [],
+    }).catch(console.error);
+
+    const result = await executeServerAction(prop.messageRef, prop.action, prop.parameters);
+
+    const resultEmbed = new EmbedBuilder()
+      .setColor(result.success ? 0x57F287 : 0xED4245)
+      .setTitle(result.success ? '✅ Server Action Complete' : '⚠️ Action Notice')
+      .setDescription(result.message)
+      .setFooter({ text: `Confirmed & applied by ${interaction.user.tag}` })
+      .setTimestamp();
+
+    if (result.details) {
+      resultEmbed.addFields({ name: '📋 Action Info', value: String(result.details).slice(0, 1000) });
+    }
+
+    await interaction.editReply({ embeds: [resultEmbed], components: [] }).catch(console.error);
+    return true;
+  }
+
+  return true;
+}
+
 module.exports = {
   generateAIResponse,
   handleAIChatChannel,
+  handleProposalButton,
+  pendingProposals,
 };
 
 

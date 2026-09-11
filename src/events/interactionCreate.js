@@ -57,7 +57,10 @@ module.exports = {
 
     // ── Button interactions ─────────────────────────────────────────────────
     if (interaction.isButton()) {
-      if (interaction.customId === 'ticket_create') {
+      if (interaction.customId.startsWith('ai_prop_')) {
+        const { handleProposalButton } = require('../modules/aiAssistant');
+        return await handleProposalButton(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_create') {
         const { handleTicketCreate } = require('../modules/ticketManager');
         return await handleTicketCreate(interaction).catch(console.error);
       } else if (interaction.customId === 'ticket_close') {

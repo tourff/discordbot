@@ -31,13 +31,209 @@ function findChannel(guild, query) {
   const byId = guild.channels.cache.get(cleanId);
   if (byId) return byId;
 
-  // Try case-insensitive name match
+  // Try case-insensitive exact name match
   const cleanName = query.replace(/^#/, '').toLowerCase().trim();
-  return (
-    guild.channels.cache.find(
-      c => c.name.toLowerCase() === cleanName || c.name.toLowerCase().includes(cleanName)
-    ) || null
-  );
+  const exactMatch = guild.channels.cache.find(c => c.name.toLowerCase() === cleanName);
+  if (exactMatch) return exactMatch;
+
+  // Match stripped alphanumeric to avoid emoji discrepancies
+  const searchRaw = cleanName.replace(/[^a-z0-9-]/g, '');
+  if (searchRaw) {
+    const strippedMatch = guild.channels.cache.find(c => {
+      const raw = c.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      return raw === searchRaw;
+    });
+    if (strippedMatch) return strippedMatch;
+  }
+
+  return null;
+}
+
+/**
+ * Formats a preview description of an action for the user before confirmation.
+ * @param {import('discord.js').Guild} guild
+ * @param {string} actionType
+ * @param {object} params
+ * @returns {{ title: string, description: string, isDestructive: boolean, summary: string }}
+ */
+function formatActionPreview(guild, actionType, params = {}) {
+  let isDestructive = false;
+  let title = '📋 Proposed Server Action';
+  const lines = [];
+  let summary = '';
+
+  switch (actionType) {
+    case 'revamp_server':
+    case 'setup_server_template': {
+      title = '🏰 Proposed Server Layout Plan';
+      const categories = Array.isArray(params.categories) ? params.categories : [];
+      let totalChannels = 0;
+
+      lines.push('### 📐 Proposed Channels & Categories:');
+      lines.push('*Review the layout below. You can chat with me to change names, add, or remove channels before confirming.*\n');
+
+      for (const cat of categories) {
+        const catName = cat.name || 'Unnamed Category';
+        const channels = Array.isArray(cat.channels) ? cat.channels : [];
+        totalChannels += channels.length;
+        lines.push(`📁 **${catName}**`);
+        for (const ch of channels) {
+          const chName = typeof ch === 'string' ? ch : (ch.name || 'channel');
+          const isVoice = typeof ch === 'object' && ch.type === 'voice';
+          lines.push(`  └─ ${isVoice ? '🔊' : '💬'} \`${chName}\``);
+        }
+        lines.push('');
+      }
+
+      summary = `Categories: ${categories.length} | Channels: ${totalChannels}`;
+      break;
+    }
+
+    case 'create_category_with_channels': {
+      title = '📁 Proposed Category & Channels';
+      const catName = params.name || params.category || 'Category';
+      const channels = Array.isArray(params.channels) ? params.channels : [];
+      lines.push(`**Category:** 📁 \`${catName}\``);
+      lines.push('**Channels to create:**');
+      channels.forEach(ch => {
+        const chName = typeof ch === 'string' ? ch : (ch.name || 'channel');
+        const isVoice = typeof ch === 'object' && ch.type === 'voice';
+        lines.push(`• ${isVoice ? '🔊' : '💬'} \`${chName}\``);
+      });
+      summary = `1 Category, ${channels.length} Channels`;
+      break;
+    }
+
+    case 'create_channel': {
+      title = '➕ Proposed New Channel';
+      const name = params.name || 'new-channel';
+      const type = params.type || 'text';
+      lines.push(`**Channel Name:** \`#${name}\``);
+      lines.push(`**Type:** \`${type}\``);
+      summary = `Create #${name} (${type})`;
+      break;
+    }
+
+    case 'delete_channel': {
+      isDestructive = true;
+      title = '⚠️ Proposed Channel Deletion';
+      const chName = params.channel || params.name || 'unknown';
+      const target = findChannel(guild, chName);
+      if (target) {
+        lines.push(`> ⚠️ **Warning:** The channel <#${target.id}> (\`#${target.name}\`) will be **permanently deleted**.`);
+        if (target.parent) {
+          lines.push(`> Located in category: **${target.parent.name}**`);
+        }
+      } else {
+        lines.push(`> ⚠️ Target channel: \`${chName}\` (Not found in server cache)`);
+      }
+      summary = `Delete #${target ? target.name : chName}`;
+      break;
+    }
+
+    case 'delete_multiple_channels': {
+      isDestructive = true;
+      title = '⚠️ Proposed Channels Deletion';
+      const list = Array.isArray(params.channels) ? params.channels : [];
+      lines.push('> ⚠️ **Warning:** The following channels will be **permanently deleted**:');
+      list.forEach(chQuery => {
+        const ch = findChannel(guild, chQuery);
+        if (ch) {
+          lines.push(`• <#${ch.id}> (\`#${ch.name}\`) [${ch.type === ChannelType.GuildCategory ? 'Category' : 'Channel'}]`);
+        } else {
+          lines.push(`• \`${chQuery}\` *(Not found)*`);
+        }
+      });
+      summary = `Delete ${list.length} channels`;
+      break;
+    }
+
+    case 'purge_messages': {
+      isDestructive = true;
+      title = '🧹 Proposed Message Purge';
+      const amount = params.amount || params.count || 10;
+      lines.push(`> ⚠️ **Warning:** Will permanently purge the last **${amount}** messages in this channel.`);
+      summary = `Purge ${amount} messages`;
+      break;
+    }
+
+    case 'setup_welcome': {
+      title = '👋 Proposed Welcome Setup';
+      if (params.channel) lines.push(`**Welcome Channel:** \`${params.channel}\``);
+      if (params.message) lines.push(`**Message:** "${params.message}"`);
+      summary = 'Update Welcome Settings';
+      break;
+    }
+
+    case 'setup_goodbye': {
+      title = '👋 Proposed Goodbye Setup';
+      if (params.channel) lines.push(`**Goodbye Channel:** \`${params.channel}\``);
+      if (params.message) lines.push(`**Message:** "${params.message}"`);
+      summary = 'Update Goodbye Settings';
+      break;
+    }
+
+    case 'lock_channel': {
+      title = '🔒 Proposed Channel Lock';
+      lines.push(`Locking channel: \`${params.channel || 'current channel'}\``);
+      summary = 'Lock Channel';
+      break;
+    }
+
+    case 'unlock_channel': {
+      title = '🔓 Proposed Channel Unlock';
+      lines.push(`Unlocking channel: \`${params.channel || 'current channel'}\``);
+      summary = 'Unlock Channel';
+      break;
+    }
+
+    case 'create_role': {
+      title = '🎭 Proposed Role Creation';
+      lines.push(`**Role Name:** \`${params.name || 'New Role'}\``);
+      if (params.color) lines.push(`**Color:** \`${params.color}\``);
+      summary = `Create Role ${params.name || ''}`;
+      break;
+    }
+
+    case 'create_tournament': {
+      title = '🏆 Proposed Tournament Setup';
+      lines.push(`**Tournament Name:** \`${params.name || 'Tournament'}\``);
+      lines.push(`**Total Slots:** \`${params.slots || 50}\``);
+      summary = `Setup Tourney ${params.name || ''}`;
+      break;
+    }
+
+    case 'set_bot_mode': {
+      title = '⚙️ Proposed Bot Access Mode';
+      lines.push(`**Mode:** \`${params.mode || 'public'}\``);
+      summary = `Set Bot Mode: ${params.mode || ''}`;
+      break;
+    }
+
+    case 'batch': {
+      title = '⚡ Proposed Batch Actions';
+      const actions = Array.isArray(params.actions) ? params.actions : [];
+      lines.push(`Batch containing **${actions.length}** actions:`);
+      actions.forEach((act, idx) => {
+        lines.push(`${idx + 1}. Action: \`${act.action}\``);
+      });
+      summary = `${actions.length} Actions`;
+      break;
+    }
+
+    default:
+      lines.push(`Action: \`${actionType}\``);
+      lines.push(`Parameters: \`${JSON.stringify(params)}\``);
+      summary = actionType;
+      break;
+  }
+
+  return {
+    title,
+    description: lines.join('\n'),
+    isDestructive,
+    summary,
+  };
 }
 
 /**
@@ -61,45 +257,13 @@ async function executeServerAction(message, actionType, params = {}) {
       // ─────────────────────────────────────────────────────────────────────
       case 'revamp_server':
       case 'setup_server_template': {
-        const cleanOld = Boolean(params.clean_old || params.clean_empty_or_old || params.remove_unused);
+        // CRITICAL SAFETY SHIELD: Never auto-delete existing server channels in revamp_server!
+        // Mass deletion must never be triggered by an AI chat prompt without explicit manual confirmation.
         const categories = Array.isArray(params.categories) ? params.categories : [];
-        const deletedChannels = [];
         const createdCategories = [];
         const createdChannels = [];
 
-        // 1. Clean old channels if user requested to remove them
-        if (cleanOld) {
-          const currentChannelId = message.channel.id;
-          const channelsToKeep = new Set([
-            currentChannelId,
-            guild.systemChannelId,
-            guild.rulesChannelId,
-            guild.publicUpdatesChannelId,
-          ].filter(Boolean));
-
-          const allChannels = await guild.channels.fetch();
-          for (const [id, ch] of allChannels) {
-            if (!ch) continue;
-            // Protect current interaction channel and system defaults
-            if (channelsToKeep.has(id)) continue;
-            const nameLower = ch.name.toLowerCase();
-            // Protect essential bot and log channels
-            if (nameLower.includes('tryout') || nameLower.includes('bot-command') || nameLower.includes('log')) {
-              continue;
-            }
-
-            try {
-              const oldName = ch.name;
-              await ch.delete(`Server revamp by ${message.author.tag}`);
-              deletedChannels.push(oldName);
-              await new Promise(r => setTimeout(r, 250)); // rate-limit safety
-            } catch (err) {
-              console.warn(`[aiActions] Could not delete channel ${ch.name}:`, err.message);
-            }
-          }
-        }
-
-        // 2. Create categories and nested channels in batch
+        // Create categories and nested channels in batch
         for (const cat of categories) {
           if (!cat.name) continue;
           let createdCat = null;
@@ -143,14 +307,11 @@ async function executeServerAction(message, actionType, params = {}) {
         if (createdChannels.length > 0) {
           summaryLines.push(`**Channels Created (${createdChannels.length}):**\n${createdChannels.join(', ')}`);
         }
-        if (deletedChannels.length > 0) {
-          summaryLines.push(`**Old Channels Cleaned (${deletedChannels.length}):**\n${deletedChannels.slice(0, 10).map(c => `\`#${c}\``).join(', ')}${deletedChannels.length > 10 ? ` ...and ${deletedChannels.length - 10} more` : ''}`);
-        }
 
         return {
           success: true,
-          message: `🏰 **Server Remake & Beautification Complete!**\n\n${summaryLines.join('\n\n')}`,
-          details: `Categories: ${createdCategories.length} | Channels: ${createdChannels.length} | Removed: ${deletedChannels.length}`,
+          message: `🏰 **Server Layout Setup Complete!**\n\n${summaryLines.join('\n\n')}`,
+          details: `Categories: ${createdCategories.length} | Channels: ${createdChannels.length}`,
         };
       }
 
@@ -222,17 +383,29 @@ async function executeServerAction(message, actionType, params = {}) {
         const deleted = [];
         for (const chQuery of list) {
           const ch = findChannel(guild, chQuery);
-          if (ch && ch.id !== message.channel.id) {
-            const name = ch.name;
-            await ch.delete(`Batch delete by ${message.author.tag}`);
-            deleted.push(name);
-            await new Promise(r => setTimeout(r, 250));
+          if (!ch || ch.id === message.channel.id) continue;
+          if (ch.id === guild.systemChannelId || ch.id === guild.rulesChannelId) continue;
+
+          // If category has children, do not delete it to prevent accidental wiping
+          if (ch.type === ChannelType.GuildCategory) {
+            const hasChildren = guild.channels.cache.some(c => c.parentId === ch.id);
+            if (hasChildren) {
+              console.warn(`[aiActions] Skipping category ${ch.name} because it contains channels.`);
+              continue;
+            }
           }
+
+          const name = ch.name;
+          await ch.delete(`Batch delete by ${message.author.tag}`);
+          deleted.push(name);
+          await new Promise(r => setTimeout(r, 250));
         }
 
         return {
           success: true,
-          message: `🧹 Deleted **${deleted.length}** channels: ${deleted.map(n => `\`#${n}\``).join(', ')}`,
+          message: deleted.length > 0
+            ? `🧹 Deleted **${deleted.length}** channels: ${deleted.map(n => `\`#${n}\``).join(', ')}`
+            : 'No matching or deletable channels were found.',
         };
       }
       case 'create_channel': {
@@ -476,4 +649,6 @@ async function executeServerAction(message, actionType, params = {}) {
 
 module.exports = {
   executeServerAction,
+  formatActionPreview,
+  findChannel,
 };
