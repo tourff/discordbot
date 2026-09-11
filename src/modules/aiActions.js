@@ -11,11 +11,109 @@ const {
   ChannelType,
   PermissionFlagsBits,
   EmbedBuilder,
+  PermissionsBitField,
 } = require('discord.js');
 
 const supabase = require('../config/supabase');
 const { setSetting } = require('./settings');
 const { setAccessMode } = require('./permissions');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERMISSION NAME → Discord PermissionFlagsBits mapper
+// Supports Banglish, English, and common shorthand names
+// ─────────────────────────────────────────────────────────────────────────────
+const PERMISSION_MAP = {
+  // Admin / General
+  'administrator':            PermissionFlagsBits.Administrator,
+  'admin':                    PermissionFlagsBits.Administrator,
+  'shob permission':          PermissionFlagsBits.Administrator,
+  'sob permission':           PermissionFlagsBits.Administrator,
+  'full permission':          PermissionFlagsBits.Administrator,
+
+  // Server Management
+  'manage guild':             PermissionFlagsBits.ManageGuild,
+  'manage server':            PermissionFlagsBits.ManageGuild,
+  'server manage':            PermissionFlagsBits.ManageGuild,
+
+  // Member Management
+  'kick members':             PermissionFlagsBits.KickMembers,
+  'kick':                     PermissionFlagsBits.KickMembers,
+  'ban members':              PermissionFlagsBits.BanMembers,
+  'ban':                      PermissionFlagsBits.BanMembers,
+  'manage nicknames':         PermissionFlagsBits.ManageNicknames,
+  'nickname manage':          PermissionFlagsBits.ManageNicknames,
+  'timeout members':          PermissionFlagsBits.ModerateMembers,
+  'mute members':             PermissionFlagsBits.MuteMembers,
+  'deafen members':           PermissionFlagsBits.DeafenMembers,
+  'move members':             PermissionFlagsBits.MoveMembers,
+
+  // Channel / Role Management
+  'manage channels':          PermissionFlagsBits.ManageChannels,
+  'channel manage':           PermissionFlagsBits.ManageChannels,
+  'manage roles':             PermissionFlagsBits.ManageRoles,
+  'role manage':              PermissionFlagsBits.ManageRoles,
+  'manage webhooks':          PermissionFlagsBits.ManageWebhooks,
+  'manage expressions':       PermissionFlagsBits.ManageGuildExpressions,
+  'manage emojis':            PermissionFlagsBits.ManageGuildExpressions,
+  'manage events':            PermissionFlagsBits.ManageEvents,
+  'manage threads':           PermissionFlagsBits.ManageThreads,
+  'manage messages':          PermissionFlagsBits.ManageMessages,
+
+  // Text Permissions
+  'send messages':            PermissionFlagsBits.SendMessages,
+  'message send':             PermissionFlagsBits.SendMessages,
+  'embed links':              PermissionFlagsBits.EmbedLinks,
+  'attach files':             PermissionFlagsBits.AttachFiles,
+  'read message history':     PermissionFlagsBits.ReadMessageHistory,
+  'mention everyone':         PermissionFlagsBits.MentionEveryone,
+  'use external emojis':      PermissionFlagsBits.UseExternalEmojis,
+  'add reactions':            PermissionFlagsBits.AddReactions,
+  'use slash commands':       PermissionFlagsBits.UseApplicationCommands,
+  'use application commands': PermissionFlagsBits.UseApplicationCommands,
+
+  // Voice Permissions
+  'connect':                  PermissionFlagsBits.Connect,
+  'speak':                    PermissionFlagsBits.Speak,
+  'stream':                   PermissionFlagsBits.Stream,
+  'video':                    PermissionFlagsBits.Stream,
+  'priority speaker':         PermissionFlagsBits.PrioritySpeaker,
+  'use voice activity':       PermissionFlagsBits.UseVAD,
+  'request to speak':         PermissionFlagsBits.RequestToSpeak,
+
+  // View
+  'view channels':            PermissionFlagsBits.ViewChannel,
+  'view channel':             PermissionFlagsBits.ViewChannel,
+  'read channels':            PermissionFlagsBits.ViewChannel,
+
+  // Moderation
+  'view audit log':           PermissionFlagsBits.ViewAuditLog,
+  'create instant invite':    PermissionFlagsBits.CreateInstantInvite,
+  'change nickname':          PermissionFlagsBits.ChangeNickname,
+};
+
+/**
+ * Resolves a list of permission name strings to a BigInt permission bitfield.
+ * @param {string[]} permNames
+ * @returns {bigint}
+ */
+function resolvePermissions(permNames) {
+  if (!Array.isArray(permNames) || permNames.length === 0) return 0n;
+
+  let bits = 0n;
+  for (const name of permNames) {
+    const normalized = name.trim().toLowerCase();
+    if (PERMISSION_MAP[normalized] !== undefined) {
+      bits |= PERMISSION_MAP[normalized];
+    } else {
+      // Try matching against PermissionFlagsBits directly by key
+      const directKey = Object.keys(PermissionFlagsBits).find(
+        k => k.toLowerCase() === normalized.replace(/\s+/g, '')
+      );
+      if (directKey) bits |= PermissionFlagsBits[directKey];
+    }
+  }
+  return bits;
+}
 
 /**
  * Finds a channel in the guild by ID, mention, or name.
@@ -37,10 +135,10 @@ function findChannel(guild, query) {
   if (exactMatch) return exactMatch;
 
   // Match stripped alphanumeric to avoid emoji discrepancies
-  const searchRaw = cleanName.replace(/[^a-z0-9-]/g, '');
+  const searchRaw = cleanName.replace(/[^a-z0-9\u0980-\u09FF-]/g, '');
   if (searchRaw) {
     const strippedMatch = guild.channels.cache.find(c => {
-      const raw = c.name.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const raw = c.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF-]/g, '');
       return raw === searchRaw;
     });
     if (strippedMatch) return strippedMatch;
@@ -49,6 +147,58 @@ function findChannel(guild, query) {
   return null;
 }
 
+/**
+ * Finds a role in the guild by ID, mention, or name.
+ * @param {import('discord.js').Guild} guild
+ * @param {string} query
+ * @returns {import('discord.js').Role|null}
+ */
+function findRole(guild, query) {
+  if (!query) return null;
+  const cleanId = query.replace(/[<@&>]/g, '').trim();
+
+  const byId = guild.roles.cache.get(cleanId);
+  if (byId) return byId;
+
+  const cleanName = query.toLowerCase().trim();
+  return guild.roles.cache.find(r => r.name.toLowerCase() === cleanName) || null;
+}
+
+/**
+ * Finds a category channel in the guild by name or ID.
+ * @param {import('discord.js').Guild} guild
+ * @param {string} query
+ * @returns {import('discord.js').CategoryChannel|null}
+ */
+function findCategory(guild, query) {
+  if (!query) return null;
+  const cleanId = query.replace(/[<#>]/g, '').trim();
+
+  const byId = guild.channels.cache.get(cleanId);
+  if (byId && byId.type === ChannelType.GuildCategory) return byId;
+
+  const cleanName = query.toLowerCase().trim();
+  const exactMatch = guild.channels.cache.find(
+    c => c.type === ChannelType.GuildCategory && c.name.toLowerCase() === cleanName
+  );
+  if (exactMatch) return exactMatch;
+
+  // Partial / stripped match for emoji-prefixed category names
+  const stripped = cleanName.replace(/[^a-z0-9\u0980-\u09FF-\s]/g, '').trim();
+  if (stripped) {
+    return guild.channels.cache.find(c => {
+      if (c.type !== ChannelType.GuildCategory) return false;
+      const raw = c.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF-\s]/g, '').trim();
+      return raw.includes(stripped) || stripped.includes(raw);
+    }) || null;
+  }
+
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORMAT ACTION PREVIEW — shows the user what will happen before confirmation
+// ─────────────────────────────────────────────────────────────────────────────
 /**
  * Formats a preview description of an action for the user before confirmation.
  * @param {import('discord.js').Guild} guild
@@ -93,7 +243,8 @@ function formatActionPreview(guild, actionType, params = {}) {
       title = '📁 Proposed Category & Channels';
       const catName = params.name || params.category || 'Category';
       const channels = Array.isArray(params.channels) ? params.channels : [];
-      lines.push(`**Category:** 📁 \`${catName}\``);
+      const isPrivate = Boolean(params.private);
+      lines.push(`**Category:** 📁 \`${catName}\` ${isPrivate ? '🔒 *(Private — @everyone hidden)*' : ''}`);
       lines.push('**Channels to create:**');
       channels.forEach(ch => {
         const chName = typeof ch === 'string' ? ch : (ch.name || 'channel');
@@ -108,9 +259,67 @@ function formatActionPreview(guild, actionType, params = {}) {
       title = '➕ Proposed New Channel';
       const name = params.name || 'new-channel';
       const type = params.type || 'text';
+      const category = params.category || null;
       lines.push(`**Channel Name:** \`#${name}\``);
       lines.push(`**Type:** \`${type}\``);
-      summary = `Create #${name} (${type})`;
+      if (category) {
+        const cat = findCategory(guild, category);
+        lines.push(`**Category:** ${cat ? `\`${cat.name}\`` : `\`${category}\` *(will be searched at creation)*`}`);
+      }
+      summary = `Create #${name} (${type})${category ? ` in ${category}` : ''}`;
+      break;
+    }
+
+    case 'move_channel_to_category': {
+      title = '📂 Proposed Channel Move';
+      const chQuery = params.channel || params.name || 'unknown';
+      const catQuery = params.category || 'unknown';
+      const targetCh = findChannel(guild, chQuery);
+      const targetCat = findCategory(guild, catQuery);
+      if (targetCh) {
+        lines.push(`**Channel:** <#${targetCh.id}> (\`#${targetCh.name}\`)`);
+        if (targetCh.parent) {
+          lines.push(`**Current Category:** \`${targetCh.parent.name}\``);
+        } else {
+          lines.push(`**Current Category:** *(none)*`);
+        }
+      } else {
+        lines.push(`**Channel:** \`${chQuery}\` *(searching by name)*`);
+      }
+      lines.push(`**Move To:** ${targetCat ? `\`${targetCat.name}\`` : `\`${catQuery}\` *(will be searched at execution)*`}`);
+      summary = `Move #${targetCh?.name || chQuery} → ${targetCat?.name || catQuery}`;
+      break;
+    }
+
+    case 'rename_channel': {
+      title = '✏️ Proposed Channel Rename';
+      const chQuery = params.channel || params.name || 'unknown';
+      const newName = params.new_name || params.newName || 'new-name';
+      const targetCh = findChannel(guild, chQuery);
+      if (targetCh) {
+        lines.push(`**Channel:** <#${targetCh.id}>`);
+        lines.push(`**Old Name:** \`#${targetCh.name}\``);
+      } else {
+        lines.push(`**Channel:** \`${chQuery}\``);
+      }
+      lines.push(`**New Name:** \`#${newName}\``);
+      summary = `Rename #${targetCh?.name || chQuery} → #${newName}`;
+      break;
+    }
+
+    case 'rename_role': {
+      title = '✏️ Proposed Role Rename';
+      const roleQuery = params.role || params.name || 'unknown';
+      const newName = params.new_name || params.newName || 'New Name';
+      const targetRole = findRole(guild, roleQuery);
+      if (targetRole) {
+        lines.push(`**Role:** <@&${targetRole.id}>`);
+        lines.push(`**Old Name:** \`${targetRole.name}\``);
+      } else {
+        lines.push(`**Role:** \`${roleQuery}\``);
+      }
+      lines.push(`**New Name:** \`${newName}\``);
+      summary = `Rename ${targetRole?.name || roleQuery} → ${newName}`;
       break;
     }
 
@@ -191,7 +400,31 @@ function formatActionPreview(guild, actionType, params = {}) {
       title = '🎭 Proposed Role Creation';
       lines.push(`**Role Name:** \`${params.name || 'New Role'}\``);
       if (params.color) lines.push(`**Color:** \`${params.color}\``);
+      if (params.hoist) lines.push(`**Show Separately:** ✅ Yes (hoisted)`);
+      if (params.mentionable) lines.push(`**Mentionable:** ✅ Yes`);
+      if (Array.isArray(params.permissions) && params.permissions.length > 0) {
+        lines.push(`**Permissions:** ${params.permissions.map(p => `\`${p}\``).join(', ')}`);
+      }
       summary = `Create Role ${params.name || ''}`;
+      break;
+    }
+
+    case 'set_role_permissions': {
+      title = '🔐 Proposed Role Permission Update';
+      const roleQuery = params.role || params.name || 'unknown';
+      const targetRole = findRole(guild, roleQuery);
+      if (targetRole) {
+        lines.push(`**Role:** <@&${targetRole.id}> (\`${targetRole.name}\`)`);
+      } else {
+        lines.push(`**Role:** \`${roleQuery}\``);
+      }
+      if (Array.isArray(params.permissions) && params.permissions.length > 0) {
+        lines.push(`**New Permissions:** ${params.permissions.map(p => `\`${p}\``).join(', ')}`);
+      }
+      if (params.hoist !== undefined) lines.push(`**Show Separately:** ${params.hoist ? '✅ Yes' : '❌ No'}`);
+      if (params.mentionable !== undefined) lines.push(`**Mentionable:** ${params.mentionable ? '✅ Yes' : '❌ No'}`);
+      if (params.color) lines.push(`**Color:** \`${params.color}\``);
+      summary = `Update permissions for ${targetRole?.name || roleQuery}`;
       break;
     }
 
@@ -236,10 +469,13 @@ function formatActionPreview(guild, actionType, params = {}) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EXECUTE SERVER ACTION — the main dispatcher
+// ─────────────────────────────────────────────────────────────────────────────
 /**
  * Executes a server management action based on parsed AI payload.
  *
- * @param {import('discord.js').Message} message - The Discord message that triggered the request
+ * @param {import('discord.js').ChatInputCommandInteraction|import('discord.js').Message} message
  * @param {string} actionType - The action to perform
  * @param {object} params - Parameters for the action
  * @returns {Promise<{ success: boolean, message: string, details?: string }>}
@@ -255,18 +491,16 @@ async function executeServerAction(message, actionType, params = {}) {
 
   try {
     switch (actionType) {
-      // ─────────────────────────────────────────────────────────────────────
-      // 0. REVAMP / REBUILD SERVER (Batch Category & Channel Template Engine)
-      // ─────────────────────────────────────────────────────────────────────
+
+      // ───────────────────────────────────────────────────────────────────────
+      // REVAMP / REBUILD SERVER (Batch Category & Channel Template Engine)
+      // ───────────────────────────────────────────────────────────────────────
       case 'revamp_server':
       case 'setup_server_template': {
-        // CRITICAL SAFETY SHIELD: Never auto-delete existing server channels in revamp_server!
-        // Mass deletion must never be triggered by an AI chat prompt without explicit manual confirmation.
         const categories = Array.isArray(params.categories) ? params.categories : [];
         const createdCategories = [];
         const createdChannels = [];
 
-        // Create categories and nested channels in batch
         for (const cat of categories) {
           if (!cat.name) continue;
           let createdCat = null;
@@ -277,7 +511,7 @@ async function executeServerAction(message, actionType, params = {}) {
               reason: `Server revamp by ${userTag}`,
             });
             createdCategories.push(createdCat.name);
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 300));
           } catch (err) {
             console.error(`[aiActions] Failed to create category ${cat.name}:`, err);
             continue;
@@ -295,7 +529,7 @@ async function executeServerAction(message, actionType, params = {}) {
                   reason: `Server revamp by ${userTag}`,
                 });
                 createdChannels.push(`${isVoice ? '🔊' : '💬'} <#${newCh.id}>`);
-                await new Promise(r => setTimeout(r, 250));
+                await new Promise(r => setTimeout(r, 300));
               } catch (err) {
                 console.error(`[aiActions] Failed to create channel ${chName}:`, err);
               }
@@ -318,9 +552,9 @@ async function executeServerAction(message, actionType, params = {}) {
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
       // BATCH EXECUTION
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
       case 'batch': {
         const actions = Array.isArray(params.actions) ? params.actions : [];
         if (actions.length === 0) {
@@ -334,7 +568,7 @@ async function executeServerAction(message, actionType, params = {}) {
           const res = await executeServerAction(message, act.action, act.parameters || {});
           if (res.success) successCount++;
           results.push(`• ${res.message}`);
-          await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         return {
@@ -344,16 +578,23 @@ async function executeServerAction(message, actionType, params = {}) {
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // CREATE CATEGORY WITH CHANNELS
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // CREATE CATEGORY WITH CHANNELS (supports private flag)
+      // ───────────────────────────────────────────────────────────────────────
       case 'create_category_with_channels': {
         const catName = params.name || params.category || 'Category';
         const channels = Array.isArray(params.channels) ? params.channels : [];
+        const isPrivate = Boolean(params.private);
+
+        // Build permission overwrites
+        const permissionOverwrites = isPrivate
+          ? [{ id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
+          : [];
 
         const category = await guild.channels.create({
           name: catName.slice(0, 100),
           type: ChannelType.GuildCategory,
+          permissionOverwrites,
           reason: `Created via Jarvis AI by ${userTag}`,
         });
 
@@ -368,19 +609,165 @@ async function executeServerAction(message, actionType, params = {}) {
             reason: `Created via Jarvis AI by ${userTag}`,
           });
           created.push(`<#${newCh.id}>`);
-          await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         return {
           success: true,
-          message: `📁 Created category **${category.name}** with ${created.length} channels: ${created.join(', ')}`,
+          message: `📁 Created category **${category.name}**${isPrivate ? ' 🔒 (private)' : ''} with **${created.length}** channels: ${created.join(', ')}`,
           details: `Category ID: ${category.id} | Channels: ${created.length}`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // CREATE CHANNEL (supports category/parent)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'create_channel': {
+        const rawName = params.name || 'new-channel';
+        const name = rawName.toLowerCase().replace(/\s+/g, '-').slice(0, 100);
+        const typeStr = (params.type || 'text').toLowerCase();
+
+        let channelType = ChannelType.GuildText;
+        if (typeStr === 'voice') channelType = ChannelType.GuildVoice;
+        else if (typeStr === 'category') channelType = ChannelType.GuildCategory;
+        else if (typeStr === 'announcement' || typeStr === 'news') channelType = ChannelType.GuildAnnouncement;
+
+        // Resolve category (parent)
+        let parentId = null;
+        const categoryQuery = params.category || params.parent || null;
+        if (categoryQuery) {
+          const cat = findCategory(guild, categoryQuery);
+          if (cat) {
+            parentId = cat.id;
+          } else {
+            console.warn(`[aiActions] Category "${categoryQuery}" not found for create_channel, creating without parent.`);
+          }
+        }
+
+        const createOptions = {
+          name,
+          type: channelType,
+          reason: `Created via Jarvis AI command by ${userTag}`,
+        };
+        if (parentId) createOptions.parent = parentId;
+
+        const newChannel = await guild.channels.create(createOptions);
+
+        return {
+          success: true,
+          message: `✅ Successfully created ${typeStr} channel <#${newChannel.id}> (\`${newChannel.name}\`)${parentId ? ` inside category \`${guild.channels.cache.get(parentId)?.name || 'Unknown'}\`` : ''}!`,
+          details: `Type: ${typeStr} | ID: ${newChannel.id}${parentId ? ` | Parent: ${parentId}` : ''}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // MOVE CHANNEL TO CATEGORY (new action)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'move_channel_to_category': {
+        const chQuery = params.channel || params.name;
+        const catQuery = params.category || params.target_category;
+
+        if (!chQuery) {
+          return { success: false, message: '❌ Channel name বলা হয়নি। কোন channel সরাতে চান সেটা বলুন।' };
+        }
+        if (!catQuery) {
+          return { success: false, message: '❌ Category name বলা হয়নি। কোন category-তে সরাতে চান সেটা বলুন।' };
+        }
+
+        const targetChannel = findChannel(guild, chQuery);
+        if (!targetChannel) {
+          return { success: false, message: `❌ \`${chQuery}\` নামের কোনো channel খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const targetCategory = findCategory(guild, catQuery);
+        if (!targetCategory) {
+          return { success: false, message: `❌ \`${catQuery}\` নামের কোনো category খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const oldCategoryName = targetChannel.parent?.name || 'None';
+        await targetChannel.setParent(targetCategory.id, {
+          lockPermissions: false,
+          reason: `Moved via Jarvis AI by ${userTag}`,
+        });
+
+        return {
+          success: true,
+          message: `📂 <#${targetChannel.id}> channel সফলভাবে \`${oldCategoryName}\` থেকে \`${targetCategory.name}\` category-তে সরানো হয়েছে!`,
+          details: `Channel: ${targetChannel.id} | New Parent: ${targetCategory.id}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // RENAME CHANNEL (new action)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'rename_channel': {
+        const chQuery = params.channel || params.name;
+        const newName = (params.new_name || params.newName || '').toLowerCase().replace(/\s+/g, '-').slice(0, 100);
+
+        if (!chQuery) return { success: false, message: '❌ কোন channel rename করতে চান সেটা বলুন।' };
+        if (!newName) return { success: false, message: '❌ নতুন নাম দেওয়া হয়নি।' };
+
+        const targetChannel = findChannel(guild, chQuery);
+        if (!targetChannel) {
+          return { success: false, message: `❌ \`${chQuery}\` নামের কোনো channel খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const oldName = targetChannel.name;
+        await targetChannel.setName(newName, `Renamed via Jarvis AI by ${userTag}`);
+
+        return {
+          success: true,
+          message: `✏️ Channel \`#${oldName}\` সফলভাবে \`#${newName}\` নামে rename করা হয়েছে!`,
+          details: `Channel ID: ${targetChannel.id}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // RENAME ROLE (new action)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'rename_role': {
+        const roleQuery = params.role || params.name;
+        const newName = (params.new_name || params.newName || '').slice(0, 100);
+
+        if (!roleQuery) return { success: false, message: '❌ কোন role rename করতে চান সেটা বলুন।' };
+        if (!newName) return { success: false, message: '❌ নতুন নাম দেওয়া হয়নি।' };
+
+        const targetRole = findRole(guild, roleQuery);
+        if (!targetRole) {
+          return { success: false, message: `❌ \`${roleQuery}\` নামের কোনো role খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const oldName = targetRole.name;
+        await targetRole.setName(newName, `Renamed via Jarvis AI by ${userTag}`);
+
+        return {
+          success: true,
+          message: `✏️ Role \`${oldName}\` সফলভাবে \`${newName}\` নামে rename করা হয়েছে!`,
+          details: `Role ID: ${targetRole.id}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // DELETE CHANNEL
+      // ───────────────────────────────────────────────────────────────────────
+      case 'delete_channel': {
+        const target = findChannel(guild, params.channel || params.name);
+        if (!target) {
+          return { success: false, message: `❌ \`${params.channel || params.name}\` নামের কোনো channel খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const channelName = target.name;
+        await target.delete(`Deleted via Jarvis AI command by ${userTag}`);
+
+        return {
+          success: true,
+          message: `🗑️ Channel **#${channelName}** সফলভাবে delete করা হয়েছে।`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
       // DELETE MULTIPLE CHANNELS
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
       case 'delete_multiple_channels': {
         const list = Array.isArray(params.channels) ? params.channels : [];
         const deleted = [];
@@ -389,7 +776,6 @@ async function executeServerAction(message, actionType, params = {}) {
           if (!ch || ch.id === messageChannelId) continue;
           if (ch.id === guild.systemChannelId || ch.id === guild.rulesChannelId) continue;
 
-          // If category has children, do not delete it to prevent accidental wiping
           if (ch.type === ChannelType.GuildCategory) {
             const hasChildren = guild.channels.cache.some(c => c.parentId === ch.id);
             if (hasChildren) {
@@ -401,59 +787,20 @@ async function executeServerAction(message, actionType, params = {}) {
           const name = ch.name;
           await ch.delete(`Batch delete by ${userTag}`);
           deleted.push(name);
-          await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         return {
           success: true,
           message: deleted.length > 0
-            ? `🧹 Deleted **${deleted.length}** channels: ${deleted.map(n => `\`#${n}\``).join(', ')}`
-            : 'No matching or deletable channels were found.',
-        };
-      }
-      case 'create_channel': {
-        const name = (params.name || 'new-channel').toLowerCase().replace(/\s+/g, '-').slice(0, 100);
-        const typeStr = (params.type || 'text').toLowerCase();
-
-        let channelType = ChannelType.GuildText;
-        if (typeStr === 'voice') channelType = ChannelType.GuildVoice;
-        else if (typeStr === 'category') channelType = ChannelType.GuildCategory;
-        else if (typeStr === 'announcement' || typeStr === 'news') channelType = ChannelType.GuildAnnouncement;
-
-        const newChannel = await guild.channels.create({
-          name,
-          type: channelType,
-          reason: `Created via Jarvis AI command by ${userTag}`,
-        });
-
-        return {
-          success: true,
-          message: `Successfully created ${typeStr} channel <#${newChannel.id}> (\`${newChannel.name}\`)!`,
-          details: `Type: ${typeStr} | ID: ${newChannel.id}`,
+            ? `🧹 **${deleted.length}** টি channel delete করা হয়েছে: ${deleted.map(n => `\`#${n}\``).join(', ')}`
+            : '⚠️ কোনো matching বা deletable channel পাওয়া যায়নি।',
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 2. DELETE CHANNEL
-      // ─────────────────────────────────────────────────────────────────────
-      case 'delete_channel': {
-        const target = findChannel(guild, params.channel || params.name);
-        if (!target) {
-          return { success: false, message: `Could not find a channel matching "${params.channel || params.name}".` };
-        }
-
-        const channelName = target.name;
-        await target.delete(`Deleted via Jarvis AI command by ${userTag}`);
-
-        return {
-          success: true,
-          message: `Successfully deleted channel **#${channelName}**.`,
-        };
-      }
-
-      // ─────────────────────────────────────────────────────────────────────
-      // 3. SETUP WELCOME SYSTEM
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP WELCOME SYSTEM
+      // ───────────────────────────────────────────────────────────────────────
       case 'setup_welcome': {
         let channelId = null;
         if (params.channel) {
@@ -461,13 +808,8 @@ async function executeServerAction(message, actionType, params = {}) {
           if (ch) channelId = ch.id;
         }
 
-        if (channelId) {
-          await setSetting(guild.id, 'WELCOME_CHANNEL_ID', channelId);
-        }
-
-        if (params.message) {
-          await setSetting(guild.id, 'WELCOME_MESSAGE', params.message);
-        }
+        if (channelId) await setSetting(guild.id, 'WELCOME_CHANNEL_ID', channelId);
+        if (params.message) await setSetting(guild.id, 'WELCOME_MESSAGE', params.message);
 
         const details = [];
         if (channelId) details.push(`Channel: <#${channelId}>`);
@@ -475,14 +817,14 @@ async function executeServerAction(message, actionType, params = {}) {
 
         return {
           success: true,
-          message: `✅ Welcome system updated successfully!`,
+          message: `✅ Welcome system সফলভাবে আপডেট হয়েছে!`,
           details: details.join(' | ') || 'Welcome settings saved.',
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 4. SETUP GOODBYE SYSTEM
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP GOODBYE SYSTEM
+      // ───────────────────────────────────────────────────────────────────────
       case 'setup_goodbye': {
         let channelId = null;
         if (params.channel) {
@@ -490,102 +832,161 @@ async function executeServerAction(message, actionType, params = {}) {
           if (ch) channelId = ch.id;
         }
 
-        if (channelId) {
-          await setSetting(guild.id, 'GOODBYE_CHANNEL_ID', channelId);
-        }
-
-        if (params.message) {
-          await setSetting(guild.id, 'GOODBYE_MESSAGE', params.message);
-        }
+        if (channelId) await setSetting(guild.id, 'GOODBYE_CHANNEL_ID', channelId);
+        if (params.message) await setSetting(guild.id, 'GOODBYE_MESSAGE', params.message);
 
         return {
           success: true,
-          message: `✅ Goodbye system updated successfully!`,
+          message: `✅ Goodbye system সফলভাবে আপডেট হয়েছে!`,
           details: channelId ? `Channel: <#${channelId}>` : 'Goodbye message updated.',
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 5. LOCK CHANNEL
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // LOCK CHANNEL
+      // ───────────────────────────────────────────────────────────────────────
       case 'lock_channel': {
-        const target = findChannel(guild, params.channel) || message.channel;
-        if (!target.isTextBased()) {
-          return { success: false, message: 'Only text channels can be locked.' };
+        const target = (params.channel ? findChannel(guild, params.channel) : null) || message.channel;
+        if (!target || !target.isTextBased()) {
+          return { success: false, message: '❌ শুধুমাত্র text channel lock করা যায়।' };
         }
 
-        await target.permissionOverwrites.edit(guild.roles.everyone, {
-          SendMessages: false,
-        }, { reason: `Locked via Jarvis AI command by ${userTag}` });
+        await target.permissionOverwrites.edit(
+          guild.roles.everyone,
+          { SendMessages: false },
+          { reason: `Locked via Jarvis AI by ${userTag}` }
+        );
 
         return {
           success: true,
-          message: `🔒 Successfully locked <#${target.id}>. Members can no longer send messages.`,
+          message: `🔒 <#${target.id}> channel lock করা হয়েছে। Members আর message পাঠাতে পারবে না।`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 6. UNLOCK CHANNEL
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // UNLOCK CHANNEL
+      // ───────────────────────────────────────────────────────────────────────
       case 'unlock_channel': {
-        const target = findChannel(guild, params.channel) || message.channel;
-        if (!target.isTextBased()) {
-          return { success: false, message: 'Only text channels can be unlocked.' };
+        const target = (params.channel ? findChannel(guild, params.channel) : null) || message.channel;
+        if (!target || !target.isTextBased()) {
+          return { success: false, message: '❌ শুধুমাত্র text channel unlock করা যায়।' };
         }
 
-        await target.permissionOverwrites.edit(guild.roles.everyone, {
-          SendMessages: null, // Reset to default
-        }, { reason: `Unlocked via Jarvis AI command by ${userTag}` });
+        await target.permissionOverwrites.edit(
+          guild.roles.everyone,
+          { SendMessages: null },
+          { reason: `Unlocked via Jarvis AI by ${userTag}` }
+        );
 
         return {
           success: true,
-          message: `🔓 Successfully unlocked <#${target.id}>. Members can now chat again.`,
+          message: `🔓 <#${target.id}> channel unlock করা হয়েছে। Members আবার message পাঠাতে পারবে।`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 7. PURGE MESSAGES
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // PURGE MESSAGES
+      // ───────────────────────────────────────────────────────────────────────
       case 'purge_messages': {
-        const target = findChannel(guild, params.channel) || message.channel;
+        const target = (params.channel ? findChannel(guild, params.channel) : null) || message.channel;
         const count = Math.min(Math.max(parseInt(params.amount || params.count, 10) || 10, 1), 100);
 
         const deleted = await target.bulkDelete(count, true);
         return {
           success: true,
-          message: `🧹 Successfully purged **${deleted.size}** messages in <#${target.id}>.`,
+          message: `🧹 <#${target.id}> থেকে **${deleted.size}** টি message purge করা হয়েছে।`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 8. CREATE ROLE
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // CREATE ROLE (with full permission support)
+      // ───────────────────────────────────────────────────────────────────────
       case 'create_role': {
         const roleName = params.name || 'New Role';
         const color = params.color || null;
+        const hoist = Boolean(params.hoist);
+        const mentionable = Boolean(params.mentionable);
+
+        // Resolve permissions from human-readable names
+        const permBits = resolvePermissions(params.permissions || []);
 
         const roleOptions = {
           name: roleName,
+          hoist,
+          mentionable,
           reason: `Created via Jarvis AI command by ${userTag}`,
         };
         if (color) roleOptions.color = color;
+        if (permBits !== 0n) roleOptions.permissions = new PermissionsBitField(permBits);
 
         const newRole = await guild.roles.create(roleOptions);
+
+        const permSummary = Array.isArray(params.permissions) && params.permissions.length > 0
+          ? `\n🔐 **Permissions:** ${params.permissions.join(', ')}`
+          : '';
+
         return {
           success: true,
-          message: `🎭 Successfully created role <@&${newRole.id}> (\`${newRole.name}\`)!`,
+          message: `🎭 Role <@&${newRole.id}> (\`${newRole.name}\`) সফলভাবে তৈরি হয়েছে!${permSummary}${hoist ? '\n📌 Members list-এ আলাদা দেখা যাবে।' : ''}${mentionable ? '\n🔔 Role mentionable।' : ''}`,
           details: `Role ID: ${newRole.id}`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 9. CREATE TOURNAMENT
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // SET ROLE PERMISSIONS (update existing role — new action)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'set_role_permissions': {
+        const roleQuery = params.role || params.name;
+        if (!roleQuery) {
+          return { success: false, message: '❌ কোন role-এর permission পরিবর্তন করতে চান সেটা বলুন।' };
+        }
+
+        const targetRole = findRole(guild, roleQuery);
+        if (!targetRole) {
+          return { success: false, message: `❌ \`${roleQuery}\` নামের কোনো role খুঁজে পাওয়া যায়নি।` };
+        }
+
+        if (targetRole.managed) {
+          return { success: false, message: `❌ \`${targetRole.name}\` একটি managed role (bot/integration role), এটা পরিবর্তন করা যাবে না।` };
+        }
+
+        const updates = {};
+        if (Array.isArray(params.permissions) && params.permissions.length > 0) {
+          const permBits = resolvePermissions(params.permissions);
+          if (permBits !== 0n) updates.permissions = new PermissionsBitField(permBits);
+        }
+        if (params.hoist !== undefined) updates.hoist = Boolean(params.hoist);
+        if (params.mentionable !== undefined) updates.mentionable = Boolean(params.mentionable);
+        if (params.color) updates.color = params.color;
+        if (params.new_name || params.newName) updates.name = params.new_name || params.newName;
+
+        if (Object.keys(updates).length === 0) {
+          return { success: false, message: '❌ কোনো update parameter দেওয়া হয়নি।' };
+        }
+
+        await targetRole.edit({
+          ...updates,
+          reason: `Permissions updated via Jarvis AI by ${userTag}`,
+        });
+
+        const permSummary = Array.isArray(params.permissions) && params.permissions.length > 0
+          ? `\n🔐 **নতুন Permissions:** ${params.permissions.join(', ')}`
+          : '';
+
+        return {
+          success: true,
+          message: `✅ <@&${targetRole.id}> (\`${targetRole.name}\`) role সফলভাবে আপডেট হয়েছে!${permSummary}`,
+          details: `Role ID: ${targetRole.id}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // CREATE TOURNAMENT
+      // ───────────────────────────────────────────────────────────────────────
       case 'create_tournament': {
         const tourneyName = params.name || 'Tournament Championship';
         const totalSlots = parseInt(params.slots, 10) || 50;
 
-        // Check if registration channel should be auto-created
         const regChannel = await guild.channels.create({
           name: `${tourneyName.toLowerCase().replace(/\s+/g, '-')}-reg`,
           type: ChannelType.GuildText,
@@ -611,20 +1012,20 @@ async function executeServerAction(message, actionType, params = {}) {
           console.error('[aiActions] Tourney insert error:', error);
           return {
             success: true,
-            message: `Created channel <#${regChannel.id}> for **${tourneyName}**, but encountered a DB notice. You can configure it via </tourney:0>.`,
+            message: `Channel <#${regChannel.id}> তৈরি করা হয়েছে **${tourneyName}** tournament-এর জন্য, কিন্তু DB-তে সমস্যা হয়েছে। </tourney:0> দিয়ে configure করুন।`,
           };
         }
 
         return {
           success: true,
-          message: `🏆 Successfully created tournament **${tourneyName}** with **${totalSlots}** slots!`,
+          message: `🏆 **${tourneyName}** tournament সফলভাবে তৈরি হয়েছে! **${totalSlots}** টি slot আছে।`,
           details: `Registration Channel: <#${regChannel.id}> | Use </tourney:0> for advanced bracket controls.`,
         };
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // 10. SET BOT ACCESS MODE
-      // ─────────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
+      // SET BOT ACCESS MODE
+      // ───────────────────────────────────────────────────────────────────────
       case 'set_bot_mode': {
         const mode = (params.mode || 'public').toLowerCase();
         if (!['public', 'restricted', 'admins_only'].includes(mode)) {
@@ -634,18 +1035,26 @@ async function executeServerAction(message, actionType, params = {}) {
         await setAccessMode(guild.id, mode);
         return {
           success: true,
-          message: `⚙️ Bot access mode for this server has been updated to **${mode}**!`,
+          message: `⚙️ Bot access mode **${mode}** করা হয়েছে!`,
         };
       }
 
       default:
-        return { success: false, message: `Unknown action: "${actionType}".` };
+        return { success: false, message: `❌ অজানা action: "${actionType}". এই কাজটি আমি এখনো করতে পারি না।` };
     }
   } catch (err) {
     console.error(`[aiActions] Error executing ${actionType}:`, err);
+
+    // User-friendly error messages in Bengali
+    let errorMsg = err.message || 'Unknown error';
+    if (err.code === 50013) errorMsg = 'Bot-এর যথেষ্ট permission নেই। Bot-এর role-টি সার্ভারে উপরে রাখুন।';
+    else if (err.code === 50001) errorMsg = 'এই channel/role-এ access নেই।';
+    else if (err.code === 30013) errorMsg = 'Channel সংখ্যা সীমা পূর্ণ হয়ে গেছে (max 500)।';
+    else if (err.code === 30005) errorMsg = 'Role সংখ্যা সীমা পূর্ণ হয়ে গেছে (max 250)।';
+
     return {
       success: false,
-      message: `Failed to execute action "${actionType}": ${err.message}`,
+      message: `⚠️ Action \`${actionType}\` execute করতে সমস্যা হয়েছে: ${errorMsg}`,
     };
   }
 }
@@ -654,4 +1063,7 @@ module.exports = {
   executeServerAction,
   formatActionPreview,
   findChannel,
+  findCategory,
+  findRole,
+  resolvePermissions,
 };
