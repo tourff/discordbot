@@ -229,6 +229,39 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 17. create_tournament: { "name": string, "slots"?: number }
 18. set_bot_mode: { "mode": "public"|"restricted"|"admins_only" }
 
+────────────────────────────────────────
+19. move_channel_position — Move a channel or category up/down in the list:
+{
+  "action": "move_channel_position",
+  "parameters": {
+    "channel": "general-chat",
+    "direction": "up",
+    "amount": 1
+  }
+}
+// direction: "up" (উপরে) | "down" (নিচে) | "top" (সবার উপরে) | "bottom" (সবার নিচে)
+// amount: কত ধাপ উপরে/নিচে (default: 1)
+// Works for both regular channels AND categories.
+
+────────────────────────────────────────
+20. set_channel_permissions — Add a role to a channel / set permissions for a role or user in a channel:
+{
+  "action": "set_channel_permissions",
+  "parameters": {
+    "channel": "general-chat",
+    "role": "Member",
+    "allow": ["send messages", "view channels"],
+    "deny": ["manage messages"],
+    "neutral": []
+  }
+}
+// channel: channel name or #channel-name
+// role: exact role name, @everyone, or user ID mention
+// allow: permissions to ALLOW (green checkmark ✅)
+// deny: permissions to DENY (red X ❌)
+// neutral: permissions to RESET/inherit from category (empty ⬜)
+// Use permission name strings from the PERMISSION NAMES guide.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 EXAMPLES OF BANGLISH → ACTION MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -241,6 +274,16 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 • "Private category banao shudhu admin ra dekhte parbe" → create_category_with_channels with private: true
 • "Channel er naam change koro" → rename_channel
 • "Role er naam bodlao" → rename_role
+• "general channel upore nao" / "channel ta aro upore dao" / "upore tolo" → move_channel_position direction: "up"
+• "category ta niche nao" / "ektu niche soro" → move_channel_position direction: "down"
+• "channel ta ekdom upore niye jao" / "first e rakho" / "shobar upore" → move_channel_position direction: "top"
+• "channel ta ekdom niche dao" / "last e nao" / "shobar niche" → move_channel_position direction: "bottom"
+• "Member role ke general channel e message pathate dao" → set_channel_permissions allow: ["send messages"]
+• "@everyone er channel dekhte para bondho koro" → set_channel_permissions deny: ["view channels"] role: "@everyone"
+• "Member role add koro general channel e" → set_channel_permissions allow: ["view channels", "send messages"]
+• "channel er permission thik kore dao" / "role ke channel e access dao" → set_channel_permissions
+• "general channel e Mod role ke message delete korte dao" → set_channel_permissions allow: ["manage messages"] role: "Mod"
+• "channel e @everyone er message pathano bondho koro" → set_channel_permissions deny: ["send messages"] role: "@everyone"
 
 If the user is chatting, asking questions, or not ready for a concrete plan, DO NOT output any JSON. Just respond naturally in Bengali.
 `;
@@ -383,16 +426,19 @@ ${customPrompt ? `\nServer Custom Prompt:\n${customPrompt}` : ''}
 }
 
 /**
- * Send a prompt to the AI provider (Gemini or OpenAI) with conversation history
+ * Send a prompt to the AI provider (Gemini or OpenAI) with conversation history.
+ * Supports optional image parts for vision/multimodal requests.
  * @param {string} prompt
  * @param {string} [systemPrompt]
  * @param {Array<{role: string, text: string}>} [history]
+ * @param {Array<{inlineData: {mimeType: string, data: string}}>} [imageParts]
  * @returns {Promise<string>}
  */
 async function generateAIResponse(
   prompt,
   systemPrompt = null,
-  history = []
+  history = [],
+  imageParts = []
 ) {
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -430,13 +476,16 @@ async function generateAIResponse(
         }
       }
     }
-    // Final user prompt
-    if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+    // Final user prompt — include image parts if present
+    const userMsgParts = [...imageParts, { text: prompt }];
+    if (contents.length > 0 && contents[contents.length - 1].role === 'user' && imageParts.length === 0) {
+      // No images: safe to append to the last user message
       contents[contents.length - 1].parts[0].text += `\n${prompt}`;
     } else {
+      // Has images OR last message is from model: push a new user turn
       contents.push({
         role: 'user',
-        parts: [{ text: prompt }],
+        parts: userMsgParts,
       });
     }
 
@@ -636,7 +685,27 @@ async function handleAIChatChannel(message) {
     return true;
   }
 
-  // ── 6. Send typing indicator while waiting for AI ───────────────────────────
+  // ── 6. Extract image attachments for vision support ─────────────────────────
+  const imageParts = [];
+  if (message.attachments?.size > 0) {
+    for (const attachment of message.attachments.values()) {
+      const mime = attachment.contentType?.split(';')[0] || '';
+      if (mime.startsWith('image/') && attachment.size < 10 * 1024 * 1024) {
+        try {
+          const imgRes = await fetch(attachment.url, { signal: AbortSignal.timeout(8000) });
+          if (imgRes.ok) {
+            const buffer = await imgRes.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            imageParts.push({ inlineData: { mimeType: mime, data: base64 } });
+          }
+        } catch (imgErr) {
+          console.warn('[AI Assistant] Failed to fetch image attachment:', imgErr.message);
+        }
+      }
+    }
+  }
+
+  // ── 7. Send typing indicator while waiting for AI ───────────────────────────
   await message.channel.sendTyping().catch(() => null);
   const typingTimer = setInterval(() => {
     message.channel.sendTyping().catch(() => null);
@@ -653,7 +722,7 @@ async function handleAIChatChannel(message) {
 
     // Use conversation history for multi-turn context
     const currentHistory = isSessionActive && existingSession?.history ? [...existingSession.history] : [];
-    const fullResponse = await generateAIResponse(cleanPrompt, systemPrompt, currentHistory);
+    const fullResponse = await generateAIResponse(cleanPrompt, systemPrompt, currentHistory, imageParts);
     clearInterval(typingTimer);
 
     // ── 7. Check if a server action was requested ─────────────────────────────

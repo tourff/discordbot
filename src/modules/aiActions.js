@@ -116,6 +116,25 @@ function resolvePermissions(permNames) {
 }
 
 /**
+ * Resolves a single human-readable permission name to its PermissionFlagsBits key string.
+ * Used for building channel.permissionOverwrites.edit() objects.
+ * @param {string} permName
+ * @returns {string|null}
+ */
+function resolvePermToKey(permName) {
+  const normalized = permName.trim().toLowerCase();
+  const bit = PERMISSION_MAP[normalized];
+  if (bit !== undefined) {
+    return Object.keys(PermissionFlagsBits).find(k => PermissionFlagsBits[k] === bit) || null;
+  }
+  // Try direct PascalCase key match
+  const directKey = Object.keys(PermissionFlagsBits).find(
+    k => k.toLowerCase() === normalized.replace(/\s+/g, '')
+  );
+  return directKey || null;
+}
+
+/**
  * Finds a channel in the guild by ID, mention, or name.
  * @param {import('discord.js').Guild} guild
  * @param {string} query
@@ -451,6 +470,57 @@ function formatActionPreview(guild, actionType, params = {}) {
         lines.push(`${idx + 1}. Action: \`${act.action}\``);
       });
       summary = `${actions.length} Actions`;
+      break;
+    }
+
+    case 'move_channel_position': {
+      title = '📶 Proposed Channel Position Change';
+      const chQuery = params.channel || params.name || 'unknown';
+      const direction = (params.direction || '').toLowerCase();
+      const targetCh = findChannel(guild, chQuery);
+      if (targetCh) {
+        lines.push(`**Channel:** <#${targetCh.id}> (\`#${targetCh.name}\`)`);
+        lines.push(`**Current Position:** \`${targetCh.position}\``);
+      } else {
+        lines.push(`**Channel:** \`${chQuery}\``);
+      }
+      const dirLabel = direction === 'up' ? '⬆️ উপরে'
+                     : direction === 'down' ? '⬇️ নিচে'
+                     : direction === 'top' ? '⬆️⬆️ একদম উপরে'
+                     : direction === 'bottom' ? '⬇️⬇️ একদম নিচে'
+                     : direction;
+      if (dirLabel) lines.push(`**Direction:** ${dirLabel}`);
+      if (params.amount && params.amount > 1) lines.push(`**Steps:** \`${params.amount}\``);
+      summary = `Move #${targetCh?.name || chQuery} ${direction}`;
+      break;
+    }
+
+    case 'set_channel_permissions': {
+      title = '🔐 Proposed Channel Permission Update';
+      const chQuery = params.channel || params.name || 'unknown';
+      const targetQuery = params.role || params.user || params.target || 'unknown';
+      const targetCh = findChannel(guild, chQuery);
+      const targetRole = findRole(guild, targetQuery);
+      if (targetCh) {
+        lines.push(`**Channel:** <#${targetCh.id}> (\`#${targetCh.name}\`)`);
+      } else {
+        lines.push(`**Channel:** \`${chQuery}\``);
+      }
+      if (targetRole) {
+        lines.push(`**Role:** <@&${targetRole.id}> (\`${targetRole.name}\`)`);
+      } else {
+        lines.push(`**Role/User:** \`${targetQuery}\``);
+      }
+      if (Array.isArray(params.allow) && params.allow.length > 0) {
+        lines.push(`**✅ Allow:** ${params.allow.map(p => `\`${p}\``).join(', ')}`);
+      }
+      if (Array.isArray(params.deny) && params.deny.length > 0) {
+        lines.push(`**❌ Deny:** ${params.deny.map(p => `\`${p}\``).join(', ')}`);
+      }
+      if (Array.isArray(params.neutral) && params.neutral.length > 0) {
+        lines.push(`**⬜ Neutral (Reset):** ${params.neutral.map(p => `\`${p}\``).join(', ')}`);
+      }
+      summary = `Channel permissions for #${targetCh?.name || chQuery} → ${targetRole?.name || targetQuery}`;
       break;
     }
 
@@ -1039,6 +1109,146 @@ async function executeServerAction(message, actionType, params = {}) {
         };
       }
 
+      // ───────────────────────────────────────────────────────────────────────
+      // MOVE CHANNEL/CATEGORY POSITION (up / down / top / bottom)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'move_channel_position': {
+        const chQuery = params.channel || params.name;
+        if (!chQuery) {
+          return { success: false, message: '❌ কোন channel সরাতে চান সেটা বলুন।' };
+        }
+
+        const targetChannel = findChannel(guild, chQuery);
+        if (!targetChannel) {
+          return { success: false, message: `❌ \`${chQuery}\` নামের কোনো channel বা category খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const direction = (params.direction || '').toLowerCase();
+        const amount = Math.max(1, parseInt(params.amount || params.steps || 1, 10));
+        const absolutePos = (params.position !== undefined && params.position !== null)
+          ? parseInt(params.position, 10)
+          : null;
+
+        const currentPos = targetChannel.position;
+        let newPos;
+
+        if (absolutePos !== null && !isNaN(absolutePos)) {
+          newPos = absolutePos;
+        } else if (direction === 'up' || direction === 'উপরে') {
+          newPos = Math.max(0, currentPos - amount);
+        } else if (direction === 'down' || direction === 'নিচে') {
+          newPos = currentPos + amount;
+        } else if (direction === 'top' || direction === 'first') {
+          newPos = 0;
+        } else if (direction === 'bottom' || direction === 'last') {
+          newPos = 999;
+        } else {
+          return { success: false, message: '❌ Direction বলুন: `up` (উপরে) অথবা `down` (নিচে)।' };
+        }
+
+        await targetChannel.setPosition(newPos, {
+          reason: `Position changed via Jarvis AI by ${userTag}`,
+        });
+
+        const dirText = direction === 'up' || direction === 'উপরে' ? '⬆️ উপরে'
+                      : direction === 'down' || direction === 'নিচে' ? '⬇️ নিচে'
+                      : direction === 'top' ? '⬆️ একদম উপরে'
+                      : direction === 'bottom' ? '⬇️ একদম নিচে'
+                      : `position \`${newPos}\`-এ`;
+
+        return {
+          success: true,
+          message: `📶 \`${targetChannel.name}\` সফলভাবে ${dirText} সরানো হয়েছে!`,
+          details: `Previous Position: ${currentPos} | New Position: ${targetChannel.position}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SET CHANNEL PERMISSIONS — add/deny/reset role or user permissions
+      // ───────────────────────────────────────────────────────────────────────
+      case 'set_channel_permissions': {
+        const chQuery = params.channel || params.name;
+        const targetQuery = params.role || params.user || params.target;
+        const allowPerms  = Array.isArray(params.allow)   ? params.allow   : [];
+        const denyPerms   = Array.isArray(params.deny)    ? params.deny    : [];
+        const neutralPerms = Array.isArray(params.neutral) ? params.neutral : [];
+
+        if (!chQuery) {
+          return { success: false, message: '❌ কোন channel-এর permission পরিবর্তন করতে চান সেটা বলুন।' };
+        }
+        if (!targetQuery) {
+          return { success: false, message: '❌ কোন role বা user-এর জন্য permission দিতে চান সেটা বলুন।' };
+        }
+        if (allowPerms.length === 0 && denyPerms.length === 0 && neutralPerms.length === 0) {
+          return { success: false, message: '❌ কী permission allow বা deny করতে চান সেটা বলুন।' };
+        }
+
+        const targetChannel = findChannel(guild, chQuery);
+        if (!targetChannel) {
+          return { success: false, message: `❌ \`${chQuery}\` নামের কোনো channel খুঁজে পাওয়া যায়নি।` };
+        }
+
+        // Resolve target: @everyone, role, or user
+        let permTarget = null;
+        let targetName = targetQuery;
+        const lowerQuery = targetQuery.toLowerCase().trim();
+
+        if (lowerQuery === '@everyone' || lowerQuery === 'everyone' || lowerQuery === 'সবাই') {
+          permTarget = guild.roles.everyone;
+          targetName = '@everyone';
+        } else {
+          permTarget = findRole(guild, targetQuery);
+          if (permTarget) {
+            targetName = permTarget.name;
+          } else {
+            // Try by user ID/mention
+            const cleanId = targetQuery.replace(/[<@!>]/g, '').trim();
+            const member = guild.members.cache.get(cleanId);
+            if (member) {
+              permTarget = member;
+              targetName = member.displayName;
+            }
+          }
+        }
+
+        if (!permTarget) {
+          return { success: false, message: `❌ \`${targetQuery}\` নামের কোনো role বা user খুঁজে পাওয়া যায়নি।` };
+        }
+
+        // Build Discord.js permissionOverwrites object
+        const permOverwrites = {};
+        for (const p of allowPerms) {
+          const key = resolvePermToKey(p);
+          if (key) permOverwrites[key] = true;
+        }
+        for (const p of denyPerms) {
+          const key = resolvePermToKey(p);
+          if (key) permOverwrites[key] = false;
+        }
+        for (const p of neutralPerms) {
+          const key = resolvePermToKey(p);
+          if (key) permOverwrites[key] = null;
+        }
+
+        if (Object.keys(permOverwrites).length === 0) {
+          return { success: false, message: '❌ কোনো valid permission দেওয়া হয়নি। সঠিক permission নাম ব্যবহার করুন।' };
+        }
+
+        await targetChannel.permissionOverwrites.edit(permTarget, permOverwrites, {
+          reason: `Channel permissions updated via Jarvis AI by ${userTag}`,
+        });
+
+        const allowList   = allowPerms.length   > 0 ? `✅ Allow: ${allowPerms.join(', ')}`   : '';
+        const denyList    = denyPerms.length    > 0 ? `❌ Deny: ${denyPerms.join(', ')}`    : '';
+        const neutralList = neutralPerms.length > 0 ? `⬜ Reset: ${neutralPerms.join(', ')}` : '';
+
+        return {
+          success: true,
+          message: `🔐 \`#${targetChannel.name}\` channel-এ \`${targetName}\`-এর permission সফলভাবে আপডেট হয়েছে!\n${[allowList, denyList, neutralList].filter(Boolean).join('\n')}`,
+          details: `Channel: ${targetChannel.id} | Target: ${permTarget.id || permTarget.user?.id}`,
+        };
+      }
+
       default:
         return { success: false, message: `❌ অজানা action: "${actionType}". এই কাজটি আমি এখনো করতে পারি না।` };
     }
@@ -1066,4 +1276,5 @@ module.exports = {
   findCategory,
   findRole,
   resolvePermissions,
+  resolvePermToKey,
 };
