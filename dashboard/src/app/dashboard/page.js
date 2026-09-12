@@ -1949,59 +1949,220 @@ export default function Dashboard() {
                   TAB: WELCOME
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'welcome' && (
-                <form onSubmit={handleSaveWelcome} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <div className="luxe-card" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Member Welcome & Departure</h2>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-                      Configure automatic welcome and farewell announcements. Supported tags: <code className="luxe-code">{'{user}'}</code> and <code className="luxe-code">{'{server}'}</code>.
-                    </p>
+                <form onSubmit={handleSaveWelcome} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div className="luxe-card" style={{ padding: '28px' }}>
+                    <div style={{ marginBottom: 24 }}>
+                      <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', margin: '0 0 6px 0' }}>Member Welcome & Departure Suite</h2>
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                        Configure automatic welcome greetings and farewell announcements. Supported tags: <code className="luxe-code">{'{user}'}</code> and <code className="luxe-code">{'{server}'}</code>.
+                      </p>
+                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Welcome Channel ID</label>
+                    {/* SECTION 1: WELCOME */}
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 14,
+                      padding: '22px',
+                      marginBottom: 24
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                        <span style={{ fontSize: 20 }}>🎉</span>
+                        <div>
+                          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>Welcome Announcements</h3>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Triggered automatically when a new member joins your Discord server</span>
+                        </div>
+                      </div>
+
+                      {/* Welcome Channel */}
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                          Welcome Channel
+                        </label>
+                        {guildChannels.length > 0 && (
+                          <select
+                            value={welcome.WELCOME_CHANNEL_ID}
+                            onChange={e => setWelcome(p => ({ ...p, WELCOME_CHANNEL_ID: e.target.value }))}
+                            className="luxe-input"
+                            style={{ cursor: 'pointer', background: '#0b0f19', marginBottom: 6 }}
+                          >
+                            <option value="">Select a Welcome Channel...</option>
+                            {guildChannels.map(ch => (
+                              <option key={ch.id} value={ch.id}>
+                                #{ch.name} {ch.type === 5 ? '📢 [Announcement]' : '💬 [Text Channel]'}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         <input
                           type="text"
                           value={welcome.WELCOME_CHANNEL_ID}
                           onChange={e => setWelcome(p => ({ ...p, WELCOME_CHANNEL_ID: e.target.value }))}
-                          placeholder="e.g. 123456789012345678"
+                          placeholder="Or enter Channel ID manually: e.g. 123456789012345678"
                           className="luxe-input"
                         />
                       </div>
+
+                      {/* Welcome Message Text */}
                       <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Welcome Message Text</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                          <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)' }}>
+                            Welcome Message Text
+                          </label>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-dim)', marginRight: 4 }}>Insert Tag:</span>
+                            <button
+                              type="button"
+                              onClick={() => setWelcome(p => ({ ...p, WELCOME_MESSAGE: (p.WELCOME_MESSAGE ? `${p.WELCOME_MESSAGE} {user}` : '{user}') }))}
+                              style={{
+                                background: 'rgba(99, 102, 241, 0.12)',
+                                border: '1px solid rgba(99, 102, 241, 0.3)',
+                                color: '#a5b4fc',
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                padding: '3px 8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              + {'{user}'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setWelcome(p => ({ ...p, WELCOME_MESSAGE: (p.WELCOME_MESSAGE ? `${p.WELCOME_MESSAGE} {server}` : '{server}') }))}
+                              style={{
+                                background: 'rgba(99, 102, 241, 0.12)',
+                                border: '1px solid rgba(99, 102, 241, 0.3)',
+                                color: '#a5b4fc',
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                padding: '3px 8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              + {'{server}'}
+                            </button>
+                          </div>
+                        </div>
+
                         <textarea
                           value={welcome.WELCOME_MESSAGE}
                           onChange={e => setWelcome(p => ({ ...p, WELCOME_MESSAGE: e.target.value }))}
                           placeholder="Welcome {user} to {server}! 🎉"
-                          rows={3}
+                          rows={6}
                           className="luxe-input"
-                          style={{ resize: 'none' }}
+                          style={{
+                            minHeight: 160,
+                            resize: 'vertical',
+                            lineHeight: '1.6',
+                            fontFamily: 'inherit',
+                            fontSize: 13.5
+                          }}
                         />
                       </div>
                     </div>
 
-                    <div style={{ height: 1, background: 'var(--border-subtle)', margin: '24px 0' }} />
+                    {/* SECTION 2: GOODBYE */}
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 14,
+                      padding: '22px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                        <span style={{ fontSize: 20 }}>👋</span>
+                        <div>
+                          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: 0 }}>Departure (Goodbye) Announcements</h3>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Triggered automatically when a member leaves or is removed</span>
+                        </div>
+                      </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Goodbye Channel ID</label>
+                      {/* Goodbye Channel */}
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                          Goodbye Channel
+                        </label>
+                        {guildChannels.length > 0 && (
+                          <select
+                            value={welcome.GOODBYE_CHANNEL_ID}
+                            onChange={e => setWelcome(p => ({ ...p, GOODBYE_CHANNEL_ID: e.target.value }))}
+                            className="luxe-input"
+                            style={{ cursor: 'pointer', background: '#0b0f19', marginBottom: 6 }}
+                          >
+                            <option value="">Select a Goodbye Channel...</option>
+                            {guildChannels.map(ch => (
+                              <option key={ch.id} value={ch.id}>
+                                #{ch.name} {ch.type === 5 ? '📢 [Announcement]' : '💬 [Text Channel]'}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         <input
                           type="text"
                           value={welcome.GOODBYE_CHANNEL_ID}
                           onChange={e => setWelcome(p => ({ ...p, GOODBYE_CHANNEL_ID: e.target.value }))}
-                          placeholder="e.g. 123456789012345678"
+                          placeholder="Or enter Channel ID manually: e.g. 123456789012345678"
                           className="luxe-input"
                         />
                       </div>
+
+                      {/* Goodbye Message Text */}
                       <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Goodbye Message Text</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                          <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)' }}>
+                            Goodbye Message Text
+                          </label>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-dim)', marginRight: 4 }}>Insert Tag:</span>
+                            <button
+                              type="button"
+                              onClick={() => setWelcome(p => ({ ...p, GOODBYE_MESSAGE: (p.GOODBYE_MESSAGE ? `${p.GOODBYE_MESSAGE} {user}` : '{user}') }))}
+                              style={{
+                                background: 'rgba(99, 102, 241, 0.12)',
+                                border: '1px solid rgba(99, 102, 241, 0.3)',
+                                color: '#a5b4fc',
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                padding: '3px 8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              + {'{user}'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setWelcome(p => ({ ...p, GOODBYE_MESSAGE: (p.GOODBYE_MESSAGE ? `${p.GOODBYE_MESSAGE} {server}` : '{server}') }))}
+                              style={{
+                                background: 'rgba(99, 102, 241, 0.12)',
+                                border: '1px solid rgba(99, 102, 241, 0.3)',
+                                color: '#a5b4fc',
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                padding: '3px 8px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              + {'{server}'}
+                            </button>
+                          </div>
+                        </div>
+
                         <textarea
                           value={welcome.GOODBYE_MESSAGE}
                           onChange={e => setWelcome(p => ({ ...p, GOODBYE_MESSAGE: e.target.value }))}
                           placeholder="Goodbye {user}, we will miss you! 👋"
-                          rows={3}
+                          rows={6}
                           className="luxe-input"
-                          style={{ resize: 'none' }}
+                          style={{
+                            minHeight: 160,
+                            resize: 'vertical',
+                            lineHeight: '1.6',
+                            fontFamily: 'inherit',
+                            fontSize: 13.5
+                          }}
                         />
                       </div>
                     </div>
