@@ -524,6 +524,31 @@ function formatActionPreview(guild, actionType, params = {}) {
       break;
     }
 
+    case 'manage_ai_channels': {
+      title = '💬 Proposed AI Channel Whitelist Update';
+      const mode = (params.mode || 'add').toLowerCase();
+      const channels = Array.isArray(params.channels) ? params.channels : (params.channel ? [params.channel] : []);
+
+      if (mode === 'clear') {
+        lines.push('⚠️ **AI Channel whitelist clear** করা হবে।');
+        lines.push('Bot সব জায়গায় @mention-এ respond করবে (whitelist বন্ধ হত যাবে)।');
+        isDestructive = true;
+      } else {
+        const modeLabel = mode === 'set' ? 'হুবহু সেট করা' : mode === 'remove' ? 'সরানো' : 'যোগ করা';
+        lines.push(`**Mode:** \`${modeLabel}\``);
+        lines.push('**Channels:**');
+        channels.forEach(ch => {
+          const found = findChannel(guild, ch);
+          lines.push(`• ${found ? `<#${found.id}> (\`#${found.name}\`)` : `\`${ch}\``}`);
+        });
+        if (mode === 'set') {
+          lines.push('\n> নোট: এটি পুরো লিস্ট replace করবে, আগের সব channels মুছে যাবে।');
+        }
+      }
+      summary = `AI channels ${mode}: ${channels.length} channel(s)`;
+      break;
+    }
+
     default:
       lines.push(`Action: \`${actionType}\``);
       lines.push(`Parameters: \`${JSON.stringify(params)}\``);
@@ -1246,6 +1271,75 @@ async function executeServerAction(message, actionType, params = {}) {
           success: true,
           message: `🔐 \`#${targetChannel.name}\` channel-এ \`${targetName}\`-এর permission সফলভাবে আপডেট হয়েছে!\n${[allowList, denyList, neutralList].filter(Boolean).join('\n')}`,
           details: `Channel: ${targetChannel.id} | Target: ${permTarget.id || permTarget.user?.id}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // MANAGE AI CHANNEL WHITELIST
+      // ───────────────────────────────────────────────────────────────────────
+      case 'manage_ai_channels': {
+        const mode = (params.mode || 'add').toLowerCase();
+        const channelQueries = Array.isArray(params.channels)
+          ? params.channels
+          : params.channel ? [params.channel] : [];
+
+        // Clear mode — remove whitelist entirely
+        if (mode === 'clear') {
+          await setSetting(guild.id, 'AI_ALLOWED_CHANNEL_IDS', '');
+          return {
+            success: true,
+            message: '🗑️ AI channel whitelist **clear** করা হয়েছে! Bot এখন @mention-এ সব channel-এ respond করবে।',
+          };
+        }
+
+        if (channelQueries.length === 0) {
+          return { success: false, message: '❌ কোন channel উল্লেখ করা হয়নি।' };
+        }
+
+        // Resolve channel IDs
+        const resolvedIds = [];
+        const notFound = [];
+        for (const q of channelQueries) {
+          const ch = findChannel(guild, q);
+          if (ch) {
+            resolvedIds.push(ch.id);
+          } else {
+            // Maybe it's already a raw ID
+            if (/^\d{17,19}$/.test(q.trim())) {
+              resolvedIds.push(q.trim());
+            } else {
+              notFound.push(q);
+            }
+          }
+        }
+
+        // Load existing whitelist
+        const currentSetting = await (async () => {
+          const { getSetting: getS } = require('./settings');
+          return (await getS(guild.id, 'AI_ALLOWED_CHANNEL_IDS')) || '';
+        })();
+        const existingIds = currentSetting.split(',').map(id => id.trim()).filter(Boolean);
+
+        let finalIds;
+        if (mode === 'set') {
+          finalIds = [...new Set(resolvedIds)];
+        } else if (mode === 'remove') {
+          finalIds = existingIds.filter(id => !resolvedIds.includes(id));
+        } else {
+          // add (default)
+          finalIds = [...new Set([...existingIds, ...resolvedIds])];
+        }
+
+        await setSetting(guild.id, 'AI_ALLOWED_CHANNEL_IDS', finalIds.join(','));
+
+        const channelMentions = finalIds.map(id => `<#${id}>`).join(', ') || '*(none)*';
+        const modeLabel = mode === 'set' ? 'সেট' : mode === 'remove' ? 'সরানো' : 'যোগ';
+        const notFoundWarn = notFound.length > 0 ? `\n⚠️ খুঁজে পাওয়া যায়নি: ${notFound.join(', ')}` : '';
+
+        return {
+          success: true,
+          message: `💬 AI channel whitelist আপডেট হয়েছে! (mode: \`${modeLabel}\`)\n\n**এখন active channels:** ${channelMentions}${notFoundWarn}`,
+          details: `Total channels: ${finalIds.length} | Mode: ${mode}`,
         };
       }
 

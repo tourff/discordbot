@@ -236,6 +236,9 @@ export default function Dashboard() {
   const [isSavingPerm, setIsSavingPerm] = useState(false);
 
   const [aiSettings, setAiSettings] = useState({ AI_ENABLED: 'true', AI_CHAT_CHANNEL_ID: '', AI_SYSTEM_PROMPT: '' });
+  const [aiAllowedChannels, setAiAllowedChannels] = useState([]); // selected channel IDs for whitelist
+  const [guildChannels, setGuildChannels] = useState([]);          // fetched from Discord API
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
   const [isSavingAi, setIsSavingAi] = useState(false);
 
   const [leveling, setLeveling] = useState({ LEVELING_ENABLED: 'true', LEVEL_UP_CHANNEL_ID: '' });
@@ -310,6 +313,22 @@ export default function Dashboard() {
       .catch(console.error);
   }, [session, selectedGuild]);
 
+  // Fetch Discord Guild Channels (for AI channel whitelist picker)
+  useEffect(() => {
+    if (!selectedGuild) return;
+    setIsLoadingChannels(true);
+    fetch(`/api/discord/channels?guildId=${selectedGuild.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.channels) {
+          // Only show text channels (type 0) and announcement channels (type 5)
+          setGuildChannels(data.channels.filter(ch => ch.type === 0 || ch.type === 5));
+        }
+      })
+      .catch(err => console.warn('[Dashboard] Failed to load guild channels:', err))
+      .finally(() => setIsLoadingChannels(false));
+  }, [selectedGuild]);
+
   // Fetch Guild Settings from Supabase
   useEffect(() => {
     if (!selectedGuild) return;
@@ -332,6 +351,9 @@ export default function Dashboard() {
           AI_CHAT_CHANNEL_ID: map.AI_CHAT_CHANNEL_ID || '',
           AI_SYSTEM_PROMPT: map.AI_SYSTEM_PROMPT || ''
         });
+        // Parse multi-channel whitelist
+        const allowedIds = (map.AI_ALLOWED_CHANNEL_IDS || '').split(',').map(id => id.trim()).filter(Boolean);
+        setAiAllowedChannels(allowedIds);
         setLeveling({
           LEVELING_ENABLED: map.LEVELING_ENABLED ?? 'true',
           LEVEL_UP_CHANNEL_ID: map.LEVEL_UP_CHANNEL_ID || ''
@@ -405,7 +427,10 @@ export default function Dashboard() {
   const handleSaveAi = async (e) => {
     e?.preventDefault();
     setIsSavingAi(true);
-    const ok = await saveSettings(aiSettings);
+    const ok = await saveSettings({
+      ...aiSettings,
+      AI_ALLOWED_CHANNEL_IDS: aiAllowedChannels.join(','),
+    });
     showToast(ok ? 'Jarvis AI settings saved' : 'Failed to save', ok ? 'success' : 'error');
     setIsSavingAi(false);
   };
@@ -1155,15 +1180,137 @@ export default function Dashboard() {
                         </label>
                       </div>
 
+                      {/* ─── AI Channel Whitelist Multi-Select ───────────────── */}
                       <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>Dedicated AI Channel ID (Optional)</label>
-                        <input
-                          type="text"
-                          value={aiSettings.AI_CHAT_CHANNEL_ID}
-                          onChange={e => setAiSettings(p => ({ ...p, AI_CHAT_CHANNEL_ID: e.target.value }))}
-                          placeholder="e.g. 123456789012345678"
-                          className="luxe-input"
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-high)' }}>
+                              Active AI Channels (Whitelist)
+                            </label>
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, marginBottom: 0 }}>
+                              {aiAllowedChannels.length > 0
+                                ? `Jarvis responds automatically in ${aiAllowedChannels.length} selected channel(s) without @mention. All other channels remain silent.`
+                                : 'No channels selected. When empty, Jarvis responds server-wide on direct @mention.'}
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {guildChannels.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (aiAllowedChannels.length === guildChannels.length) {
+                                    setAiAllowedChannels([]);
+                                  } else {
+                                    setAiAllowedChannels(guildChannels.map(c => c.id));
+                                  }
+                                }}
+                                style={{
+                                  fontSize: 11.5,
+                                  fontWeight: 500,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: '1px solid var(--border-subtle)',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  color: 'var(--text-high)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {aiAllowedChannels.length === guildChannels.length ? 'Deselect All' : 'Select All'}
+                              </button>
+                            )}
+                            {aiAllowedChannels.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setAiAllowedChannels([])}
+                                style={{
+                                  fontSize: 11.5,
+                                  fontWeight: 500,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  color: '#f87171',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Channel selector list / chips */}
+                        {isLoadingChannels ? (
+                          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
+                            Loading server channels...
+                          </div>
+                        ) : guildChannels.length > 0 ? (
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                              gap: 8,
+                              maxHeight: 220,
+                              overflowY: 'auto',
+                              padding: 10,
+                              background: 'rgba(0, 0, 0, 0.2)',
+                              borderRadius: 10,
+                              border: '1px solid var(--border-subtle)',
+                            }}
+                          >
+                            {guildChannels.map(ch => {
+                              const isChecked = aiAllowedChannels.includes(ch.id);
+                              return (
+                                <label
+                                  key={ch.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '7px 10px',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    background: isChecked ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                                    border: isChecked ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid var(--border-subtle)',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={e => {
+                                      if (e.target.checked) {
+                                        setAiAllowedChannels(prev => [...prev, ch.id]);
+                                      } else {
+                                        setAiAllowedChannels(prev => prev.filter(id => id !== ch.id));
+                                      }
+                                    }}
+                                    style={{ accentColor: '#6366f1' }}
+                                  />
+                                  <span style={{ fontSize: 13, color: isChecked ? '#fff' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {ch.type === 5 ? '📢 ' : '# '}{ch.name}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div>
+                            <input
+                              type="text"
+                              value={aiAllowedChannels.join(', ')}
+                              onChange={e => {
+                                const ids = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                setAiAllowedChannels(ids);
+                              }}
+                              placeholder="Channel IDs separated by comma (e.g. 123456789, 987654321)"
+                              className="luxe-input"
+                            />
+                            <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                              Tip: You can enter channel IDs separated by commas, or configure directly inside Discord: <code>@Jarvis shudhu #general ar #bot-chat e respond korbe</code>
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <div>

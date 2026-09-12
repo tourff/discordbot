@@ -284,6 +284,25 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 • "channel er permission thik kore dao" / "role ke channel e access dao" → set_channel_permissions
 • "general channel e Mod role ke message delete korte dao" → set_channel_permissions allow: ["manage messages"] role: "Mod"
 • "channel e @everyone er message pathano bondho koro" → set_channel_permissions deny: ["send messages"] role: "@everyone"
+• "general channel ke ai channel e add koro" / "bot shudhu general e respond korbe" → manage_ai_channels mode: "add"
+• "bot-commands channel remove koro ai theke" → manage_ai_channels mode: "remove"
+• "shudhu general ar bot-commands e respond korbe" → manage_ai_channels mode: "set" with both channels
+• "ai channel whitelist clear koro" / "sob channel e respond korbe" → manage_ai_channels mode: "clear"
+• "ai channel list dekhao" / "kono kono channel e respond kore" → (list current setting, no action needed)
+
+────────────────────────────────────────
+21. manage_ai_channels — Configure which channels Jarvis responds in (whitelist):
+{
+  "action": "manage_ai_channels",
+  "parameters": {
+    "mode": "add",
+    "channels": ["general-chat", "bot-commands"]
+  }
+}
+// mode: "add" (যোগ) | "remove" (সরানো) | "set" (পুরো list replace) | "clear" (whitelist বন্ধ)
+// channels: channel name(s) or #channel-mention(s) — not needed for "clear" mode
+// When whitelist is active: bot ONLY responds in those channels (no @mention needed there)
+// @mention still works everywhere for admins
 
 If the user is chatting, asking questions, or not ready for a concrete plan, DO NOT output any JSON. Just respond naturally in Bengali.
 `;
@@ -627,11 +646,35 @@ async function handleAIChatChannel(message) {
     }
   }
 
-  // ── 3. Check if message is in dedicated AI channel ─────────────────────────
-  const aiChannelId = await getSetting(message.guild.id, 'AI_CHAT_CHANNEL_ID');
-  const isAiChannel = Boolean(aiChannelId && message.channel.id === aiChannelId);
+  // ── 3. Check if message is in an AI-allowed channel ────────────────────────
+  // Supports multi-channel whitelist (AI_ALLOWED_CHANNEL_IDS, comma-separated)
+  // Falls back to legacy AI_CHAT_CHANNEL_ID if whitelist is not configured.
+  const allowedChannelsSetting = await getSetting(message.guild.id, 'AI_ALLOWED_CHANNEL_IDS');
+  let isAiChannel = false;
 
-  // If NOT mentioned, NOT replying, NOT in AI channel, AND NO active session -> ignore!
+  if (allowedChannelsSetting && allowedChannelsSetting.trim()) {
+    // New multi-channel whitelist mode
+    const allowedIds = allowedChannelsSetting.split(',').map(id => id.trim()).filter(Boolean);
+    isAiChannel = allowedIds.includes(message.channel.id);
+  } else {
+    // Legacy single-channel fallback
+    const legacyChannelId = await getSetting(message.guild.id, 'AI_CHAT_CHANNEL_ID');
+    isAiChannel = Boolean(legacyChannelId && message.channel.id === legacyChannelId);
+  }
+
+  // ── Whitelist gate ──────────────────────────────────────────────────────────
+  // If whitelist IS configured:
+  // - In whitelisted channels: Jarvis responds to all messages (no @mention needed!)
+  // - In non-whitelisted channels: Silently ignore all chatter; only admins can reach bot with explicit @mention/reply
+  const whitelistActive = Boolean(allowedChannelsSetting && allowedChannelsSetting.trim());
+  if (whitelistActive && !isAiChannel) {
+    const hasAdmin = await canManageBot(message.member).catch(() => false);
+    if (!hasAdmin || (!isMentioned && !isReplyToBot)) {
+      return false; // Silently ignore non-whitelisted channels
+    }
+  }
+
+  // If NOT mentioned, NOT replying, NOT in AI channel, AND NO active session → ignore
   if (!isMentioned && !isReplyToBot && !isAiChannel && !isSessionActive) {
     return false;
   }
