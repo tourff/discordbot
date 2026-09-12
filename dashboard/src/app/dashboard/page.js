@@ -806,7 +806,7 @@ export default function Dashboard() {
     : null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', display: 'flex', flexDirection: 'column', position: 'relative' }} className="bg-grid-mesh">
+    <div style={{ height: '100vh', background: 'var(--bg-main)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }} className="bg-grid-mesh">
 
       <div className="ambient-glow-1" style={{ top: '-10%', left: '15%' }} />
       <div className="ambient-glow-2" style={{ bottom: '10%', right: '10%' }} />
@@ -814,6 +814,7 @@ export default function Dashboard() {
       {/* ─── TOP NAVIGATION HEADER ─── */}
       <header style={{
         height: 60,
+        flexShrink: 0,
         background: 'rgba(8, 10, 15, 0.85)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -908,16 +909,19 @@ export default function Dashboard() {
       </header>
 
       {/* ─── MAIN APP LAYOUT ─── */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 60px)' }}>
+      <div style={{ display: 'flex', flex: 1, height: 'calc(100vh - 60px)', overflow: 'hidden' }}>
 
         {/* ─── SINGLE UNIFIED MASTER SIDEBAR ─── */}
         <aside style={{
           width: 250,
+          height: '100%',
           background: 'rgba(99, 102, 241, 0.03)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex', flexDirection: 'column',
           flexShrink: 0,
           padding: '16px 12px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           justifyContent: 'space-between',
         }}>
           <div>
@@ -1079,7 +1083,8 @@ export default function Dashboard() {
         </aside>
 
         {/* ─── MAIN CONTENT CANVAS ─── */}
-        <main style={{ flex: 1, padding: '28px 36px', overflowY: 'auto', maxWidth: 1200 }}>
+        <main style={{ flex: 1, height: '100%', padding: '28px 36px', overflowY: 'auto', overflowX: 'hidden' }}>
+          <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto' }}>
 
           {!selectedGuild ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', textAlign: 'center' }}>
@@ -2905,6 +2910,7 @@ export default function Dashboard() {
 
             </div>
           )}
+          </div>
         </main>
       </div>
 
