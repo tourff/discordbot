@@ -44,6 +44,13 @@ module.exports = {
     await interaction.deferReply();
 
     // 1. Build context-aware system prompt with Banglish comprehension and guild details
+    if (interaction.guild) {
+      await Promise.all([
+        interaction.guild.channels.fetch().catch(() => null),
+        interaction.guild.roles.fetch().catch(() => null),
+      ]);
+    }
+
     let customPrompt = null;
     if (interaction.guildId) {
       customPrompt = await getSetting(interaction.guildId, 'AI_SYSTEM_PROMPT').catch(() => null);

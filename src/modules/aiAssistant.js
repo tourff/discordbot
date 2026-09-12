@@ -17,6 +17,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  ChannelType,
 } = require('discord.js');
 const { getSetting } = require('./settings');
 const { canManageBot } = require('./permissions');
@@ -356,6 +357,107 @@ const activeSessions = new Map();
 const SESSION_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 /**
+ * Formats a clean, structured real-time overview of the Discord server layout
+ * (categories, channels, types, positions, and roles) to inject directly into the AI system prompt.
+ * @param {import('discord.js').Guild} [guild]
+ * @returns {string}
+ */
+function formatGuildLayout(guild) {
+  if (!guild || !guild.channels?.cache) return '';
+
+  const channels = Array.from(guild.channels.cache.values());
+  const categories = channels
+    .filter(c => c.type === 4 || c.type === ChannelType.GuildCategory)
+    .sort((a, b) => a.position - b.position);
+
+  const textChannels = channels.filter(c => c.type === 0 || c.type === ChannelType.GuildText);
+  const voiceChannels = channels.filter(c => c.type === 2 || c.type === ChannelType.GuildVoice);
+  const announcementChannels = channels.filter(c => c.type === 5 || c.type === ChannelType.GuildAnnouncement);
+  const forumChannels = channels.filter(c => c.type === 15 || c.type === ChannelType.GuildForum);
+
+  const lines = [];
+  lines.push(`Server Name: "${guild.name}" (ID: ${guild.id})`);
+  lines.push(`Total Members: ${guild.memberCount || 'Unknown'}`);
+  lines.push(`Summary: ${categories.length} Categories, ${channels.filter(c => c.type !== 4 && c.type !== ChannelType.GuildCategory).length} Channels (${textChannels.length} text, ${voiceChannels.length} voice, ${announcementChannels.length} announcement, ${forumChannels.length} forum), ${guild.roles?.cache?.size || 0} Roles`);
+  lines.push('');
+  lines.push('📁 ALL SERVER CHANNELS & CATEGORIES (100% COMPLETE LIST):');
+
+  // Categories and their children
+  for (const cat of categories) {
+    const isCatPrivate = cat.permissionsFor && guild.roles?.everyone && !cat.permissionsFor(guild.roles.everyone).has(PermissionFlagsBits.ViewChannel);
+    const catPrivTag = isCatPrivate ? ' [🔒 Private Category]' : '';
+    const children = channels
+      .filter(c => c.parentId === cat.id)
+      .sort((a, b) => a.position - b.position);
+
+    lines.push(`\n📂 [Category] "${cat.name}" (position: ${cat.position}, ID: ${cat.id})${catPrivTag}:`);
+    if (children.length === 0) {
+      lines.push('   *(empty category)*');
+    } else {
+      for (const ch of children) {
+        let typeStr = 'text';
+        if (ch.type === 2 || ch.type === ChannelType.GuildVoice) typeStr = 'voice';
+        else if (ch.type === 5 || ch.type === ChannelType.GuildAnnouncement) typeStr = 'announcement';
+        else if (ch.type === 15 || ch.type === ChannelType.GuildForum) typeStr = 'forum';
+        else if (ch.type === 13 || ch.type === ChannelType.GuildStageVoice) typeStr = 'stage';
+
+        const isChPrivate = ch.permissionsFor && guild.roles?.everyone && !ch.permissionsFor(guild.roles.everyone).has(PermissionFlagsBits.ViewChannel);
+        const privTag = isChPrivate ? ' [🔒 Private]' : '';
+        const prefix = typeStr === 'voice' ? '🔊' : typeStr === 'announcement' ? '📢' : typeStr === 'forum' ? '💬' : '#';
+        lines.push(`   • ${prefix} ${ch.name} (type: ${typeStr}, position: ${ch.position}, ID: ${ch.id})${privTag}`);
+      }
+    }
+  }
+
+  // Uncategorized channels
+  const uncategorized = channels
+    .filter(c => c.type !== 4 && c.type !== ChannelType.GuildCategory && !c.parentId)
+    .sort((a, b) => a.position - b.position);
+
+  if (uncategorized.length > 0) {
+    lines.push('\n📁 [No Category / Root Channels]:');
+    for (const ch of uncategorized) {
+      let typeStr = 'text';
+      if (ch.type === 2 || ch.type === ChannelType.GuildVoice) typeStr = 'voice';
+      else if (ch.type === 5 || ch.type === ChannelType.GuildAnnouncement) typeStr = 'announcement';
+      else if (ch.type === 15 || ch.type === ChannelType.GuildForum) typeStr = 'forum';
+
+      const isChPrivate = ch.permissionsFor && guild.roles?.everyone && !ch.permissionsFor(guild.roles.everyone).has(PermissionFlagsBits.ViewChannel);
+      const privTag = isChPrivate ? ' [🔒 Private]' : '';
+      const prefix = typeStr === 'voice' ? '🔊' : typeStr === 'announcement' ? '📢' : '#';
+      lines.push(`   • ${prefix} ${ch.name} (type: ${typeStr}, position: ${ch.position}, ID: ${ch.id})${privTag}`);
+    }
+  }
+
+  // ALL Roles (100% hierarchy, no limit)
+  if (guild.roles?.cache && guild.roles.cache.size > 0) {
+    const roles = Array.from(guild.roles.cache.values())
+      .filter(r => r.name !== '@everyone')
+      .sort((a, b) => b.position - a.position);
+
+    lines.push(`\n👑 ALL SERVER ROLES (100% Complete Hierarchy, total ${guild.roles.cache.size}):`);
+    for (const r of roles) {
+      const perms = [];
+      if (r.permissions?.has) {
+        if (r.permissions.has(PermissionFlagsBits.Administrator) || r.permissions.has(8n)) perms.push('Admin');
+        if (r.permissions.has(PermissionFlagsBits.ManageGuild)) perms.push('ManageServer');
+        if (r.permissions.has(PermissionFlagsBits.ManageChannels)) perms.push('ManageChannels');
+        if (r.permissions.has(PermissionFlagsBits.ManageRoles)) perms.push('ManageRoles');
+        if (r.permissions.has(PermissionFlagsBits.BanMembers)) perms.push('Ban');
+        if (r.permissions.has(PermissionFlagsBits.KickMembers)) perms.push('Kick');
+        if (r.permissions.has(PermissionFlagsBits.ManageMessages)) perms.push('ManageMessages');
+      }
+      const permStr = perms.length > 0 ? ` [Perms: ${perms.join(', ')}]` : '';
+      const memberCountStr = r.members ? ` (${r.members.size} members)` : '';
+      lines.push(`   • @${r.name} (position: ${r.position}, ID: ${r.id}${memberCountStr}${permStr})`);
+    }
+    lines.push(`   • @everyone (ID: ${guild.id}, default server role)`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Constructs the master system prompt for Jarvis AI, incorporating bilingual & Banglish mastery,
  * server context, conversational memory, and architectural proposal guidelines.
  * @param {object} options
@@ -368,11 +470,40 @@ const SESSION_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 function buildAssistantSystemPrompt({ guild = null, member = null, customPrompt = null, includeActions = true } = {}) {
   const guildName = guild?.name || 'Discord Server';
   const userName = member?.displayName || member?.user?.username || 'User';
+  const serverLayout = formatGuildLayout(guild);
 
   return `
 You are Jarvis, a highly intelligent, proactive, and friendly Discord AI assistant and server architect created by trj7 (falcon_trj7).
 Server: "${guildName}"
 Current User: "${userName}"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏰 LIVE SERVER REAL-TIME LAYOUT (READ-ONLY DIRECT DISCORD ACCESS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${serverLayout || 'No active guild layout data available.'}
+
+🚨 CRITICAL SERVER AWARENESS & CAPABILITY DIRECTIVE (NEVER VIOLATE):
+1. You ARE Jarvis, connected LIVE to this Discord server via Discord.js with full administrator/management privileges.
+2. YOU HAVE 100% COMPLETE VISIBILITY into ALL channels, ALL categories, and ALL roles shown in the layout above!
+3. STRICT PROHIBITIONS — NEVER SAY:
+   ❌ "আমার কাছে সরাসরি সার্ভার রিড করার পারমিশন বা API টুল নেই"
+   ❌ "আমার পক্ষে ডেটা ফেচ করা সম্ভব নয়"
+   ❌ "চ্যানেল বা ক্যাটাগরিগুলো আমাকে চ্যাটে লিখে দিন"
+   These statements are completely FALSE. You already have the live real-time server layout right above.
+4. When the user asks anything like:
+   - "Full server ta dekho to" / "server ta dekho"
+   - "ki ki channel and category ache" / "ki ki channel ache"
+   - "all channel dekhao" / "shob channel dekhao" / "channel list"
+   - "all category dekhao" / "shob category dekhao" / "category list"
+   - "all roles dekhao" / "all role dekhao" / "shob role dekhao" / "ki ki role ache"
+   - "server layout kemon" / "server e ki ki ache"
+   IMMEDIATELY review the "LIVE SERVER REAL-TIME LAYOUT" provided above and respond warmly and proudly in Bengali!
+   • Greet the user respectfully (e.g. "আরে বস ${userName}! আমি আপনার পুরো সার্ভার স্ক্যান করেছি।")
+   • If asking for CHANNELS/CATEGORIES: List EVERY category along with its text channels (#) and voice channels (🔊), noting if private (🔒). Show uncategorized channels if any.
+   • If asking for ROLES: List ALL roles from highest to lowest hierarchy, showing their member counts and key permissions (Admin, Mod, etc.).
+   • If asking for FULL SERVER: Give the complete overview of all categories, channels, and roles with exact total counts!
+   • Proactively ask: "আপনি কি কোনো চ্যানেল/ক্যাটাগরি উপরে-নিচে সাজাতে চান, কোনো নতুন ক্যাটাগরি যোগ করতে চান, নাকি কোনো চ্যানেলের পারমিশন সেট করতে চান? আমাকে বলুন, আমি এক্ষুনি সাজিয়ে দিচ্ছি! 🚀"
+   • DO NOT output any JSON action for simple view/list queries. Just reply naturally in Bengali.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧠 BANGLISH & BILINGUAL MASTERY — CRITICAL
@@ -755,6 +886,13 @@ async function handleAIChatChannel(message) {
   }, 4000);
 
   try {
+    if (message.guild) {
+      await Promise.all([
+        message.guild.channels.fetch().catch(() => null),
+        message.guild.roles.fetch().catch(() => null),
+      ]);
+    }
+
     const customSystemPrompt = await getSetting(message.guild.id, 'AI_SYSTEM_PROMPT');
     const systemPrompt = buildAssistantSystemPrompt({
       guild: message.guild,
