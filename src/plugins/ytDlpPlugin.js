@@ -199,6 +199,20 @@ class YtDlpPlugin extends PlayableExtractorPlugin {
       throw new DisTubeError('YTDLP_PLUGIN_INVALID_SONG', 'Cannot get stream url from invalid song.');
     }
 
+    // 1. Resolve direct audio stream URL directly via yt-dlp (fast, reliable, zero proxy issues)
+    try {
+      const info = await runYtDlpJson(song.url, {
+        format: 'ba/ba*',
+      });
+      const directStreamUrl = info?.url || (Array.isArray(info?.entries) && info.entries[0]?.url);
+      if (directStreamUrl) {
+        return directStreamUrl;
+      }
+    } catch (err) {
+      console.warn('[YtDlpPlugin] Direct audio URL extraction failed, trying localhost stream fallback:', err.message);
+    }
+
+    // 2. Fallback to local streaming proxy if direct extraction fails
     const port = process.env.PORT || 3000;
     return `http://127.0.0.1:${port}/stream?url=${encodeURIComponent(song.url)}`;
   }

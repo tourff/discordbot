@@ -61,8 +61,20 @@ app.get('/stream', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[Express] Listening on port ${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const fallbackPort = Number(PORT) + 1;
+    console.warn(`[Express] Port ${PORT} is in use (e.g. by Next.js Dashboard). Listening on port ${fallbackPort}...`);
+    app.listen(fallbackPort, () => {
+      console.log(`[Express] Listening on port ${fallbackPort}`);
+    });
+  } else {
+    console.error('[Express Error]', err);
+  }
 });
 
 // ── 2. Discord client ─────────────────────────────────────────────────────────
