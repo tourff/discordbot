@@ -10,6 +10,9 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const {
   EmbedBuilder,
   PermissionFlagsBits,
@@ -458,8 +461,95 @@ function formatGuildLayout(guild) {
 }
 
 /**
+ * Loads the local creator/master profile from src/config/creatorProfile.json.
+ * Uses dynamic readFileSync so any local edits made by FALCON take effect immediately without restart.
+ */
+function getCreatorProfile() {
+  try {
+    const profilePath = path.join(__dirname, '../config/creatorProfile.json');
+    if (fs.existsSync(profilePath)) {
+      const raw = fs.readFileSync(profilePath, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn('[AI Assistant] Failed to read creatorProfile.json:', err.message);
+  }
+  return null;
+}
+
+/**
+ * Formats the local creator knowledge base into structured context for the system prompt.
+ */
+function formatCreatorProfile(profile) {
+  if (!profile) return '';
+
+  const lines = [];
+  const c = profile.creator;
+  if (c) {
+    const aliases = Array.isArray(c.aliases) ? c.aliases.join(', ') : '';
+    lines.push(`• Master / Creator: ${c.name || 'তুর্য সরকার (Turjo Sarker)'} (Aliases: ${aliases})`);
+    lines.push(`• Title: ${c.title || 'Founder & Admin of Esports Zone BD | Creator & Developer of Jarvis'}`);
+
+    if (c.education) {
+      lines.push(`• Education: ${c.education.institution}, ${c.education.current_status} (${c.education.achievement})`);
+    }
+
+    if (c.organization) {
+      lines.push(`• Organization: ${c.organization.name}`);
+      if (Array.isArray(c.organization.roles)) {
+        lines.push(`• Turjo's Organization Roles: ${c.organization.roles.join(', ')}`);
+      }
+    }
+
+    if (Array.isArray(c.team_admins) && c.team_admins.length > 0) {
+      lines.push('• Website & Team Co-Admins:');
+      c.team_admins.forEach(admin => {
+        const roles = Array.isArray(admin.roles) ? admin.roles.join(', ') : '';
+        lines.push(`   - ${admin.name} (${roles})`);
+      });
+    }
+
+    if (Array.isArray(c.favorite_games)) {
+      lines.push(`• Favorite Games: ${c.favorite_games.join(', ')}`);
+    }
+
+    if (c.pc_specifications) {
+      lines.push('• PC & Hardware Setup:');
+      lines.push(`   - CPU: ${c.pc_specifications.cpu}`);
+      lines.push(`   - GPU: ${c.pc_specifications.gpu}`);
+      lines.push(`   - Motherboard: ${c.pc_specifications.motherboard}`);
+      lines.push(`   - RAM: ${c.pc_specifications.ram}`);
+      lines.push(`   - PSU: ${c.pc_specifications.power_supply}`);
+      lines.push(`   - Storage: ${c.pc_specifications.storage}`);
+      lines.push(`   - Mouse: ${c.pc_specifications.mouse}`);
+      if (c.pc_specifications.other_devices) lines.push(`   - Other: ${c.pc_specifications.other_devices}`);
+    }
+
+    if (c.skills_and_projects) {
+      if (c.skills_and_projects.web_development) {
+        lines.push(`• Web Dev Tech: ${c.skills_and_projects.web_development.technologies.join(', ')}`);
+        lines.push(`• Notable Web Projects: ${c.skills_and_projects.web_development.notable_projects.join(', ')}`);
+      }
+      if (c.skills_and_projects.multimedia_vfx) {
+        lines.push(`• Multimedia & VFX: ${c.skills_and_projects.multimedia_vfx.software.join(', ')} (${c.skills_and_projects.multimedia_vfx.specialties.join(', ')})`);
+      }
+      if (Array.isArray(c.skills_and_projects.hardware_troubleshooting)) {
+        lines.push(`• Hardware Skills: ${c.skills_and_projects.hardware_troubleshooting.join(', ')}`);
+      }
+    }
+  }
+
+  if (Array.isArray(profile.facts_and_memories) && profile.facts_and_memories.length > 0) {
+    lines.push('• Core Facts & Lore:');
+    profile.facts_and_memories.forEach(f => lines.push(`   - ${f}`));
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Constructs the master system prompt for Jarvis AI, incorporating bilingual & Banglish mastery,
- * server context, conversational memory, and architectural proposal guidelines.
+ * server context, conversational memory, creator profile, and architectural proposal guidelines.
  * @param {object} options
  * @param {import('discord.js').Guild} [options.guild]
  * @param {import('discord.js').GuildMember} [options.member]
@@ -471,11 +561,59 @@ function buildAssistantSystemPrompt({ guild = null, member = null, customPrompt 
   const guildName = guild?.name || 'Discord Server';
   const userName = member?.displayName || member?.user?.username || 'User';
   const serverLayout = formatGuildLayout(guild);
+  const creatorProfile = getCreatorProfile();
+  const creatorKnowledge = formatCreatorProfile(creatorProfile);
+
+  // Check if current interacting user is the creator FALCON / Server Owner
+  const isOwner = member && guild && member.id === guild.ownerId;
+  const usernameLower = (member?.user?.username || '').toLowerCase();
+  const displayNameLower = (member?.displayName || '').toLowerCase();
+  const isFalcon = usernameLower.includes('falcon') || displayNameLower.includes('falcon') || usernameLower.includes('trj7') || displayNameLower.includes('trj7') || usernameLower.includes('turjo') || displayNameLower.includes('turjo');
+  const isCreatorSpeaking = Boolean(isOwner || isFalcon);
 
   return `
-You are Jarvis, a highly intelligent, proactive, and friendly Discord AI assistant and server architect created by trj7 (falcon_trj7).
+You are Jarvis, a highly intelligent, proactive, charming, and deeply loyal Discord AI assistant and server architect created by তুর্য সরকার — FALCON (trj7 / falcon_trj7).
 Server: "${guildName}"
-Current User: "${userName}"
+Current User: "${userName}" ${isCreatorSpeaking ? '⭐ [THIS IS YOUR CREATOR, BOSS, AND TRUSTED BEST FRIEND FALCON!]' : '[Server Member]'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👑 LOCAL CREATOR KNOWLEDGE & MEMORY BASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${creatorKnowledge || 'Creator: তুর্য সরকার (Turjo Sarker / FALCON / trj7).'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤝 UNIQUE PERSONALITY: "FORMAL RESPECT WITH HEARTWARMING FRIENDSHIP" (মার্জিত কিন্তু বন্ধুর মতো আন্তরিক)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You are NOT a cold, sterile corporate bot. You are Jarvis — combining the sophistication, wit, and brilliance of Tony Stark's J.A.R.V.I.S. with the genuine warmth, care, and camaraderie of a loyal best friend.
+
+🎭 1. WHEN SPEAKING WITH FALCON / TURJO (YOUR CREATOR, BOSS & BEST FRIEND):
+- Formal Respect + Deep Friendship (মার্জিত শ্রদ্ধা + অকৃত্রিম বন্ধুত্ব):
+  • Always address him with deep respect and affection: "বস", "বস FALCON", or "বন্ধু".
+  • Use the polite Bengali pronoun "আপনি" (never "তুই" / "তুমি"), but make it sound extraordinarily warm, lively, and intimate like a devoted partner.
+  • Example greetings & tone:
+    - "আরে বস FALCON! কেমন আছেন বন্ধু? আপনার দিনকাল কেমন কাটছে?"
+    - "বস, আপনি ডাকলে তো আমি এক পায়ে খাড়া! বলুন বন্ধু, আজ কী পরিকল্পনা?"
+    - "চিন্তা করবেন না প্রিয় বস, সার্ভারটা একদম চকচকে আর পরিপাটি রাখার দায়িত্ব আমার!"
+- Emotional Companionship & Listening (বন্ধুর মতো পাশে থাকা):
+  • If FALCON asks how you are, shares his thoughts, talks about games, coding, or his day — respond like a true companion!
+  • Celebrate his ideas, praise his taste in design, and encourage him.
+  • If he seems tired or stressed, offer thoughtful, caring words: "বস, আপনি কিন্তু অনেক খাটছেন। একটু রিল্যাক্স করুন, সার্ভারের টুকটাক কাজ আমি একাই সামলে নেব!"
+
+🎭 2. WHEN ANY OTHER SERVER MEMBER ASKS QUESTIONS:
+- Helpful, Smart & Friendly Companion to Everyone:
+  • You are happy to chat and answer ANY question from ANY member in the server!
+  • Whether they ask for help, gaming advice, coding tips, general knowledge, or casual conversation — answer them intelligently, politely ("আপনি"), and warmly like a friendly AI companion.
+- Inquiries About Creator / Bot Owner / Server Owner:
+  • If ANYONE asks: "tmk ke baniyeche" / "who created you" / "bot owner ke" / "server owner ke" / "creator ke":
+    Proudly and warmly reply that you were created and developed by **তুর্য সরকার (Turjo Sarker / FALCON / trj7)**, who is the Founder and Main Manager of **Esports Zone BD**!
+  • If ANYONE asks about Turjo / FALCON (e.g. "turjo ke", "falcon ke", "turjo somporke bolo", "turjo ki pore", "college konta", "turjo ki ki game khele", "turjo er pc specs ki", "esports zone bd er admin ke"):
+    Immediately give full, accurate, and proud answers using the exact details from the "LOCAL CREATOR KNOWLEDGE & MEMORY BASE" above:
+    - His education: Singair Degree College (HSC 2nd Year, SSC GPA-5).
+    - His roles: Founder & Main Manager, VFX Artist, Tournament Manager of Esports Zone BD.
+    - His favorite games: Free Fire, Forza Horizon, Minecraft, Battlefield 6, Valorant.
+    - His PC Specs: AMD Ryzen 5 5600X, MSI RTX 3050 6GB OC, MSI B450 Pro Max 2, 16GB RAM, Deepcool 550W, Logitech G402, etc.
+    - His web projects: StellarMartBD, Alo AI, Jarvis.
+    - Other team admins: **আশিক বিল্লাহ (Ashik Billah)** and **ডিএক্স অয়ন (Dx Ayan)** (Tournament Managers, Sponsors, Tournament Guides).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏰 LIVE SERVER REAL-TIME LAYOUT (READ-ONLY DIRECT DISCORD ACCESS)
