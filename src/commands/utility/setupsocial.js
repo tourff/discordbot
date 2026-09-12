@@ -1,10 +1,31 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelSelectMenuBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 
-function getMainDashboard() {
+async function getMainDashboard(guildId) {
+  const { getSocialFeeds } = require('../../modules/settings');
+  const feeds = guildId ? await getSocialFeeds(guildId) : [];
+
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('🌐 Social Media Notification Setup')
-    .setDescription('Select a platform below to configure its RSS feed, channel, and custom message.');
+    .setDescription(
+      'Configure automated notifications when you post content online!\n' +
+      '💡 **Tip:** You can manage **unlimited multiple accounts & custom messages** directly from the [Web Dashboard](https://discordbot-ten-dusky.vercel.app/dashboard).\n\n' +
+      `**Active Feeds Configured:** \`${feeds.length}\``
+    );
+
+  if (feeds.length > 0) {
+    const list = feeds.slice(0, 10).map((f, i) => {
+      const ping = f.ping && f.ping !== 'none' ? ` [${f.ping}]` : '';
+      return `**${i + 1}. [${(f.platform || 'FEED').toUpperCase()}]** ${f.name || 'Account'} ➔ <#${f.channelId}>${ping}`;
+    }).join('\n');
+    embed.addFields({ name: 'Configured Social Feeds', value: list.slice(0, 1024) });
+  }
+
+  embed.addFields({
+    name: '📝 Message Variables Supported',
+    value: '`{author}` — Creator/Channel name\n`{title}` — Post title\n`{url}` — Link to content\n`{platform}` — Platform name',
+    inline: false
+  });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('social_menu_YOUTUBE').setLabel('YouTube').setStyle(ButtonStyle.Secondary).setEmoji('▶️'),
@@ -30,11 +51,11 @@ async function getSubDashboard(guildId, platform) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle(`⚙️ ${platform} Setup`)
-    .setDescription(`Configure notifications for ${platform}.`)
+    .setDescription(`Configure notifications for ${platform}.\nVariables: \`{author}\`, \`{title}\`, \`{url}\`, \`{platform}\``)
     .addFields(
       { name: 'Channel', value: config.channelId ? `<#${config.channelId}>` : 'Not set', inline: true },
       { name: 'RSS Link', value: config.url ? `\`${config.url}\`` : 'Not set', inline: true },
-      { name: 'Message', value: config.message ? `\`\`\`text\n${config.message.substring(0, 1000)}\n\`\`\`` : 'Not set', inline: false },
+      { name: 'Message', value: config.message ? `\`\`\`text\n${config.message.substring(0, 1000)}\n\`\`\`` : 'Default notification message', inline: false },
       { name: '\u200b', value: `📌 **URL Format for ${platform}:**\n${urlHints[platform] ?? 'Any valid RSS/Atom feed URL'}`, inline: false }
     );
 
@@ -65,6 +86,8 @@ module.exports = {
   getSubDashboard,
 
   async execute(interaction) {
-    await interaction.reply({ ...getMainDashboard(), ephemeral: true });
+    const mainDash = await getMainDashboard(interaction.guild.id);
+    await interaction.reply({ ...mainDash, ephemeral: true });
   },
 };
+

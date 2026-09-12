@@ -128,6 +128,17 @@ const Icon = {
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
   ),
+  Edit: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  ExternalLink: () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  ),
   Logout: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -212,10 +223,11 @@ const NAV_SECTIONS = [
 ];
 
 const SOCIAL_PLATFORMS = [
-  { key: 'YOUTUBE', label: 'YouTube', color: '#ff0000', icon: '▶' },
-  { key: 'FACEBOOK', label: 'Facebook', color: '#1877f2', icon: 'f' },
-  { key: 'INSTAGRAM', label: 'Instagram', color: '#e1306c', icon: 'IG' },
-  { key: 'TIKTOK', label: 'TikTok', color: '#00f2fe', icon: 'TT' },
+  { key: 'youtube', label: 'YouTube', color: '#ff0000', icon: '▶' },
+  { key: 'facebook', label: 'Facebook', color: '#1877f2', icon: 'f' },
+  { key: 'instagram', label: 'Instagram', color: '#e1306c', icon: 'IG' },
+  { key: 'tiktok', label: 'TikTok', color: '#00f2fe', icon: 'TT' },
+  { key: 'custom', label: 'Custom RSS', color: '#a855f7', icon: '📡' },
 ];
 
 export default function Dashboard() {
@@ -280,8 +292,21 @@ export default function Dashboard() {
     INSTAGRAM_URL: '', INSTAGRAM_CHANNEL_ID: '',
     TIKTOK_URL: '', TIKTOK_CHANNEL_ID: '',
   });
+  const [socialFeeds, setSocialFeeds] = useState([]);
+  const [activeSocialFilter, setActiveSocialFilter] = useState('ALL');
+  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+  const [feedFormData, setFeedFormData] = useState({
+    id: '',
+    platform: 'youtube',
+    name: '',
+    url: '',
+    channelId: '',
+    message: '🚨 **{author}** just uploaded a new video: **{title}**\nWatch here: {url}',
+    ping: 'none',
+    enabled: true,
+  });
   const [isSavingSocial, setIsSavingSocial] = useState(false);
-  const [activeSocialKey, setActiveSocialKey] = useState('YOUTUBE');
+  const [activeSocialKey, setActiveSocialKey] = useState('youtube');
 
   const [accessMode, setAccessMode] = useState('public');
   const [botAdderId, setBotAdderId] = useState('');
@@ -408,6 +433,42 @@ export default function Dashboard() {
           INSTAGRAM_URL: map.INSTAGRAM_URL || '', INSTAGRAM_CHANNEL_ID: map.INSTAGRAM_CHANNEL_ID || '',
           TIKTOK_URL: map.TIKTOK_URL || '', TIKTOK_CHANNEL_ID: map.TIKTOK_CHANNEL_ID || '',
         });
+
+        let loadedFeeds = [];
+        if (map.SOCIAL_FEEDS) {
+          try {
+            const parsed = JSON.parse(map.SOCIAL_FEEDS);
+            if (Array.isArray(parsed)) loadedFeeds = parsed;
+          } catch (e) {
+            console.error('Error parsing SOCIAL_FEEDS:', e);
+          }
+        }
+        if (loadedFeeds.length === 0) {
+          const legacyPlatforms = [
+            { key: 'YOUTUBE', label: 'YouTube', platform: 'youtube' },
+            { key: 'FACEBOOK', label: 'Facebook', platform: 'facebook' },
+            { key: 'INSTAGRAM', label: 'Instagram', platform: 'instagram' },
+            { key: 'TIKTOK', label: 'TikTok', platform: 'tiktok' },
+          ];
+          legacyPlatforms.forEach(p => {
+            const url = map[`${p.key}_URL`];
+            const channelId = map[`${p.key}_CHANNEL_ID`];
+            const message = map[`${p.key}_MESSAGE`];
+            if (url && channelId) {
+              loadedFeeds.push({
+                id: `legacy_${p.platform}`,
+                platform: p.platform,
+                name: `${p.label} Account`,
+                url,
+                channelId,
+                message: message || '📢 **{author}** uploaded new content on **{platform}**!\n**{title}**\n{url}',
+                ping: 'none',
+                enabled: true,
+              });
+            }
+          });
+        }
+        setSocialFeeds(loadedFeeds);
       }
     }).finally(() => setIsLoadingData(false));
   }, [selectedGuild]);
@@ -523,6 +584,131 @@ export default function Dashboard() {
     setIsSavingEsports(false);
   };
 
+  const handleOpenAddFeed = () => {
+    setFeedFormData({
+      id: '',
+      platform: 'youtube',
+      name: '',
+      url: '',
+      channelId: guildChannels.length > 0 ? guildChannels[0].id : '',
+      message: '🚨 **{author}** just uploaded a new video: **{title}**\nWatch here: {url}',
+      ping: 'none',
+      enabled: true,
+    });
+    setIsFeedModalOpen(true);
+  };
+
+  const handleOpenEditFeed = (feed) => {
+    setFeedFormData({ ...feed });
+    setIsFeedModalOpen(true);
+  };
+
+  const handleSaveFeed = async (e) => {
+    e?.preventDefault();
+    if (!feedFormData.url.trim()) {
+      showToast('Please enter a Feed or RSS URL', 'error');
+      return;
+    }
+    if (!feedFormData.channelId.trim()) {
+      showToast('Please select a target Discord channel', 'error');
+      return;
+    }
+
+    let cleanUrl = feedFormData.url.trim();
+    if (feedFormData.platform === 'youtube') {
+      if (cleanUrl.startsWith('UC') && cleanUrl.length >= 20 && !cleanUrl.includes('/')) {
+        cleanUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${cleanUrl}`;
+      } else if (cleanUrl.includes('youtube.com/channel/')) {
+        const match = cleanUrl.match(/channel\/(UC[a-zA-Z0-9_-]+)/);
+        if (match) cleanUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${match[1]}`;
+      }
+    }
+
+    const newFeed = {
+      ...feedFormData,
+      id: feedFormData.id || `feed_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: feedFormData.name.trim() || `${feedFormData.platform.toUpperCase()} Feed`,
+      url: cleanUrl,
+      channelId: feedFormData.channelId.trim(),
+      message: feedFormData.message.trim() || '📢 **{author}** uploaded new content on **{platform}**!\n**{title}**\n{url}',
+      ping: feedFormData.ping || 'none',
+      enabled: feedFormData.enabled !== false,
+    };
+
+    let updatedFeeds;
+    if (feedFormData.id) {
+      updatedFeeds = socialFeeds.map(f => f.id === feedFormData.id ? newFeed : f);
+    } else {
+      updatedFeeds = [...socialFeeds, newFeed];
+    }
+
+    setIsSavingSocial(true);
+    const ok = await saveSettings({
+      SOCIAL_FEEDS: JSON.stringify(updatedFeeds),
+    });
+
+    if (ok) {
+      setSocialFeeds(updatedFeeds);
+      setIsFeedModalOpen(false);
+      showToast(feedFormData.id ? 'Social feed updated!' : 'Social feed added successfully!', 'success');
+    } else {
+      showToast('Failed to save feed configuration', 'error');
+    }
+    setIsSavingSocial(false);
+  };
+
+  const handleDeleteFeed = async (feedId) => {
+    if (!window.confirm('Are you sure you want to remove this social feed notifier?')) return;
+    const updatedFeeds = socialFeeds.filter(f => f.id !== feedId);
+    setIsSavingSocial(true);
+    const ok = await saveSettings({
+      SOCIAL_FEEDS: JSON.stringify(updatedFeeds),
+    });
+    if (ok) {
+      setSocialFeeds(updatedFeeds);
+      showToast('Social feed removed', 'success');
+    } else {
+      showToast('Failed to remove feed', 'error');
+    }
+    setIsSavingSocial(false);
+  };
+
+  const handleToggleFeed = async (feedId) => {
+    const updatedFeeds = socialFeeds.map(f => (f.id === feedId ? { ...f, enabled: !f.enabled } : f));
+    setSocialFeeds(updatedFeeds);
+    await saveSettings({
+      SOCIAL_FEEDS: JSON.stringify(updatedFeeds),
+    });
+  };
+
+  const insertVariableTag = (tag) => {
+    setFeedFormData(prev => ({
+      ...prev,
+      message: prev.message ? `${prev.message} ${tag}` : tag,
+    }));
+  };
+
+  const generatePreview = () => {
+    const template = feedFormData.message || '📢 **{author}** posted new content on **{platform}**!\n**{title}**\n{url}';
+    const authorName = feedFormData.name || (feedFormData.platform === 'youtube' ? 'Falcon Gaming' : 'Official Page');
+    const titleText = 'Grand Finals - High Voltage Esports Showdown';
+    const urlText = 'https://youtu.be/example';
+    const platformName = feedFormData.platform ? feedFormData.platform.toUpperCase() : 'YOUTUBE';
+
+    let text = template
+      .replace(/\{author\}/gi, authorName)
+      .replace(/\{channel\}/gi, authorName)
+      .replace(/\{title\}/gi, titleText)
+      .replace(/\{url\}/gi, urlText)
+      .replace(/\{link\}/gi, urlText)
+      .replace(/\{platform\}/gi, platformName);
+
+    if (feedFormData.ping && feedFormData.ping !== 'none') {
+      text = `${feedFormData.ping} ${text}`;
+    }
+    return text;
+  };
+
   const handleSaveSocial = async (e) => {
     e?.preventDefault();
     setIsSavingSocial(true);
@@ -599,10 +785,10 @@ export default function Dashboard() {
     if (welcome.WELCOME_CHANNEL_ID) count++;
     if (logging.MOD_LOGS_CHANNEL_ID) count++;
     if (roles.DEFAULT_MEMBER_ROLE_ID || roles.AUTOROLE_HUMANS_ROLE_ID) count++;
-    if (social.YOUTUBE_URL || social.FACEBOOK_URL) count++;
+    if (socialFeeds.length > 0 || social.YOUTUBE_URL || social.FACEBOOK_URL) count++;
     if (esports.SS_VERIFY_CHANNEL) count++;
     return count;
-  }, [aiSettings, leveling, antiNuke, tempVoice, birthdays, captcha, tickets, automod, welcome, logging, roles, social, esports]);
+  }, [aiSettings, leveling, antiNuke, tempVoice, birthdays, captcha, tickets, automod, welcome, logging, roles, social, esports, socialFeeds]);
 
   if (status === 'loading') {
     return (
@@ -1923,66 +2109,552 @@ export default function Dashboard() {
                   TAB: SOCIAL
                   ═══════════════════════════════════════════════════════════════ */}
               {activeTab === 'social' && (
-                <form onSubmit={handleSaveSocial} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <div className="luxe-card" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 4 }}>Social Media Feeds</h2>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-                      Publish instant updates to your Discord channels when new content is posted online.
-                    </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div className="luxe-card" style={{ padding: '26px 28px' }}>
+                    {/* Header bar */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 22 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', margin: 0 }}>Social Media Feeds & Multi-Account Notifier</h2>
+                          <span style={{
+                            background: 'rgba(99, 102, 241, 0.15)',
+                            color: '#818cf8',
+                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 20
+                          }}>
+                            {socialFeeds.length} Active Feeds
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0, maxWidth: 650 }}>
+                          Publish instant updates from multiple YouTube channels, Facebook pages, Instagram, TikTok or RSS feeds directly to your Discord announcement channels with custom messages.
+                        </p>
+                      </div>
 
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-                      {SOCIAL_PLATFORMS.map(p => (
+                      <button
+                        type="button"
+                        onClick={handleOpenAddFeed}
+                        className="btn-luxe-primary"
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', fontSize: 13.5 }}
+                      >
+                        <Icon.Plus /> Add Social Account / Channel
+                      </button>
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 14 }}>
+                      {[
+                        { key: 'ALL', label: `All Feeds (${socialFeeds.length})`, icon: '🌐', color: '#6366f1' },
+                        ...SOCIAL_PLATFORMS.map(p => ({
+                          key: p.key.toUpperCase(),
+                          label: `${p.label} (${socialFeeds.filter(f => (f.platform || '').toLowerCase() === p.key.toLowerCase()).length})`,
+                          icon: p.icon,
+                          color: p.color
+                        }))
+                      ].map(filter => (
                         <button
-                          key={p.key}
+                          key={filter.key}
                           type="button"
-                          onClick={() => setActiveSocialKey(p.key)}
+                          onClick={() => setActiveSocialFilter(filter.key)}
                           className="btn-luxe-secondary"
                           style={{
-                            borderColor: activeSocialKey === p.key ? '#6366f1' : 'var(--border-subtle)',
-                            background: activeSocialKey === p.key ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-                            color: activeSocialKey === p.key ? '#fff' : 'var(--text-medium)',
+                            padding: '6px 14px',
+                            fontSize: 12.5,
+                            borderColor: activeSocialFilter === filter.key ? filter.color : 'var(--border-subtle)',
+                            background: activeSocialFilter === filter.key ? `${filter.color}18` : 'transparent',
+                            color: activeSocialFilter === filter.key ? '#fff' : 'var(--text-medium)',
                           }}
                         >
-                          <span style={{ color: p.color, fontWeight: 800 }}>{p.icon}</span> {p.label}
+                          <span style={{ color: filter.color, fontWeight: 800 }}>{filter.icon}</span> {filter.label}
                         </button>
                       ))}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
-                          {activeSocialKey} RSS / Feed URL
-                        </label>
-                        <input
-                          type="text"
-                          value={social[`${activeSocialKey}_URL`] || ''}
-                          onChange={e => setSocial(p => ({ ...p, [`${activeSocialKey}_URL`]: e.target.value }))}
-                          placeholder={activeSocialKey === 'YOUTUBE' ? 'https://www.youtube.com/feeds/videos.xml?channel_id=...' : 'RSS feed URL'}
-                          className="luxe-input"
-                        />
+                    {/* Feed Cards Grid */}
+                    {socialFeeds.filter(f => activeSocialFilter === 'ALL' || (f.platform || '').toUpperCase() === activeSocialFilter).length === 0 ? (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '48px 20px',
+                        background: 'rgba(15, 23, 42, 0.3)',
+                        borderRadius: 14,
+                        border: '1px dashed var(--border-subtle)'
+                      }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
+                        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 6 }}>No Social Feeds Added Yet</h3>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 460, margin: '0 auto 20px' }}>
+                          Add multiple YouTube channels, Facebook pages, Instagram, TikTok or RSS feeds to notify your community with customized announcement messages.
+                        </p>
+                        <button type="button" onClick={handleOpenAddFeed} className="btn-luxe-primary">
+                          <Icon.Plus /> Add Your First Feed
+                        </button>
                       </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
+                        {socialFeeds
+                          .filter(f => activeSocialFilter === 'ALL' || (f.platform || '').toUpperCase() === activeSocialFilter)
+                          .map(feed => {
+                            const platformObj = SOCIAL_PLATFORMS.find(p => p.key.toLowerCase() === (feed.platform || '').toLowerCase()) || { label: feed.platform || 'RSS', color: '#6366f1', icon: '📡' };
+                            const targetChannel = guildChannels.find(c => c.id === feed.channelId);
 
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
-                          Announcement Channel ID
-                        </label>
-                        <input
-                          type="text"
-                          value={social[`${activeSocialKey}_CHANNEL_ID`] || ''}
-                          onChange={e => setSocial(p => ({ ...p, [`${activeSocialKey}_CHANNEL_ID`]: e.target.value }))}
-                          placeholder="e.g. 123456789012345678"
-                          className="luxe-input"
-                        />
+                            return (
+                              <div
+                                key={feed.id}
+                                style={{
+                                  background: 'rgba(15, 23, 42, 0.55)',
+                                  borderRadius: 14,
+                                  border: `1px solid ${feed.enabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)'}`,
+                                  padding: '18px 20px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'space-between',
+                                  gap: 14,
+                                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                                  opacity: feed.enabled ? 1 : 0.65,
+                                  position: 'relative',
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                {/* Glowing platform accent bar */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: platformObj.color }} />
+
+                                <div>
+                                  {/* Top row */}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{
+                                        background: `${platformObj.color}22`,
+                                        color: platformObj.color,
+                                        border: `1px solid ${platformObj.color}44`,
+                                        padding: '3px 8px',
+                                        borderRadius: 6,
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4
+                                      }}>
+                                        <span>{platformObj.icon}</span> {platformObj.label}
+                                      </span>
+                                      <h4 style={{ fontSize: 14.5, fontWeight: 700, color: '#fff', margin: 0 }}>
+                                        {feed.name}
+                                      </h4>
+                                    </div>
+
+                                    {/* Active/Pause toggle button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleFeed(feed.id)}
+                                      title={feed.enabled ? 'Click to Pause' : 'Click to Enable'}
+                                      style={{
+                                        background: feed.enabled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                        color: feed.enabled ? '#34d399' : '#f87171',
+                                        border: `1px solid ${feed.enabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                                        borderRadius: 20,
+                                        fontSize: 10.5,
+                                        fontWeight: 600,
+                                        padding: '2px 8px',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {feed.enabled ? '● Active' : '○ Paused'}
+                                    </button>
+                                  </div>
+
+                                  {/* Meta Details */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ color: 'var(--text-high)', fontWeight: 600 }}>Channel:</span>
+                                      <span style={{
+                                        background: 'rgba(99, 102, 241, 0.12)',
+                                        color: '#a5b4fc',
+                                        padding: '2px 6px',
+                                        borderRadius: 4,
+                                        fontWeight: 600
+                                      }}>
+                                        #{targetChannel ? targetChannel.name : feed.channelId}
+                                      </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ color: 'var(--text-high)', fontWeight: 600 }}>Mention:</span>
+                                      <span style={{
+                                        color: feed.ping === '@everyone' ? '#f87171' : feed.ping === '@here' ? '#fbbf24' : 'var(--text-muted)',
+                                        fontWeight: feed.ping && feed.ping !== 'none' ? 700 : 500
+                                      }}>
+                                        {feed.ping && feed.ping !== 'none' ? feed.ping : 'No Mention'}
+                                      </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                                      <span style={{ color: 'var(--text-high)', fontWeight: 600, flexShrink: 0 }}>URL:</span>
+                                      <span style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        fontFamily: 'monospace',
+                                        fontSize: 11,
+                                        color: 'var(--text-dim)'
+                                      }} title={feed.url}>
+                                        {feed.url}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Custom Message preview quote */}
+                                  <div style={{
+                                    marginTop: 12,
+                                    padding: '8px 10px',
+                                    borderRadius: 8,
+                                    background: 'rgba(0, 0, 0, 0.3)',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    fontSize: 11.5,
+                                    color: 'var(--text-medium)',
+                                    whiteSpace: 'pre-wrap',
+                                    maxHeight: 60,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}>
+                                    <span style={{ fontSize: 10, color: '#818cf8', fontWeight: 700, display: 'block', marginBottom: 2 }}>
+                                      CUSTOM MESSAGE TEMPLATE:
+                                    </span>
+                                    {feed.message || 'Default notification'}
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditFeed(feed)}
+                                    className="btn-luxe-secondary"
+                                    style={{ padding: '5px 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+                                  >
+                                    <Icon.Edit /> Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteFeed(feed.id)}
+                                    className="btn-luxe-secondary"
+                                    style={{ padding: '5px 10px', fontSize: 12, color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                                    title="Delete Feed"
+                                  >
+                                    <Icon.Trash />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ADD / EDIT FEED MODAL */}
+                  {isFeedModalOpen && (
+                    <div style={{
+                      position: 'fixed',
+                      inset: 0,
+                      zIndex: 9999,
+                      background: 'rgba(0, 0, 0, 0.75)',
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 20
+                    }}>
+                      <div className="luxe-card" style={{
+                        width: '100%',
+                        maxWidth: 640,
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        padding: '28px',
+                        boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.2)',
+                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                        borderRadius: 16
+                      }}>
+                        {/* Modal Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                          <div>
+                            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>
+                              {feedFormData.id ? 'Edit Social Media Feed' : 'Add New Social Feed / Account'}
+                            </h3>
+                            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3, marginBottom: 0 }}>
+                              Configure feed URL, target Discord channel, and dynamic custom message.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsFeedModalOpen(false)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: 20, cursor: 'pointer' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <form onSubmit={handleSaveFeed} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                          {/* Platform Picker */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                              Platform
+                            </label>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {SOCIAL_PLATFORMS.map(p => (
+                                <button
+                                  key={p.key}
+                                  type="button"
+                                  onClick={() => {
+                                    setFeedFormData(prev => ({
+                                      ...prev,
+                                      platform: p.key,
+                                      message: prev.message || (p.key === 'youtube'
+                                        ? '🚨 **{author}** just uploaded a new video: **{title}**\nWatch here: {url}'
+                                        : '📢 **{author}** posted new content on **{platform}**!\n**{title}**\n{url}')
+                                    }));
+                                  }}
+                                  className="btn-luxe-secondary"
+                                  style={{
+                                    padding: '8px 14px',
+                                    fontSize: 12.5,
+                                    borderColor: feedFormData.platform === p.key ? p.color : 'var(--border-subtle)',
+                                    background: feedFormData.platform === p.key ? `${p.color}22` : 'transparent',
+                                    color: feedFormData.platform === p.key ? '#fff' : 'var(--text-medium)',
+                                    fontWeight: feedFormData.platform === p.key ? 700 : 500
+                                  }}
+                                >
+                                  <span style={{ color: p.color, fontWeight: 800 }}>{p.icon}</span> {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Account / Feed Name */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                              Account / Feed Display Name
+                            </label>
+                            <input
+                              type="text"
+                              value={feedFormData.name}
+                              onChange={e => setFeedFormData(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="e.g. TRJ7 Gaming or Esports Highlights"
+                              className="luxe-input"
+                            />
+                          </div>
+
+                          {/* Feed / RSS URL */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-high)' }}>
+                                Feed / RSS URL
+                              </label>
+                              {feedFormData.platform === 'youtube' && (
+                                <span style={{ fontSize: 11, color: '#818cf8' }}>
+                                  💡 Enter Channel ID (UC...) or full RSS URL
+                                </span>
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={feedFormData.url}
+                              onChange={e => setFeedFormData(prev => ({ ...prev, url: e.target.value }))}
+                              placeholder={
+                                feedFormData.platform === 'youtube'
+                                  ? 'https://www.youtube.com/feeds/videos.xml?channel_id=UC... or Channel ID'
+                                  : feedFormData.platform === 'instagram'
+                                  ? 'https://rsshub.app/instagram/user/USERNAME'
+                                  : feedFormData.platform === 'tiktok'
+                                  ? 'https://rsshub.app/tiktok/user/@USERNAME'
+                                  : 'https://example.com/rss.xml'
+                              }
+                              className="luxe-input"
+                              required
+                            />
+                            <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4, marginBottom: 0 }}>
+                              {feedFormData.platform === 'youtube'
+                                ? 'Tip: You can paste your channel ID (starts with UC) or standard YouTube channel URL.'
+                                : 'Must be a valid, reachable RSS or Atom feed XML URL.'}
+                            </p>
+                          </div>
+
+                          {/* Target Discord Channel Dropdown */}
+                          <div>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                              Announcement Discord Channel
+                            </label>
+                            <select
+                              value={feedFormData.channelId}
+                              onChange={e => setFeedFormData(prev => ({ ...prev, channelId: e.target.value }))}
+                              className="luxe-input"
+                              style={{ cursor: 'pointer', background: '#0b0f19' }}
+                              required
+                            >
+                              <option value="">Select a Discord Channel...</option>
+                              {guildChannels.map(ch => (
+                                <option key={ch.id} value={ch.id}>
+                                  #{ch.name} {ch.type === 5 ? '📢 [Announcement]' : '💬 [Text Channel]'}
+                                </option>
+                              ))}
+                            </select>
+                            {guildChannels.length === 0 && (
+                              <input
+                                type="text"
+                                value={feedFormData.channelId}
+                                onChange={e => setFeedFormData(prev => ({ ...prev, channelId: e.target.value }))}
+                                placeholder="Or enter Channel ID manually (e.g. 123456789...)"
+                                className="luxe-input"
+                                style={{ marginTop: 6 }}
+                              />
+                            )}
+                          </div>
+
+                          {/* Custom Message Template & Variable Tags */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-high)' }}>
+                                Custom Announcement Message
+                              </label>
+                              <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                                Click chips to insert variables
+                              </span>
+                            </div>
+
+                            {/* Variable Chips */}
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                              {[
+                                { tag: '{author}', desc: 'Creator Name' },
+                                { tag: '{title}', desc: 'Post Title' },
+                                { tag: '{url}', desc: 'Content Link' },
+                                { tag: '{platform}', desc: 'Platform' }
+                              ].map(v => (
+                                <button
+                                  key={v.tag}
+                                  type="button"
+                                  onClick={() => insertVariableTag(v.tag)}
+                                  style={{
+                                    background: 'rgba(99, 102, 241, 0.12)',
+                                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                                    color: '#a5b4fc',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    padding: '3px 8px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                  title={`Insert ${v.desc}`}
+                                >
+                                  <span>+</span> {v.tag}
+                                </button>
+                              ))}
+                            </div>
+
+                            <textarea
+                              value={feedFormData.message}
+                              onChange={e => setFeedFormData(prev => ({ ...prev, message: e.target.value }))}
+                              rows={3}
+                              placeholder="Enter message template..."
+                              className="luxe-input"
+                              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+                            />
+
+                            {/* Live Preview Box */}
+                            <div style={{
+                              marginTop: 8,
+                              padding: '10px 14px',
+                              borderRadius: 10,
+                              background: 'rgba(0, 0, 0, 0.4)',
+                              border: '1px solid rgba(255, 255, 255, 0.06)'
+                            }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#818cf8', marginBottom: 4, letterSpacing: '0.5px' }}>
+                                MESSAGE PREVIEW IN DISCORD:
+                              </div>
+                              <div style={{ fontSize: 12.5, color: '#e2e8f0', whiteSpace: 'pre-wrap' }}>
+                                {generatePreview()}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Mention / Ping & Active Toggle */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                                Role Mention
+                              </label>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                {['none', '@everyone', '@here'].map(p => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setFeedFormData(prev => ({ ...prev, ping: p }))}
+                                    style={{
+                                      flex: 1,
+                                      padding: '6px 8px',
+                                      fontSize: 11.5,
+                                      borderRadius: 8,
+                                      border: `1px solid ${feedFormData.ping === p ? '#6366f1' : 'var(--border-subtle)'}`,
+                                      background: feedFormData.ping === p ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                                      color: feedFormData.ping === p ? '#fff' : 'var(--text-medium)',
+                                      fontWeight: feedFormData.ping === p ? 700 : 500,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {p === 'none' ? 'None' : p}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                                Feed Status
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setFeedFormData(prev => ({ ...prev, enabled: !prev.enabled }))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  border: `1px solid ${feedFormData.enabled ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                                  background: feedFormData.enabled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                  color: feedFormData.enabled ? '#34d399' : '#f87171',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {feedFormData.enabled ? '✓ Enabled (Polling Every 5m)' : '✕ Paused'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Modal Actions */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => setIsFeedModalOpen(false)}
+                              className="btn-luxe-secondary"
+                              style={{ padding: '10px 18px', fontSize: 13 }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSavingSocial}
+                              className="btn-luxe-primary"
+                              style={{ padding: '10px 22px', fontSize: 13 }}
+                            >
+                              {isSavingSocial ? 'Saving...' : feedFormData.id ? 'Save Changes' : 'Add Feed'}
+                            </button>
+                          </div>
+                        </form>
                       </div>
                     </div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="submit" disabled={isSavingSocial} className="btn-luxe-primary">
-                      {isSavingSocial ? 'Saving...' : 'Save Social Configuration'}
-                    </button>
-                  </div>
-                </form>
+                  )}
+                </div>
               )}
 
               {/* ═══════════════════════════════════════════════════════════════

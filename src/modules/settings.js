@@ -149,6 +149,63 @@ async function getSocialPlatformConfig(guildId, platform) {
   return { url, channelId, message };
 }
 
+/**
+ * Gets all configured social feeds for a guild.
+ * Checks SOCIAL_FEEDS first. If absent or empty, falls back to legacy single-key configs.
+ * @param {string} guildId
+ * @returns {Promise<Array<object>>}
+ */
+async function getSocialFeeds(guildId) {
+  const rawFeeds = await getSetting(guildId, 'SOCIAL_FEEDS');
+  if (rawFeeds) {
+    try {
+      const parsed = JSON.parse(rawFeeds);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error(`[settings] Failed to parse SOCIAL_FEEDS for guild ${guildId}:`, e);
+    }
+  }
+
+  // Fallback / auto-migration from legacy single-feed platform keys
+  const legacyPlatforms = ['YOUTUBE', 'FACEBOOK', 'INSTAGRAM', 'TIKTOK'];
+  const legacyFeeds = [];
+
+  for (const plat of legacyPlatforms) {
+    const [url, channelId, message] = await Promise.all([
+      getSetting(guildId, `${plat}_URL`),
+      getSetting(guildId, `${plat}_CHANNEL_ID`),
+      getSetting(guildId, `${plat}_MESSAGE`),
+    ]);
+
+    if (url && channelId) {
+      legacyFeeds.push({
+        id: `legacy_${plat.toLowerCase()}`,
+        platform: plat.toLowerCase(),
+        name: `${plat.charAt(0) + plat.slice(1).toLowerCase()} Feed`,
+        url,
+        channelId,
+        message: message || '',
+        ping: 'none',
+        enabled: true,
+      });
+    }
+  }
+
+  return legacyFeeds;
+}
+
+/**
+ * Saves all social feeds for a guild.
+ * @param {string} guildId
+ * @param {Array<object>} feeds
+ * @returns {Promise<boolean>}
+ */
+async function saveSocialFeeds(guildId, feeds) {
+  return setSetting(guildId, 'SOCIAL_FEEDS', JSON.stringify(feeds || []));
+}
+
 module.exports = {
   getSetting,
   setSetting,
@@ -162,4 +219,7 @@ module.exports = {
   getServerLogsChannelId,
   getDefaultMemberRoleId,
   getSocialPlatformConfig,
+  getSocialFeeds,
+  saveSocialFeeds,
 };
+

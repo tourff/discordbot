@@ -35,12 +35,13 @@ const PLATFORMS = [
   { key: 'facebook',  label: 'Facebook',  emoji: '📘',  color: 0x1877f2 },
   { key: 'instagram', label: 'Instagram', emoji: '📸',  color: 0xe1306c },
   { key: 'tiktok',    label: 'TikTok',    emoji: '🎵',  color: 0x010101 },
+  { key: 'custom',    label: 'RSS Feed',  emoji: '📡',  color: 0x5865f2 },
 ];
 
 // ── Supabase helpers ──────────────────────────────────────────────────────────
 
 /**
- * Retrieves the last known post ID for a platform.
+ * Retrieves the last known post ID for a platform or feed key.
  * @param {string} platform
  * @returns {Promise<string|null>}
  */
@@ -58,7 +59,7 @@ async function getLastId(platform) {
 }
 
 /**
- * Saves (upserts) the last post ID for a platform.
+ * Saves (upserts) the last post ID for a platform or feed key.
  * @param {string} platform
  * @param {string} postId
  */
@@ -73,14 +74,52 @@ async function saveLastId(platform, postId) {
 }
 
 /**
+ * Formats custom message with variables {author}, {title}, {url}, {platform}
+ * @param {string} template
+ * @param {object} context
+ * @returns {string}
+ */
+function formatNotificationMessage(template, { platform, item, feed }) {
+  const authorName = item.creator || item.author || feed.name || platform.label;
+  const postTitle = item.title || 'New Post';
+  const postUrl = item.link || item.guid || '';
+  const platformName = platform.label;
+
+  let msg = template && template.trim()
+    ? template
+    : `📢 **{author}** posted new content on **{platform}**!\n**{title}**\n{url}`;
+
+  msg = msg
+    .replace(/\{author\}/gi, authorName)
+    .replace(/\{channel\}/gi, authorName)
+    .replace(/\{title\}/gi, postTitle)
+    .replace(/\{url\}/gi, postUrl)
+    .replace(/\{link\}/gi, postUrl)
+    .replace(/\{platform\}/gi, platformName);
+
+  // Ping handling
+  const pingOption = feed.ping;
+  let pingPrefix = '';
+  if (pingOption === '@everyone' && !msg.includes('@everyone')) {
+    pingPrefix = '@everyone ';
+  } else if (pingOption === '@here' && !msg.includes('@here')) {
+    pingPrefix = '@here ';
+  } else if (!pingOption && process.env.SOCIAL_PING_EVERYONE === 'true' && !msg.includes('@everyone')) {
+    pingPrefix = '@everyone ';
+  }
+
+  return `${pingPrefix}${msg}`.trim();
+}
+
+/**
  * Sends a Discord embed notification for a new post.
  * @param {import('discord.js').Client} client
- * @param {string} channelId
- * @param {string} customMessage
+ * @param {object} feed
  * @param {object} platform
  * @param {object} item     - Parsed RSS item
  */
-async function sendNotification(client, channelId, customMessage, platform, item) {
+async function sendNotification(client, feed, platform, item) {
+  const channelId = feed.channelId;
   if (!channelId) return;
 
   // Try cache first, then fetch from API (handles bot restart / uncached channels)
@@ -96,17 +135,18 @@ async function sendNotification(client, channelId, customMessage, platform, item
   if (!channel) return;
 
   let thumbnail = null;
-  if (item.mediaThumbnail?.$ ?.url)    thumbnail = item.mediaThumbnail.$.url;
+  if (item.mediaThumbnail?.$?.url)    thumbnail = item.mediaThumbnail.$.url;
   if (item.mediaGroup?.['media:thumbnail']?.[0]?.$.url) {
     thumbnail = item.mediaGroup['media:thumbnail'][0].$.url;
   }
   if (item.enclosure?.url)             thumbnail = item.enclosure.url;
 
   const url = item.link ?? item.guid;
+  const authorName = item.creator || item.author || feed.name || platform.label;
 
   const embed = new EmbedBuilder()
     .setColor(platform.color)
-    .setAuthor({ name: `${platform.emoji} New ${platform.label} Post!` })
+    .setAuthor({ name: `${platform.emoji} New ${platform.label} Post - ${feed.name || authorName}`.slice(0, 100) })
     .setTitle(item.title?.slice(0, 256) ?? 'New post')
     .setURL(url)
     .setDescription(
@@ -115,14 +155,13 @@ async function sendNotification(client, channelId, customMessage, platform, item
         : null
     )
     .setTimestamp(item.pubDate ? new Date(item.pubDate) : new Date())
-    .setFooter({ text: `${platform.label} • New Content` });
+    .setFooter({ text: `${platform.label} • ${feed.name || 'Social Feed'}` });
 
   if (thumbnail) embed.setImage(thumbnail);
 
-  const ping = process.env.SOCIAL_PING_EVERYONE === 'true' ? '@everyone ' : '';
-  const textMsg = customMessage ? customMessage : `New post on ${platform.label}! ${url}`;
+  const textMsg = formatNotificationMessage(feed.message, { platform, item, feed });
 
-  await channel.send({ content: `${ping}${textMsg}`, embeds: [embed] }).catch(console.error);
+  await channel.send({ content: textMsg, embeds: [embed] }).catch(console.error);
 }
 
 // ── Main poll function ────────────────────────────────────────────────────────
@@ -132,53 +171,74 @@ async function sendNotification(client, channelId, customMessage, platform, item
  * @param {import('discord.js').Client} client
  */
 async function pollFeeds(client) {
-  const { getSocialPlatformConfig } = require('../modules/settings');
+  const { getSocialFeeds } = require('../modules/settings');
 
   for (const guild of client.guilds.cache.values()) {
-    for (const platform of PLATFORMS) {
-      try {
-        const config = await getSocialPlatformConfig(guild.id, platform.key.toUpperCase());
-        
-        if (!config.url || !config.channelId) continue; // Not configured for this guild
+    try {
+      const feeds = await getSocialFeeds(guild.id);
+      if (!Array.isArray(feeds) || feeds.length === 0) continue;
 
-        const feed    = await parser.parseURL(config.url);
-        const items   = feed.items;
-        if (!items || items.length === 0) continue;
+      for (const feed of feeds) {
+        if (feed.enabled === false) continue;
+        if (!feed.url || !feed.channelId) continue;
 
-        const latestItem = items[0];
-        const latestId   = latestItem.guid ?? latestItem.link ?? latestItem.id;
-        if (!latestId) continue;
+        const platformKey = (feed.platform || 'custom').toLowerCase();
+        const platform = PLATFORMS.find(p => p.key === platformKey) || {
+          key: platformKey,
+          label: feed.platform ? feed.platform.toUpperCase() : 'Feed',
+          emoji: '📡',
+          color: 0x5865f2,
+        };
 
-        const dbPlatformKey = `${platform.key}_${guild.id}`;
-        const lastId = await getLastId(dbPlatformKey);
+        try {
+          const parsedFeed = await parser.parseURL(feed.url);
+          const items = parsedFeed.items;
+          if (!items || items.length === 0) continue;
 
-        if (lastId === latestId) continue; // No new posts
+          const latestItem = items[0];
+          const latestId = latestItem.guid ?? latestItem.link ?? latestItem.id;
+          if (!latestId) continue;
 
-        // First-run bootstrap: just store the current ID without sending
-        if (lastId === null) {
-          await saveLastId(dbPlatformKey, latestId);
-          console.log(`[socialNotifier] Bootstrapped ${platform.label} for ${guild.name} with ID: ${latestId}`);
-          continue;
+          // Unique key for tracking last seen post for this feed
+          const feedTrackingKey = feed.id ? `feed_${feed.id}` : `${platform.key}_${guild.id}`;
+          let lastId = await getLastId(feedTrackingKey);
+
+          // If not found by feed id, check legacy key as fallback
+          if (!lastId && feed.platform) {
+            const legacyKey = `${feed.platform.toLowerCase()}_${guild.id}`;
+            lastId = await getLastId(legacyKey);
+          }
+
+          if (lastId === latestId) continue; // No new posts
+
+          // First-run bootstrap: just store the current ID without sending
+          if (lastId === null) {
+            await saveLastId(feedTrackingKey, latestId);
+            console.log(`[socialNotifier] Bootstrapped ${feed.name || platform.label} for ${guild.name} with ID: ${latestId}`);
+            continue;
+          }
+
+          // Collect all items newer than the last seen ID
+          const newItems = [];
+          for (const item of items) {
+            const itemId = item.guid ?? item.link ?? item.id;
+            if (itemId === lastId) break;
+            newItems.push(item);
+          }
+
+          // Send newest-first but in reverse so Discord shows them chronologically
+          for (const item of newItems.reverse()) {
+            await sendNotification(client, feed, platform, item);
+          }
+
+          await saveLastId(feedTrackingKey, latestId);
+          console.log(`[socialNotifier] ${feed.name || platform.label} (${guild.name}): sent ${newItems.length} notification(s).`);
+        } catch (feedErr) {
+          console.error(`[socialNotifier] Error polling feed "${feed.name || feed.url}" for ${guild.name}:`, feedErr.message);
         }
-
-        // Collect all items newer than the last seen ID
-        const newItems = [];
-        for (const item of items) {
-          const itemId = item.guid ?? item.link ?? item.id;
-          if (itemId === lastId) break;
-          newItems.push(item);
-        }
-
-        // Send newest-first but in reverse so Discord shows them chronologically
-        for (const item of newItems.reverse()) {
-          await sendNotification(client, config.channelId, config.message, platform, item);
-        }
-
-        await saveLastId(dbPlatformKey, latestId);
-        console.log(`[socialNotifier] ${platform.label} (${guild.name}): sent ${newItems.length} notification(s).`);
-      } catch (err) {
-        console.error(`[socialNotifier] Error polling ${platform.label} for ${guild.name}:`, err.message);
       }
+    } catch (err) {
+      console.error(`[socialNotifier] Error loading social feeds for guild ${guild.name}:`, err.message);
     }
   }
 }
@@ -202,3 +262,4 @@ function startSocialCron(client) {
 }
 
 module.exports = startSocialCron;
+

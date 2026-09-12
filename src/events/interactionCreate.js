@@ -116,7 +116,8 @@ module.exports = {
         await interaction.update(subDash);
       } else if (interaction.customId === 'social_back') {
         const { getMainDashboard } = require('../commands/utility/setupsocial');
-        await interaction.update(getMainDashboard());
+        const mainDash = await getMainDashboard(interaction.guild.id);
+        await interaction.update(mainDash);
       } else if (interaction.customId.startsWith('social_urlbtn_')) {
         const platform = interaction.customId.split('_')[2];
         const { getSocialPlatformConfig } = require('../modules/settings');
