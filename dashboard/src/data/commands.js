@@ -1,3 +1,142 @@
+// dashboard/src/data/commands.js
+// ─────────────────────────────────────────────────────────────────────────────
+// Complete Directory of all 73 Jarvis Bot Slash Commands with category breakdown,
+// parameter details, Bengali/English purpose explanations, and dashboard links.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const COMMAND_CATEGORIES = [
+  {
+    "key": "ai",
+    "label": "AI Intelligence",
+    "labelBn": "কৃত্রিম বুদ্ধিমত্তা ও চ্যাট অ্যাসিস্ট্যান্ট",
+    "icon": "🧠",
+    "color": "#8b5cf6",
+    "desc": "Ask Jarvis AI questions, generate AI images, analyze chats, and automate tasks.",
+    "descBn": "জার্ভিস AI-কে যেকোনো প্রশ্ন করুন, AI ছবি তৈরি করুন এবং চ্যাট সামারাইজ করুন।",
+    "dashboardTab": "ai"
+  },
+  {
+    "key": "moderation",
+    "label": "Moderation & Security",
+    "labelBn": "সার্ভার মডারেশন ও নিরাপত্তা টুলস",
+    "icon": "🛡️",
+    "color": "#ef4444",
+    "desc": "Keep your community safe with ban, kick, timeout/mute, channel locks, auto-purge, and cases.",
+    "descBn": "সার্ভারের শৃঙ্খলা রক্ষা, নিয়ম ভঙ্গকারীদের ব্যান/মিউট এবং চ্যানেল লক বা আনলক করার টুলস।",
+    "dashboardTab": "antinuke"
+  },
+  {
+    "key": "esports",
+    "label": "Esports & Scrims",
+    "labelBn": "কাস্টম স্ক্রিমস ও টুর্নামেন্ট ম্যানেজমেন্ট",
+    "icon": "🏆",
+    "color": "#f59e0b",
+    "desc": "Manage scrims registration, slot bookings, team tag checks, screenshot verify, and points tables.",
+    "descBn": "কাস্টম স্ক্রিমস, স্লট বুকিং, টিম ট্যাগ ভেরিফিকেশন এবং টুর্নামেন্ট পয়েন্ট টেবিল পরিচালনা।",
+    "dashboardTab": null
+  },
+  {
+    "key": "tickets",
+    "label": "Support Tickets",
+    "labelBn": "সাপোর্ট টিকিট ও হেল্প ডেস্ক",
+    "icon": "🎟️",
+    "color": "#6366f1",
+    "desc": "Deploy interactive ticket panels for private member support, staff claims, and transcripts.",
+    "descBn": "সার্ভার মেম্বারদের জন্য প্রাইভেট টিকিট প্যানেল, স্টাফ ক্লেইম এবং সাপোর্ট হিস্ট্রি।",
+    "dashboardTab": "tickets"
+  },
+  {
+    "key": "music",
+    "label": "Music & Audio Engine",
+    "labelBn": "হাই-কোয়ালিটি ভয়েস মিউজিক প্লেয়ার",
+    "icon": "🎵",
+    "color": "#ec4899",
+    "desc": "High-fidelity audio player with YouTube, Spotify, and SoundCloud support in voice channels.",
+    "descBn": "ভয়েস চ্যানেলে হাই-কোয়ালিটি গান প্লে, কিউ দেখা, স্কিপ, পজ এবং ভলিউম কন্ট্রোল।",
+    "dashboardTab": "music"
+  },
+  {
+    "key": "utility",
+    "label": "Utility & Tools",
+    "labelBn": "সোশ্যাল নোটিফিকেশন, এমবেড ও ইউটিলিটি",
+    "icon": "⚙️",
+    "color": "#3b82f6",
+    "desc": "Interactive embed builder, social feeds (YouTube, Facebook, TikTok), tags, and server tools.",
+    "descBn": "কাস্টম এমবেড ডিজাইন, ইউটিউব/ফেসবুক অটো নোটিফিকেশন এবং সার্ভার অটোমেশন।",
+    "dashboardTab": "social"
+  },
+  {
+    "key": "economy",
+    "label": "Economy & Mini-Games",
+    "labelBn": "সার্ভার কয়েন ও বিনোদনমূলক গেমস",
+    "icon": "🪙",
+    "color": "#10b981",
+    "desc": "Earn Jarvis Coins through daily rewards, coinflip, trivia quizzes, and truth-or-dare party games.",
+    "descBn": "ডেইলি রিওয়ার্ড, কয়েনফ্লিপ, ট্রিভিয়া কুইজ এবং ট্রুথ অর ডেয়ার খেলে কয়েন অর্জন।",
+    "dashboardTab": null
+  },
+  {
+    "key": "leveling",
+    "label": "Leveling & XP",
+    "labelBn": "অ্যাক্টিভিটি লেভেল ও লিডারবোর্ড",
+    "icon": "⭐",
+    "color": "#eab308",
+    "desc": "Reward active chatters with XP levels, beautiful rank cards, and competitive server leaderboards.",
+    "descBn": "মেম্বারদের চ্যাট অনুযায়ী XP দেওয়া, র‍্যাংক কার্ড দেখা এবং সার্ভার লিডারবোর্ড।",
+    "dashboardTab": "leveling"
+  },
+  {
+    "key": "welcome",
+    "label": "Welcome & Goodbye",
+    "labelBn": "স্বাগতম ও বিদায় বার্তা সিস্টেম",
+    "icon": "👋",
+    "color": "#14b8a6",
+    "desc": "Configure rich welcome embeds with animated emojis and farewell departure announcements.",
+    "descBn": "নতুন মেম্বারদের অ্যানিমেটেড ইমোজিসহ ওয়েলকাম এবং বিদায় বার্তা সেটআপ করা।",
+    "dashboardTab": null
+  },
+  {
+    "key": "voice",
+    "label": "Dynamic Temp Voice",
+    "labelBn": "প্রাইভেট টেম্প ভয়েস রুমস",
+    "icon": "🔊",
+    "color": "#06b6d4",
+    "desc": "Join-to-Create dynamic voice rooms that auto-create and auto-delete when empty.",
+    "descBn": "জয়েন করলেই অটোমেটিক পার্সোনাল ভয়েস রুম তৈরি এবং খালি হলে অটো ডিলিট।",
+    "dashboardTab": "tempvoice"
+  },
+  {
+    "key": "giveaways",
+    "label": "Giveaways & Drops",
+    "labelBn": "গিভঅ্যাওয়ে ও উইনার ড্র",
+    "icon": "🎁",
+    "color": "#a855f7",
+    "desc": "Host automated giveaways with countdown timers, reaction entries, and random winner rolls.",
+    "descBn": "সার্ভারে টাইমারসহ স্বয়ংক্রিয় গিভঅ্যাওয়ে শুরু করা এবং উইনার নির্বাচন করা।",
+    "dashboardTab": null
+  },
+  {
+    "key": "birthdays",
+    "label": "Birthday Celebrations",
+    "labelBn": "জন্মদিন শুভেচ্ছা ও স্পেশাল রোল",
+    "icon": "🎂",
+    "color": "#f43f5e",
+    "desc": "Celebrate member birthdays automatically with special announcement cards and temporary roles.",
+    "descBn": "মেম্বারদের জন্মদিনে স্বয়ংক্রিয় উইশ বার্তা পাঠানো এবং স্পেশাল সেলিব্রেশন রোল দেওয়া।",
+    "dashboardTab": "birthdays"
+  },
+  {
+    "key": "general",
+    "label": "General & Server Info",
+    "labelBn": "সাধারণ তথ্য, অবতার ও বট হেল্প",
+    "icon": "🌐",
+    "color": "#64748b",
+    "desc": "Essential community commands: user avatars, server info, AFK status, bot latency, and voting.",
+    "descBn": "বটের পিং, সার্ভার ইনফো, ইউজারের অবতার, AFK সেট এবং সাধারণ হেল্প।",
+    "dashboardTab": null
+  }
+];
+
 export const BOT_COMMANDS = [
   {
     "name": "about",
@@ -8,7 +147,9 @@ export const BOT_COMMANDS = [
     "description": "Display information and statistics about the bot.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের সার্বিক তথ্য, সক্রিয় ফিচার ও সিস্টেম স্ট্যাটাস দেখতে।",
+    "usage": "/about"
   },
   {
     "name": "afk",
@@ -26,7 +167,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "অন্যদের জানাতে যে আপনি সাময়িকভাবে ব্যস্ত বা কীবোর্ড থেকে দূরে আছেন।",
+    "usage": "/afk reason:Dinner time"
   },
   {
     "name": "ask",
@@ -44,7 +187,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "ai"
+    "dashboardTab": "ai",
+    "purposeBn": "জার্ভিস AI-কে যেকোনো প্রশ্ন করতে বা সার্ভারের কাজ পরিচালনা করতে।",
+    "usage": "/ask prompt:How to setup a Discord role hierarchy?"
   },
   {
     "name": "autopurge",
@@ -74,7 +219,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Messages",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "একটি চ্যানেলের সব নতুন মেসেজ নির্দিষ্ট সময় পর স্বয়ংক্রিয়ভাবে মুছে ফেলতে।",
+    "usage": "/autopurge set channel:#spam-box delay:1m"
   },
   {
     "name": "balance",
@@ -92,7 +239,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "নিজের বা অন্য কোনো মেম্বারের বর্তমান জার্ভিস কয়েন ব্যালেন্স জানতে।",
+    "usage": "/balance [user:@member]"
   },
   {
     "name": "ban",
@@ -122,7 +271,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Ban Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভার থেকে কোনো মেম্বারকে স্থায়ীভাবে বহিষ্কার (Ban) করতে।",
+    "usage": "/ban user:@baduser reason:Violating server rules"
   },
   {
     "name": "birthday",
@@ -146,7 +297,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "birthdays"
+    "dashboardTab": "birthdays",
+    "purposeBn": "নিজের জন্মদিন রেজিস্টার করতে বা সার্ভারের পরবর্তী জন্মদিন দেখতে।",
+    "usage": "/birthday set month:5 day:20"
   },
   {
     "name": "botcontrol",
@@ -188,7 +341,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের পারমিশন ডায়াগনস্টিক ও মডিউল স্ট্যাটাস পরীক্ষা করতে।",
+    "usage": "/botcontrol"
   },
   {
     "name": "captcha-setup",
@@ -206,7 +361,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "captcha"
+    "dashboardTab": "captcha",
+    "purposeBn": "নতুন মেম্বারদের জন্য ইন্টারেক্টিভ ক্যাপচা ভেরিফিকেশন প্যানেল তৈরি করতে।",
+    "usage": "/captcha-setup channel:#verification role:@Member"
   },
   {
     "name": "cases",
@@ -224,7 +381,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Moderate Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "কোনো মেম্বারের অতীত সতর্কতা ও মডারেশন রেকর্ড দেখতে।",
+    "usage": "/cases user:@member"
   },
   {
     "name": "category",
@@ -260,7 +419,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Channels",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারে দ্রুত নতুন চ্যানেল ক্যাটাগরি তৈরি বা মুছে ফেলতে।",
+    "usage": "/category create name:Scrims Hub"
   },
   {
     "name": "coinflip",
@@ -284,7 +445,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "জার্ভিস কয়েন বাজি ধরে হেডস নাকি টেইলস কয়েনফ্লিপ গেম খেলতে।",
+    "usage": "/coinflip choice:heads bet:100"
   },
   {
     "name": "contributors",
@@ -295,7 +458,9 @@ export const BOT_COMMANDS = [
     "description": "See the amazing people who contributed to Quotient.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের ডেভেলপার ও কন্ট্রিবিউটরদের অফিসিয়াল তালিকা দেখতে।",
+    "usage": "/contributors"
   },
   {
     "name": "daily",
@@ -306,7 +471,9 @@ export const BOT_COMMANDS = [
     "description": "Claim your daily Jarvis coin bonus",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "প্রতি ২৪ ঘণ্টায় একবার ফ্রি ডেইলি জার্ভিস কয়েন বোনাস ক্লেইম করতে।",
+    "usage": "/daily"
   },
   {
     "name": "easytag",
@@ -336,7 +503,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "টিমমেটদের একসাথে দ্রুত মেনশন ও ট্যাগ করার শর্টকাট টুল।",
+    "usage": "/easytag"
   },
   {
     "name": "embed",
@@ -354,7 +523,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Messages",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "কালারফুল রিচ এমবেড ঘোষণা ও নোটিশ তৈরি করে পাঠাতে।",
+    "usage": "/embed channel:#announcements"
   },
   {
     "name": "giveaway",
@@ -378,7 +549,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারে স্বয়ংক্রিয় গিভঅ্যাওয়ে আয়োজন ও উইনার নির্বাচন করতে।",
+    "usage": "/giveaway create duration:2h prize:Discord Nitro"
   },
   {
     "name": "groupm",
@@ -408,7 +581,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "নির্দিষ্ট মেম্বারদের গ্রুপ মেসেজ বা স্পেশাল নোটিফিকেশন পাঠাতে।",
+    "usage": "/groupm"
   },
   {
     "name": "help",
@@ -419,7 +594,9 @@ export const BOT_COMMANDS = [
     "description": "Displays a categorized list of all available commands",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের সম্পূর্ণ হেল্প মেনু ও প্রয়োজনীয় কমান্ড নির্দেশিকা দেখতে।",
+    "usage": "/help"
   },
   {
     "name": "idp",
@@ -455,7 +632,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "স্ক্রিমস বা কাস্টম ম্যাচের রুম আইডি ও পাসওয়ার্ড টিমদের পাঠাতে।",
+    "usage": "/idp room_id:123456 pass:7890"
   },
   {
     "name": "imagine",
@@ -479,7 +658,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "ai"
+    "dashboardTab": "ai",
+    "purposeBn": "AI দিয়ে যেকোনো টেক্সট প্রম্পটের ভিত্তিতে বাস্তবসম্মত ছবি তৈরি করতে।",
+    "usage": "/imagine prompt:A hyper-detailed cybernetic tiger in neon Tokyo"
   },
   {
     "name": "invite",
@@ -490,7 +671,9 @@ export const BOT_COMMANDS = [
     "description": "Get invite links for the bot and the support server.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "আপনার নিজের সার্ভারে এই বটটিকে যুক্ত করার অফিসিয়াল ইনভাইট লিংক পেতে।",
+    "usage": "/invite"
   },
   {
     "name": "kick",
@@ -514,7 +697,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Kick Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভার থেকে সাময়িকভাবে কোনো বিশৃঙ্খলাকারী মেম্বারকে বের (Kick) করে দিতে।",
+    "usage": "/kick user:@member reason:Spamming repeatedly"
   },
   {
     "name": "leaderboard",
@@ -525,7 +710,9 @@ export const BOT_COMMANDS = [
     "description": "View the top 10 most active members on the server",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "leveling"
+    "dashboardTab": "leveling",
+    "purposeBn": "সার্ভারের সর্বোচ্চ লেভেল ও XP অর্জনকারী মেম্বারদের লিডারবোর্ড দেখতে।",
+    "usage": "/leaderboard"
   },
   {
     "name": "lock",
@@ -561,7 +748,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Channels",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "জরুরি প্রয়োজনে যেকোনো টেক্সট চ্যানেলে সাধারণ মেম্বারদের মেসেজ পাঠানো বন্ধ করতে।",
+    "usage": "/lock type:Current Channel reason:Raid control"
   },
   {
     "name": "maintenance",
@@ -585,7 +774,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Administrator",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারে মেইনটেন্যান্স মোড চালু করে কাজ চলাকালীন মেসেজ দিতে।",
+    "usage": "/maintenance toggle:on reason:Bot upgrading"
   },
   {
     "name": "mass-create",
@@ -609,7 +800,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Administrator",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "একসাথে স্বয়ংক্রিয়ভাবে একাধিক চ্যানেল বা রোল তৈরি করতে।",
+    "usage": "/mass-create type:channels count:5 name:room"
   },
   {
     "name": "mass-delete",
@@ -627,7 +820,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Administrator",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "একসাথে অপ্রয়োজনীয় একাধিক চ্যানেল বা রোল দ্রুত মুছে ফেলতে।",
+    "usage": "/mass-delete"
   },
   {
     "name": "mass-message",
@@ -657,7 +852,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Administrator",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারের নির্ধারিত রোলের সকল মেম্বারকে একসাথে ডিরেক্ট মেসেজ পাঠাতে।",
+    "usage": "/mass-message role:@Member message:Important announcement"
   },
   {
     "name": "mass-role",
@@ -681,7 +878,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Roles",
-    "dashboardTab": "roles"
+    "dashboardTab": "roles",
+    "purposeBn": "সার্ভারের সব মেম্বারকে একসাথে কোনো রোল দিতে বা রিমুভ করতে।",
+    "usage": "/mass-role action:add role:@Verified"
   },
   {
     "name": "money",
@@ -692,7 +891,9 @@ export const BOT_COMMANDS = [
     "description": "Check your current balance of Quo Coins.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "ইকোনমি সিস্টেমে কয়েন যুক্ত করতে, কাটতে বা ট্র্যাকিং করতে।",
+    "usage": "/money add user:@member amount:1000"
   },
   {
     "name": "mute",
@@ -722,7 +923,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Moderate Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "কোনো মেম্বারকে নির্ধারিত সময়ের জন্য কথা বলা ও চ্যাট থেকে টাইমআউট (মিউট) করতে।",
+    "usage": "/mute user:@member duration:15m reason:Disrespectful behaviour"
   },
   {
     "name": "nowplaying",
@@ -733,7 +936,9 @@ export const BOT_COMMANDS = [
     "description": "Displays information about the currently playing song.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "ভয়েস চ্যানেলে বর্তমানে প্লে হওয়া গানের টাইটেল, সময় ও প্রোগ্রেস দেখতে।",
+    "usage": "/nowplaying"
   },
   {
     "name": "pause",
@@ -744,7 +949,9 @@ export const BOT_COMMANDS = [
     "description": "Pauses the currently playing music.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "চলমান মিউজিক প্লেব্যাক সাময়িকভাবে থামিয়ে রাখতে (Pause)।",
+    "usage": "/pause"
   },
   {
     "name": "ping",
@@ -755,7 +962,9 @@ export const BOT_COMMANDS = [
     "description": "Check the bot's and database's response latency.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের রেসপন্স স্পিড ও ডিসকর্ড API লেটেন্সি মিলি-সেকেন্ডে মাপতে।",
+    "usage": "/ping"
   },
   {
     "name": "play",
@@ -773,7 +982,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "ভয়েস চ্যানেলে যেকোনো ইউটিউব, স্পটিফাই বা সার্চ কিউ গান বাজাতে।",
+    "usage": "/play query:Alan Walker Faded"
   },
   {
     "name": "pointstable",
@@ -803,7 +1014,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "স্ক্রিমস ও টুর্নামেন্টের কিল ও প্লেসমেন্ট পয়েন্ট টেবিল তৈরি করতে।",
+    "usage": "/pointstable"
   },
   {
     "name": "purge",
@@ -869,7 +1082,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Messages",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "চ্যানেল থেকে নির্ধারিত সংখ্যক পুরনো মেসেজ একসাথে ক্লিয়ার করতে।",
+    "usage": "/purge amount:25"
   },
   {
     "name": "queue",
@@ -880,7 +1095,9 @@ export const BOT_COMMANDS = [
     "description": "Displays the current music queue.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "মিউজিক প্লেয়ারে পরবর্তীতে বাজানোর অপেক্ষায় থাকা গানের কিউ দেখতে।",
+    "usage": "/queue"
   },
   {
     "name": "rank",
@@ -898,7 +1115,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "leveling"
+    "dashboardTab": "leveling",
+    "purposeBn": "নিজের বা অন্য কোনো মেম্বারের বর্তমান লেভেল, XP ও র‍্যাংক কার্ড দেখতে।",
+    "usage": "/rank [user:@member]"
   },
   {
     "name": "reminder",
@@ -928,7 +1147,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "নির্দিষ্ট সময় পর কোনো কাজের কথা মনে করিয়ে দেওয়ার রিমাইন্ডার সেট করতে।",
+    "usage": "/reminder time:30m message:Tournament match starting"
   },
   {
     "name": "resume",
@@ -939,7 +1160,9 @@ export const BOT_COMMANDS = [
     "description": "Resumes the paused music.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "পজ করা গান যেখান থেকে বন্ধ হয়েছিল সেখান থেকে পুনরায় বাজাতে।",
+    "usage": "/resume"
   },
   {
     "name": "roleall",
@@ -969,7 +1192,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Roles",
-    "dashboardTab": "roles"
+    "dashboardTab": "roles",
+    "purposeBn": "সার্ভারের সব সাধারণ মেম্বার বা সকল বটকে একটি রোল একসাথে দিতে।",
+    "usage": "/roleall role:@Member"
   },
   {
     "name": "rrole",
@@ -1017,7 +1242,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Roles",
-    "dashboardTab": "roles"
+    "dashboardTab": "roles",
+    "purposeBn": "মেম্বারদের নিজে ক্লিক করে রোল নেওয়ার জন্য রিঅ্যাকশন বাটন রোল মেনু সেট করতে।",
+    "usage": "/rrole"
   },
   {
     "name": "seek",
@@ -1035,7 +1262,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "চলমান গানের নির্দিষ্ট মিনিট বা সেকেন্ডে ফাস্ট-ফরোয়ার্ড করে যেতে।",
+    "usage": "/seek timestamp:2:15"
   },
   {
     "name": "setup",
@@ -1071,7 +1300,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Administrator",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের মূল কনফিগারেশন উইজার্ড ও ফিচার সেটআপ লঞ্চ করতে।",
+    "usage": "/setup"
   },
   {
     "name": "setup-roles",
@@ -1101,7 +1332,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Roles",
-    "dashboardTab": "roles"
+    "dashboardTab": "roles",
+    "purposeBn": "সার্ভারের অ্যাডমিন, মডারেটর ও মেম্বার রোলের অটো অ্যাসাইন কনফিগার করতে।",
+    "usage": "/setup-roles"
   },
   {
     "name": "setupgoodbye",
@@ -1112,7 +1345,9 @@ export const BOT_COMMANDS = [
     "description": "Configure the goodbye system dashboard.",
     "options": [],
     "permission": "Manage Server",
-    "dashboardTab": "welcome"
+    "dashboardTab": "welcome",
+    "purposeBn": "মেম্বার সার্ভার ত্যাগ করলে স্বয়ংক্রিয় বিদায় বার্তা ও চ্যানেল সেট করতে।",
+    "usage": "/setupgoodbye"
   },
   {
     "name": "setupsocial",
@@ -1123,7 +1358,9 @@ export const BOT_COMMANDS = [
     "description": "Configure social media notifications.",
     "options": [],
     "permission": "Manage Server",
-    "dashboardTab": "social"
+    "dashboardTab": "social",
+    "purposeBn": "ইউটিউব, ফেসবুক বা টিকটক চ্যানেলের নতুন পোস্টের অটো নোটিফিকেশন সেট করতে।",
+    "usage": "/setupsocial"
   },
   {
     "name": "setupwelcome",
@@ -1134,7 +1371,9 @@ export const BOT_COMMANDS = [
     "description": "Configure the welcome system dashboard.",
     "options": [],
     "permission": "Manage Server",
-    "dashboardTab": "welcome"
+    "dashboardTab": "welcome",
+    "purposeBn": "নতুন মেম্বার জয়েন করলে ওয়েলকাম মেসেজ, অ্যানিমেটেড ইমোজি ও চ্যানেল কনফিগার করতে।",
+    "usage": "/setupwelcome"
   },
   {
     "name": "simulate",
@@ -1152,7 +1391,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "ওয়েলকাম বা গুডবাই মেসেজ কীভাবে দেখাবে তা নিজে পরীক্ষা করার জন্য সিমুলেট করতে।",
+    "usage": "/simulate event:join"
   },
   {
     "name": "skip",
@@ -1163,7 +1404,9 @@ export const BOT_COMMANDS = [
     "description": "Skips the currently playing song.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বর্তমান গানটি বাদ দিয়ে কিউতে থাকা পরবর্তী গানে চলে যেতে।",
+    "usage": "/skip"
   },
   {
     "name": "slotmanager",
@@ -1187,7 +1430,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "স্ক্রিমস রেজিস্ট্রেশন ও টিম স্লট বুকিং সিস্টেমের সম্পূর্ণ কনফিগারেশন।",
+    "usage": "/slotmanager"
   },
   {
     "name": "smanager",
@@ -1198,7 +1443,9 @@ export const BOT_COMMANDS = [
     "description": "Launch the interactive Scrims Manager.",
     "options": [],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "স্ক্রিমস ও টুর্নামেন্ট আয়োজনের অল-ইন-ওয়ান কন্ট্রোল প্যানেল খুলতে।",
+    "usage": "/smanager"
   },
   {
     "name": "snipe",
@@ -1216,7 +1463,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "চ্যানেল থেকে সম্প্রতি মুছে ফেলা সর্বশেষ মেসেজটি দেখতে।",
+    "usage": "/snipe"
   },
   {
     "name": "source",
@@ -1234,7 +1483,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বটের ওপেন সোর্স কোড রিপোজিটরি ও ডেভেলপার তথ্য দেখতে।",
+    "usage": "/source"
   },
   {
     "name": "ssverify",
@@ -1258,7 +1509,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "esports"
+    "dashboardTab": "esports",
+    "purposeBn": "স্ক্রিনশট ভেরিফিকেশন সিস্টেম (ইউটিউব সাবস্ক্রাইব প্রুফ ইত্যাদি চেক করতে)।",
+    "usage": "/ssverify"
   },
   {
     "name": "stats-setup",
@@ -1269,7 +1522,9 @@ export const BOT_COMMANDS = [
     "description": "Automatically create live server stats voice counters",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "tempvoice"
+    "dashboardTab": "tempvoice",
+    "purposeBn": "সার্ভারের মোট মেম্বার ও অ্যাক্টিভ ভয়েস মেম্বার কাউন্ট স্ট্যাটাস চ্যানেল বানাতে।",
+    "usage": "/stats-setup"
   },
   {
     "name": "stop",
@@ -1280,7 +1535,9 @@ export const BOT_COMMANDS = [
     "description": "Stops the music and clears the queue.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "মিউজিক পুরোপুরি বন্ধ করে ভয়েস চ্যানেল থেকে বটকে ডিসকানেক্ট করতে।",
+    "usage": "/stop"
   },
   {
     "name": "summarize",
@@ -1298,7 +1555,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "ai"
+    "dashboardTab": "ai",
+    "purposeBn": "চ্যানেলে মেম্বারদের বিগত আলোচনা বা কথপোকথন AI দিয়ে সারসংক্ষেপ করতে।",
+    "usage": "/summarize count:30"
   },
   {
     "name": "tag",
@@ -1370,7 +1629,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারে বারবার ব্যবহৃত প্রয়োজনীয় টেক্সট শর্টকাট ট্যাগ তৈরি বা কল করতে।",
+    "usage": "/tag get name:rules"
   },
   {
     "name": "tagcheck",
@@ -1406,7 +1667,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "স্ক্রিমস রেজিস্ট্রেশন চ্যানেলে সব টিমমেট ট্যাগ করা হয়েছে কিনা চেক করতে।",
+    "usage": "/tagcheck set channel:#registration"
   },
   {
     "name": "ticket",
@@ -1436,7 +1699,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "tickets"
+    "dashboardTab": "tickets",
+    "purposeBn": "মেম্বারদের সহায়তায় প্রাইভেট টিকিট প্যানেল ও সাপোর্ট হেল্প ডেস্ক তৈরি করতে।",
+    "usage": "/ticket setup"
   },
   {
     "name": "tourney",
@@ -1447,7 +1712,9 @@ export const BOT_COMMANDS = [
     "description": "Launch the interactive Tournament Manager.",
     "options": [],
     "permission": "Manage Server",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "বড় টুর্নামেন্ট রেজিস্ট্রেশন, ব্র্যাকেট ও টিম ট্র্যাকিং ম্যানেজার চালু করতে।",
+    "usage": "/tourney"
   },
   {
     "name": "trivia",
@@ -1458,7 +1725,9 @@ export const BOT_COMMANDS = [
     "description": "Play an interactive trivia quiz and win Jarvis Coins!",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সাধারণ জ্ঞানের কুইজ খেলে সার্ভারের বন্ধুদের সাথে কয়েন জেতার প্রতিযোগিতা করতে।",
+    "usage": "/trivia"
   },
   {
     "name": "truthordare",
@@ -1476,7 +1745,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভার মেম্বারদের আড্ডা ও ভয়েস চ্যাটের জন্য ট্রুথ অর ডেয়ার প্রম্পট পেতে।",
+    "usage": "/truthordare type:Truth"
   },
   {
     "name": "unban",
@@ -1500,7 +1771,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Ban Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "পূর্বে ব্যান করা কোনো মেম্বারকে পুনরায় সার্ভারে প্রবেশাধিকার দিতে (আনব্যান)।",
+    "usage": "/unban user_id:1234567890 reason:Appeal approved"
   },
   {
     "name": "unlock",
@@ -1530,7 +1803,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Manage Channels",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "লক করা চ্যানেলে পুনরায় সবার মেসেজ পাঠানোর অনুমতি চালু করতে।",
+    "usage": "/unlock type:Current Channel"
   },
   {
     "name": "unmute",
@@ -1554,7 +1829,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Moderate Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "টাইমআউট দেওয়া মেম্বারকে নির্ধারিত সময়ের আগেই আনমিউট করতে।",
+    "usage": "/unmute user:@member reason:Apologized"
   },
   {
     "name": "volume",
@@ -1572,7 +1849,9 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Everyone",
-    "dashboardTab": "music"
+    "dashboardTab": "music",
+    "purposeBn": "মিউজিক প্লেয়ারের ভলিউম (১% থেকে ১০০%) নিয়ন্ত্রণ করতে।",
+    "usage": "/volume amount:80"
   },
   {
     "name": "vote",
@@ -1583,7 +1862,9 @@ export const BOT_COMMANDS = [
     "description": "Vote for the bot to get rewards.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "টপ.জিজি বা বটে ভোট দিয়ে বোনাস জার্ভিস কয়েন ও ব্যাজ পেতে।",
+    "usage": "/vote"
   },
   {
     "name": "voteremind",
@@ -1594,7 +1875,9 @@ export const BOT_COMMANDS = [
     "description": "Toggle reminders when your vote eligibility expires.",
     "options": [],
     "permission": "Everyone",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "পুনরায় ভোট করার সময় হলে নোটিফিকেশন রিমাইন্ডার পেতে।",
+    "usage": "/voteremind"
   },
   {
     "name": "warn",
@@ -1618,6 +1901,8 @@ export const BOT_COMMANDS = [
       }
     ],
     "permission": "Moderate Members",
-    "dashboardTab": null
+    "dashboardTab": null,
+    "purposeBn": "সার্ভারের নিয়ম ভঙ্গকারী কোনো মেম্বারকে আনুষ্ঠানিক ওয়ার্নিং দিতে।",
+    "usage": "/warn user:@member reason:Inappropriate message"
   }
 ];

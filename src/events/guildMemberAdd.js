@@ -55,10 +55,18 @@ module.exports = {
 
     const memberCount = guild.memberCount;
 
+    const { resolveEmojis } = require('../modules/emojiResolver');
     const customMessage = await getWelcomeMessage(guild.id);
-    const description = customMessage 
-      ? customMessage.replace(/{user}/g, `${member}`).replace(/{server}/g, guild.name)
+    let rawDescription = customMessage 
+      ? customMessage
+          .replace(/{user}/g, `${member}`)
+          .replace(/{username}/g, member.user.username)
+          .replace(/{server}/g, guild.name)
+          .replace(/{membercount}/gi, `${memberCount}`)
+          .replace(/{count}/gi, `${memberCount}`)
       : `Hey ${member}, glad you joined us!\n\n📋 Please read the rules before chatting.\n🎭 Head over to the roles channel to grab your roles.`;
+
+    const description = resolveEmojis(rawDescription, guild, member.client);
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2) // Discord Blurple

@@ -26,6 +26,28 @@ const PLATFORM_ICONS = {
   custom: '📡',
 };
 
+const APP_EMOJI_MAP = {
+  arrow_lookright: '<a:arrow_lookright:1548650753990852669>',
+  arrowrcolor: '<a:Arrowrcolor:1548650829932662795>',
+  carydance: '<a:carydance:1548650843585388604>',
+  arrow_lookleft: '<a:arrow_lookleft:1548650845732864070>',
+  diamond: '<a:diamond:1548651187300204605>',
+  loading: '<a:loading:1548651190919630858>',
+};
+
+function resolveTestEmojis(str) {
+  if (!str) return str;
+  return str
+    .replace(/<(a?):([a-zA-Z0-9_~]+):([0-9]+)>/g, (m, a, name) => {
+      const lower = name.toLowerCase();
+      return APP_EMOJI_MAP[lower] || m;
+    })
+    .replace(/(?<!<a?):([a-zA-Z0-9_~]+):(?!([0-9]+>))/g, (m, name) => {
+      const lower = name.toLowerCase();
+      return APP_EMOJI_MAP[lower] || m;
+    });
+}
+
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
@@ -67,6 +89,7 @@ export async function POST(request) {
     if (feed.ping && feed.ping !== 'none') {
       text = `${feed.ping} ${text}`;
     }
+    text = resolveTestEmojis(text);
 
     const embed = {
       title: postTitle,
@@ -75,7 +98,7 @@ export async function POST(request) {
       author: {
         name: `${emoji} New ${platformLabel} Post - ${authorName}`.slice(0, 100),
       },
-      description: `⚡ **Verification Test**: This is a test notification from the **Jarvis Bot Dashboard**.\n\nYour feed **${feed.name || authorName}** is properly connected to the database and will notify this channel automatically every 5 minutes when new content is uploaded!`,
+      description: resolveTestEmojis(`⚡ **Verification Test**: This is a test notification from the **Jarvis Bot Dashboard**.\n\nYour feed **${feed.name || authorName}** is properly connected to the database and will notify this channel automatically every 5 minutes when new content is uploaded!`),
       fields: [
         { name: 'Target Channel', value: `<#${feed.channelId}>`, inline: true },
         { name: 'Mention Setting', value: feed.ping && feed.ping !== 'none' ? `\`${feed.ping}\`` : 'None', inline: true },

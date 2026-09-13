@@ -443,18 +443,32 @@ module.exports = {
       if (interaction.customId === 'welcome_message_modal') {
         const newMessage = interaction.fields.getTextInputValue('welcome_message_input');
         const { setSetting } = require('../modules/settings');
+        const { resolveEmojis } = require('../modules/emojiResolver');
         const success = await setSetting(interaction.guild.id, 'WELCOME_MESSAGE', newMessage);
         if (success) {
-          await interaction.reply({ content: '✅ Custom welcome message updated successfully!', ephemeral: true });
+          const preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
+            .replace(/{user}/g, `${interaction.member}`)
+            .replace(/{server}/g, interaction.guild.name);
+          await interaction.reply({
+            content: `✅ **Custom welcome message updated successfully!**\n\n**Preview with Animated Emojis:**\n${preview}`,
+            ephemeral: true
+          });
         } else {
           await interaction.reply({ content: '❌ Failed to update welcome message in database.', ephemeral: true });
         }
       } else if (interaction.customId === 'goodbye_message_modal') {
         const newMessage = interaction.fields.getTextInputValue('goodbye_message_input');
         const { setSetting } = require('../modules/settings');
+        const { resolveEmojis } = require('../modules/emojiResolver');
         const success = await setSetting(interaction.guild.id, 'GOODBYE_MESSAGE', newMessage);
         if (success) {
-          await interaction.reply({ content: '✅ Custom goodbye message updated successfully!', ephemeral: true });
+          const preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
+            .replace(/{user}/g, `**${interaction.user.tag}**`)
+            .replace(/{server}/g, interaction.guild.name);
+          await interaction.reply({
+            content: `✅ **Custom goodbye message updated successfully!**\n\n**Preview with Animated Emojis:**\n${preview}`,
+            ephemeral: true
+          });
         } else {
           await interaction.reply({ content: '❌ Failed to update goodbye message in database.', ephemeral: true });
         }
@@ -566,11 +580,16 @@ module.exports = {
         }
 
         const { EmbedBuilder } = require('discord.js');
+        const { resolveEmojis } = require('../modules/emojiResolver');
+
+        const resolvedDesc = resolveEmojis(desc, interaction.guild, interaction.client);
+        const resolvedTitle = title ? resolveEmojis(title, interaction.guild, interaction.client) : null;
+
         const embed = new EmbedBuilder()
           .setColor(color)
-          .setDescription(desc);
+          .setDescription(resolvedDesc);
 
-        if (title) embed.setTitle(title);
+        if (resolvedTitle) embed.setTitle(resolvedTitle);
         if (thumbnail && thumbnail.startsWith('http')) embed.setThumbnail(thumbnail);
         if (image && image.startsWith('http')) embed.setImage(image);
 

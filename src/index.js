@@ -105,6 +105,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildExpressions,
   ],
   partials: [
     Partials.Message,
@@ -158,8 +159,11 @@ const startStatsCron = require('./jobs/statsJob');
 const startBirthdayCron = require('./jobs/birthdayJob');
 
 // Delay startup slightly so the client is ready before the first poll
-client.once('ready', () => {
+const { syncApplicationEmojis } = require('./modules/emojiResolver');
+
+client.once('ready', async () => {
   console.log(`[Discord] Logged in as ${client.user.tag}`);
+  await syncApplicationEmojis(client).catch(console.error);
   startSocialCron(client);
   startReminderCron(client);
   startAutopurgeCron(client);

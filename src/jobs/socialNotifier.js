@@ -157,9 +157,13 @@ async function sendNotification(client, feed, platform, item) {
     .setTimestamp(item.pubDate ? new Date(item.pubDate) : new Date())
     .setFooter({ text: `${platform.label} • ${feed.name || 'Social Feed'}` });
 
-  if (thumbnail) embed.setImage(thumbnail);
+  const { resolveEmojis } = require('../modules/emojiResolver');
+  if (embed.data?.description) {
+    embed.setDescription(resolveEmojis(embed.data.description, channel.guild, client));
+  }
 
-  const textMsg = formatNotificationMessage(feed.message, { platform, item, feed });
+  const rawTextMsg = formatNotificationMessage(feed.message, { platform, item, feed });
+  const textMsg = resolveEmojis(rawTextMsg, channel.guild, client);
 
   await channel.send({ content: textMsg, embeds: [embed] }).catch(console.error);
 }

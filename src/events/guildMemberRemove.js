@@ -50,10 +50,16 @@ module.exports = {
     if (goodbyeChannelId) {
       const goodbyeChannel = member.guild.channels.cache.get(goodbyeChannelId);
       if (goodbyeChannel) {
+        const { resolveEmojis } = require('../modules/emojiResolver');
         const customMessage = await getGoodbyeMessage(member.guild.id);
-        const description = customMessage 
-          ? customMessage.replace(/{user}/g, `**${member.user.tag}**`).replace(/{server}/g, member.guild.name)
-          : `**${member.user.tag}** left the server.`;
+        const rawDescription = customMessage 
+          ? customMessage
+              .replace(/{user}/g, `**${member.user?.tag || member.displayName || 'User'}**`)
+              .replace(/{username}/g, member.user?.username || 'User')
+              .replace(/{server}/g, member.guild.name)
+          : `**${member.user?.tag || 'A member'}** left the server.`;
+
+        const description = resolveEmojis(rawDescription, member.guild, member.client);
 
         const goodbyeEmbed = new EmbedBuilder()
           .setColor(0xed4245)
