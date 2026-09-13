@@ -405,8 +405,33 @@ module.exports = {
       } else if (interaction.customId.startsWith('social_channel_')) {
         const platform = interaction.customId.split('_')[2];
         const channelId = interaction.values[0];
-        const { setSetting } = require('../modules/settings');
+        const { setSetting, getSocialFeeds, saveSocialFeeds } = require('../modules/settings');
         await setSetting(interaction.guild.id, `${platform}_CHANNEL_ID`, channelId);
+
+        // Keep multi-account SOCIAL_FEEDS in sync
+        try {
+          const feeds = await getSocialFeeds(interaction.guild.id);
+          const platKey = platform.toLowerCase();
+          const existing = feeds.find(f => (f.platform || '').toLowerCase() === platKey);
+          if (existing) {
+            existing.channelId = channelId;
+          } else {
+            feeds.push({
+              id: `feed_${platKey}_${interaction.guild.id}`,
+              platform: platKey,
+              name: `${platform.charAt(0) + platform.slice(1).toLowerCase()} Feed`,
+              url: '',
+              channelId,
+              message: '',
+              ping: 'none',
+              enabled: true,
+            });
+          }
+          await saveSocialFeeds(interaction.guild.id, feeds);
+        } catch (e) {
+          console.error('[interactionCreate] Error syncing channel to SOCIAL_FEEDS:', e.message);
+        }
+
         const { getSubDashboard } = require('../commands/utility/setupsocial');
         const subDash = await getSubDashboard(interaction.guild.id, platform);
         await interaction.update(subDash);
@@ -436,36 +461,76 @@ module.exports = {
       } else if (interaction.customId.startsWith('social_urlmodal_')) {
         // customId format: social_urlmodal_PLATFORM (e.g. social_urlmodal_YOUTUBE)
         const platform = interaction.customId.replace('social_urlmodal_', '');
-        const newUrl = interaction.fields.getTextInputValue('social_url_input').trim();
-        const { setSetting } = require('../modules/settings');
+        const rawInput = interaction.fields.getTextInputValue('social_url_input').trim();
+        const { setSetting, getSocialFeeds, saveSocialFeeds, getSetting } = require('../modules/settings');
+        const { resolveSocialFeed } = require('../modules/socialResolver');
 
-        // Validate: try to parse the feed immediately so the user gets instant feedback
-        const Parser = require('rss-parser');
-        const testParser = new Parser();
+        let resolved = null;
         let feedOk = false;
+        let finalUrl = rawInput;
+        let channelTitle = `${platform.charAt(0) + platform.slice(1).toLowerCase()} Feed`;
+
         try {
-          await testParser.parseURL(newUrl);
-          feedOk = true;
-        } catch (_e) {
-          // Feed failed — still save it but warn the user
+          resolved = await resolveSocialFeed(rawInput, platform);
+          if (resolved && resolved.feedUrl) {
+            finalUrl = resolved.feedUrl;
+            channelTitle = resolved.title || channelTitle;
+            feedOk = true;
+          }
+        } catch (err) {
+          console.warn(`[setupsocial] Resolve warning for ${rawInput}:`, err.message);
         }
 
-        await setSetting(interaction.guild.id, `${platform}_URL`, newUrl);
-        const { getSubDashboard } = require('../commands/utility/setupsocial');
-        const subDash = await getSubDashboard(interaction.guild.id, platform);
+        // Save to single key
+        await setSetting(interaction.guild.id, `${platform}_URL`, finalUrl);
 
-        // Modals must use reply(), NOT update() — update() only works for button/select interactions
+        // Sync with multi-feed SOCIAL_FEEDS table in Supabase
+        try {
+          const feeds = await getSocialFeeds(interaction.guild.id);
+          const platKey = platform.toLowerCase();
+          const targetChannelId = (await getSetting(interaction.guild.id, `${platform}_CHANNEL_ID`)) || '';
+
+          const existingIndex = feeds.findIndex(f => (f.platform || '').toLowerCase() === platKey);
+          const feedObj = {
+            id: existingIndex >= 0 ? feeds[existingIndex].id : `feed_${platKey}_${Date.now()}`,
+            platform: platKey,
+            name: channelTitle,
+            url: finalUrl,
+            channelId: existingIndex >= 0 && feeds[existingIndex].channelId ? feeds[existingIndex].channelId : targetChannelId,
+            message: existingIndex >= 0 && feeds[existingIndex].message ? feeds[existingIndex].message : '',
+            ping: 'none',
+            enabled: true,
+          };
+
+          if (existingIndex >= 0) {
+            feeds[existingIndex] = feedObj;
+          } else {
+            feeds.push(feedObj);
+          }
+
+          await saveSocialFeeds(interaction.guild.id, feeds);
+        } catch (syncErr) {
+          console.error('[setupsocial] Error syncing to SOCIAL_FEEDS:', syncErr.message);
+        }
+
+        // Reply to user with clean status
         if (feedOk) {
-          await interaction.reply({ content: `✅ RSS link saved! The feed is valid and notifications will start within 5 minutes.`, ephemeral: true });
+          await interaction.reply({
+            content: [
+              `✅ **${channelTitle}** (${platform}) feed connected successfully!`,
+              `📡 **Feed XML:** \`${finalUrl}\``,
+              resolved?.latestPost?.title ? `🎬 **Latest Content:** *${resolved.latestPost.title}*` : null,
+              `⚡ Automated notifications are active and will post within 5 minutes when new content is uploaded!`,
+            ].filter(Boolean).join('\n'),
+            ephemeral: true,
+          });
         } else {
           await interaction.reply({
             content: [
-              `⚠️ Link saved, but the feed could **not** be reached or parsed.`,
-              `Please double-check the URL — it must be a valid RSS/Atom feed.`,
+              `⚠️ Link saved as \`${finalUrl}\`, but could **not** be reached or parsed as a valid XML feed.`,
+              `Please double-check the URL.`,
               platform === 'YOUTUBE'
-                ? '\n📌 **YouTube tip:** Use the Atom feed URL format:\n`https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxxxx`'
-                : platform === 'INSTAGRAM' || platform === 'TIKTOK'
-                ? `\n📌 **${platform} tip:** Use an RSS bridge like \`https://rsshub.app/${platform.toLowerCase()}/user/USERNAME\``
+                ? '\n💡 **Tip:** You can paste your channel handle (e.g. `@TRJ7EDITS`) or channel link, or manage it from the [Web Dashboard](https://discordbot-ten-dusky.vercel.app/dashboard).'
                 : '',
             ].join('\n'),
             ephemeral: true,
