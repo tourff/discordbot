@@ -298,9 +298,69 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 // mode: "add" (যোগ করা) | "remove" (সরানো)
 // roles: array of role names, or single role name
 
+────────────────────────────────────────
+🔧 SYSTEM CONFIGURATION ACTIONS — Bot-এর internal systems configure করতে:
+────────────────────────────────────────
+
+23. setup_ticket — Ticket system সম্পূর্ণ configure করা (+ optionally panel deploy):
+{
+  "action": "setup_ticket",
+  "parameters": {
+    "staff_role": "Support Team",
+    "category": "TICKETS",
+    "panel_channel": "create-ticket",
+    "transcript_channel": "ticket-logs",
+    "welcome_message": "Please describe your issue and staff will assist you shortly."
+  }
+}
+// panel_channel দিলে সেই channel-এ panel embed POST হয়ে যাবে। Optional।
+
+────────────────────────────────────────
+24. deploy_ticket_panel — শুধু ticket panel একটি channel-এ deploy করা:
+{ "action": "deploy_ticket_panel", "parameters": { "channel": "create-ticket", "title": "📩 Support Desk" } }
+
+────────────────────────────────────────
+25. setup_welcome — Welcome message system configure করা:
+{ "action": "setup_welcome", "parameters": { "channel": "welcome", "message": "Hey {user}, welcome to **{server}**! 🎉" } }
+// {user} = member mention, {server} = server name
+
+────────────────────────────────────────
+26. setup_goodbye — Goodbye message configure করা:
+{ "action": "setup_goodbye", "parameters": { "channel": "general", "message": "{user} has left **{server}**. Goodbye! 👋" } }
+
+────────────────────────────────────────
+27. setup_leveling — XP/Leveling system configure করা:
+{ "action": "setup_leveling", "parameters": { "channel": "level-up", "xp_rate": 15, "enabled": true } }
+
+────────────────────────────────────────
+28. setup_birthday — Birthday system configure করা:
+{ "action": "setup_birthday", "parameters": { "channel": "birthdays", "role": "Birthday Star" } }
+
+────────────────────────────────────────
+29. setup_automod — AutoMod/Moderation configure করা:
+{ "action": "setup_automod", "parameters": { "log_channel": "mod-logs", "anti_spam": true, "anti_link": false, "mute_role": "Muted" } }
+
+────────────────────────────────────────
+30. show_config — সব bot settings একসাথে দেখানো:
+{ "action": "show_config", "parameters": {} }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 SYSTEM CONFIG EXAMPLES (BANGLISH → ACTION)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• "ticket system set koro, staff role Support, category TICKETS e, panel create-ticket e" → setup_ticket
+• "ticket panel create-ticket channel e deploy kore dao" → deploy_ticket_panel
+• "welcome system set koro, #welcome channel e" → setup_welcome
+• "goodbye message set koro general channel e" → setup_goodbye
+• "leveling chalu koro, level-up channel e notification asha" → setup_leveling
+• "birthday channel set koro #birthdays e, Birthday Star role dao" → setup_birthday
+• "automod set koro, mod-logs e log jabe, anti-spam chalu" → setup_automod
+• "current config dekhao" / "ki ki set ache" / "bot config dekhao" → show_config
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 EXAMPLES OF BANGLISH → ACTION MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 • "ADMIN & MANAGEMENT VC category er shob voice channel e VIP, Moderator, Admin role add koro" → set_channel_permissions with channels: [...] and roles: ["VIP / Partner", "Moderator", "ALL ADMIN"]
 • "ekshathe onek gula role add koro channel e" → set_channel_permissions with roles: ["Role1", "Role2", ...]

@@ -1732,8 +1732,357 @@ async function executeServerAction(message, actionType, params = {}) {
         };
       }
 
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP TICKET SYSTEM — configure + optionally deploy panel
+      // ───────────────────────────────────────────────────────────────────────
+      case 'setup_ticket': {
+        const { setSetting: saveSetting } = require('./settings');
+        const results = [];
+
+        const staffRoleQuery = params.staff_role || params.staffRole;
+        const categoryQuery  = params.category   || params.ticket_category;
+        const panelChannel   = params.panel_channel || params.panelChannel;
+        const transcriptCh   = params.transcript_channel || params.transcriptChannel;
+        const welcomeMsg     = params.welcome_message || params.welcomeMessage;
+
+        if (staffRoleQuery) {
+          const role = findRole(guild, staffRoleQuery);
+          if (role) {
+            await saveSetting(guild.id, 'TICKET_STAFF_ROLE_ID', role.id);
+            results.push(`✅ Staff Role → ${role}`);
+          } else {
+            results.push(`⚠️ Staff role \`${staffRoleQuery}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (categoryQuery) {
+          const cat = findCategory(guild, categoryQuery);
+          if (cat) {
+            await saveSetting(guild.id, 'TICKET_CATEGORY_ID', cat.id);
+            results.push(`✅ Ticket Category → \`${cat.name}\``);
+          } else {
+            results.push(`⚠️ Category \`${categoryQuery}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (transcriptCh) {
+          const ch = findChannel(guild, transcriptCh);
+          if (ch) {
+            await saveSetting(guild.id, 'TICKET_TRANSCRIPT_CHANNEL_ID', ch.id);
+            results.push(`✅ Transcript Channel → <#${ch.id}>`);
+          } else {
+            results.push(`⚠️ Transcript channel \`${transcriptCh}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (welcomeMsg) {
+          await saveSetting(guild.id, 'TICKET_WELCOME_MESSAGE', welcomeMsg);
+          results.push(`✅ Welcome message সেট হয়েছে`);
+        }
+
+        // Optionally deploy ticket panel in a channel
+        if (panelChannel) {
+          const ch = findChannel(guild, panelChannel);
+          if (ch) {
+            const { EmbedBuilder: Embed, ActionRowBuilder: ARB, ButtonBuilder: BB, ButtonStyle: BS } = require('discord.js');
+            const panelEmbed = new Embed()
+              .setColor(0x6366f1)
+              .setTitle('📩 Support Ticket Desk')
+              .setDescription('Need help, want to report something, or have a partnership offer? Click **Open Ticket** below to start a private conversation with our staff team.')
+              .addFields(
+                { name: '🔒 Private & Secure',   value: 'Only you and staff can see your ticket.', inline: true },
+                { name: '⚡ Quick Response',      value: 'Our team responds as soon as possible.',  inline: true },
+              )
+              .setFooter({ text: 'Jarvis Ticket System' })
+              .setTimestamp();
+            const row = new ARB().addComponents(
+              new BB().setCustomId('ticket_create').setLabel('Open Ticket').setEmoji('📩').setStyle(BS.Primary)
+            );
+            await ch.send({ embeds: [panelEmbed], components: [row] });
+            results.push(`✅ Ticket panel deployed in <#${ch.id}>`);
+          } else {
+            results.push(`⚠️ Panel channel \`${panelChannel}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (results.length === 0) {
+          return { success: false, message: '❌ কোনো parameter দেওয়া হয়নি। `staff_role`, `category`, `panel_channel`, `transcript_channel`, অথবা `welcome_message` দিন।' };
+        }
+
+        return {
+          success: true,
+          message: `🎫 **Ticket System কনফিগার হয়েছে!**\n\n${results.join('\n')}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP WELCOME / GOODBYE
+      // ───────────────────────────────────────────────────────────────────────
+      case 'setup_welcome': {
+        const { setSetting: saveSetting } = require('./settings');
+        const channelQuery = params.channel;
+        const welcomeText  = params.message || 'Hey {user}, glad you joined **{server}**! 🎉\n\nPlease read the rules and enjoy your stay.';
+
+        if (!channelQuery) {
+          return { success: false, message: '❌ Welcome channel-এর নাম দিন। উদাহরণ: `channel: "welcome"`' };
+        }
+
+        const ch = findChannel(guild, channelQuery);
+        if (!ch) return { success: false, message: `❌ Channel \`${channelQuery}\` খুঁজে পাওয়া যায়নি।` };
+
+        await saveSetting(guild.id, 'WELCOME_CHANNEL_ID', ch.id);
+        await saveSetting(guild.id, 'WELCOME_MESSAGE', welcomeText);
+
+        return {
+          success: true,
+          message: `👋 **Welcome System সেট হয়েছে!**\n\n✅ Channel → <#${ch.id}>\n✅ Message → \`${welcomeText.slice(0, 100)}...\`\n\n*{user} = member mention, {server} = server name*`,
+        };
+      }
+
+      case 'setup_goodbye': {
+        const { setSetting: saveSetting } = require('./settings');
+        const channelQuery = params.channel;
+        const goodbyeText  = params.message || '{user} has left **{server}**. Goodbye! 👋';
+
+        if (!channelQuery) {
+          return { success: false, message: '❌ Goodbye channel-এর নাম দিন। উদাহরণ: `channel: "general"`' };
+        }
+
+        const ch = findChannel(guild, channelQuery);
+        if (!ch) return { success: false, message: `❌ Channel \`${channelQuery}\` খুঁজে পাওয়া যায়নি।` };
+
+        await saveSetting(guild.id, 'GOODBYE_CHANNEL_ID', ch.id);
+        await saveSetting(guild.id, 'GOODBYE_MESSAGE', goodbyeText);
+
+        return {
+          success: true,
+          message: `👋 **Goodbye System সেট হয়েছে!**\n\n✅ Channel → <#${ch.id}>\n✅ Message → \`${goodbyeText.slice(0, 100)}\``,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP LEVELING
+      // ───────────────────────────────────────────────────────────────────────
+      case 'setup_leveling': {
+        const { setSetting: saveSetting } = require('./settings');
+        const results = [];
+
+        if (params.channel) {
+          const ch = findChannel(guild, params.channel);
+          if (ch) {
+            await saveSetting(guild.id, 'LEVELING_CHANNEL_ID', ch.id);
+            results.push(`✅ Level-up notification channel → <#${ch.id}>`);
+          } else {
+            results.push(`⚠️ Channel \`${params.channel}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (params.xp_rate !== undefined) {
+          await saveSetting(guild.id, 'LEVELING_XP_RATE', String(params.xp_rate));
+          results.push(`✅ XP rate → \`${params.xp_rate}\` per message`);
+        }
+
+        if (params.enabled !== undefined) {
+          await saveSetting(guild.id, 'LEVELING_ENABLED', params.enabled ? '1' : '0');
+          results.push(`✅ Leveling system → \`${params.enabled ? 'চালু' : 'বন্ধ'}\``);
+        }
+
+        if (results.length === 0) {
+          return { success: false, message: '❌ `channel`, `xp_rate`, বা `enabled` এর মধ্যে অন্তত একটি দিন।' };
+        }
+
+        return {
+          success: true,
+          message: `🏆 **Leveling System কনফিগার হয়েছে!**\n\n${results.join('\n')}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP BIRTHDAY
+      // ───────────────────────────────────────────────────────────────────────
+      case 'setup_birthday': {
+        const { setSetting: saveSetting } = require('./settings');
+        const results = [];
+
+        if (params.channel) {
+          const ch = findChannel(guild, params.channel);
+          if (ch) {
+            await saveSetting(guild.id, 'BIRTHDAY_CHANNEL_ID', ch.id);
+            results.push(`✅ Birthday announcement channel → <#${ch.id}>`);
+          } else {
+            results.push(`⚠️ Channel \`${params.channel}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (params.role) {
+          const role = findRole(guild, params.role);
+          if (role) {
+            await saveSetting(guild.id, 'BIRTHDAY_ROLE_ID', role.id);
+            results.push(`✅ Birthday role → ${role} (জন্মদিনে দেওয়া হবে)`);
+          } else {
+            results.push(`⚠️ Role \`${params.role}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (params.message) {
+          await saveSetting(guild.id, 'BIRTHDAY_MESSAGE', params.message);
+          results.push(`✅ Birthday message সেট হয়েছে`);
+        }
+
+        if (results.length === 0) {
+          return { success: false, message: '❌ `channel`, `role`, বা `message` এর মধ্যে অন্তত একটি দিন।' };
+        }
+
+        return {
+          success: true,
+          message: `🎂 **Birthday System কনফিগার হয়েছে!**\n\n${results.join('\n')}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SETUP AUTOMOD (basic spam / bad-word filter settings)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'setup_automod': {
+        const { setSetting: saveSetting } = require('./settings');
+        const results = [];
+
+        if (params.log_channel) {
+          const ch = findChannel(guild, params.log_channel);
+          if (ch) {
+            await saveSetting(guild.id, 'MOD_LOG_CHANNEL_ID', ch.id);
+            results.push(`✅ Mod log channel → <#${ch.id}>`);
+          } else {
+            results.push(`⚠️ Channel \`${params.log_channel}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (params.anti_spam !== undefined) {
+          await saveSetting(guild.id, 'ANTI_SPAM_ENABLED', params.anti_spam ? '1' : '0');
+          results.push(`✅ Anti-spam → \`${params.anti_spam ? 'চালু' : 'বন্ধ'}\``);
+        }
+
+        if (params.anti_link !== undefined) {
+          await saveSetting(guild.id, 'ANTI_LINK_ENABLED', params.anti_link ? '1' : '0');
+          results.push(`✅ Anti-link filter → \`${params.anti_link ? 'চালু' : 'বন্ধ'}\``);
+        }
+
+        if (params.mute_role) {
+          const role = findRole(guild, params.mute_role);
+          if (role) {
+            await saveSetting(guild.id, 'MUTE_ROLE_ID', role.id);
+            results.push(`✅ Mute role → ${role}`);
+          } else {
+            results.push(`⚠️ Mute role \`${params.mute_role}\` খুঁজে পাওয়া যায়নি`);
+          }
+        }
+
+        if (results.length === 0) {
+          return { success: false, message: '❌ `log_channel`, `anti_spam`, `anti_link`, বা `mute_role` এর মধ্যে একটি দিন।' };
+        }
+
+        return {
+          success: true,
+          message: `🛡️ **AutoMod System কনফিগার হয়েছে!**\n\n${results.join('\n')}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // DEPLOY TICKET PANEL — just post the panel embed in a channel
+      // ───────────────────────────────────────────────────────────────────────
+      case 'deploy_ticket_panel': {
+        const channelQuery = params.channel;
+        const panelTitle   = params.title       || '📩 Support Ticket Desk';
+        const panelDesc    = params.description || 'Need help or want to report something? Click **Open Ticket** below to start a private conversation with our staff team.';
+
+        let targetCh;
+        if (channelQuery) {
+          targetCh = findChannel(guild, channelQuery);
+          if (!targetCh) return { success: false, message: `❌ Channel \`${channelQuery}\` খুঁজে পাওয়া যায়নি।` };
+        } else {
+          targetCh = message.channel;
+        }
+
+        const panelEmbed = new EmbedBuilder()
+          .setColor(0x6366f1)
+          .setTitle(panelTitle)
+          .setDescription(panelDesc)
+          .addFields(
+            { name: '🔒 Private & Secure',   value: 'Only you and staff can see your ticket.', inline: true },
+            { name: '⚡ Quick Response',      value: 'Our team responds as soon as possible.',  inline: true },
+            { name: '📂 Multiple Categories', value: 'Choose the type that fits your request.', inline: true },
+          )
+          .setFooter({ text: 'Jarvis Ticket System' })
+          .setTimestamp();
+
+        const { ActionRowBuilder: ARB, ButtonBuilder: BB, ButtonStyle: BS } = require('discord.js');
+        const row = new ARB().addComponents(
+          new BB().setCustomId('ticket_create').setLabel('Open Ticket').setEmoji('📩').setStyle(BS.Primary)
+        );
+
+        await targetCh.send({ embeds: [panelEmbed], components: [row] });
+
+        return {
+          success: true,
+          message: `📩 **Ticket Panel successfully deployed in <#${targetCh.id}>!**`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // SHOW CONFIG — display current bot settings for this server
+      // ───────────────────────────────────────────────────────────────────────
+      case 'show_config': {
+        const { getSetting: getS } = require('./settings');
+
+        const keys = [
+          ['TICKET_STAFF_ROLE_ID',          '🎫 Ticket Staff Role',      'role'],
+          ['TICKET_CATEGORY_ID',             '📁 Ticket Category',         'channel'],
+          ['TICKET_TRANSCRIPT_CHANNEL_ID',   '📄 Transcript Channel',      'channel'],
+          ['WELCOME_CHANNEL_ID',             '👋 Welcome Channel',         'channel'],
+          ['GOODBYE_CHANNEL_ID',             '👋 Goodbye Channel',         'channel'],
+          ['LEVELING_CHANNEL_ID',            '🏆 Leveling Channel',        'channel'],
+          ['LEVELING_ENABLED',               '🏆 Leveling Enabled',        'bool'],
+          ['BIRTHDAY_CHANNEL_ID',            '🎂 Birthday Channel',         'channel'],
+          ['BIRTHDAY_ROLE_ID',               '🎂 Birthday Role',            'role'],
+          ['MOD_LOG_CHANNEL_ID',             '🛡️ Mod Log Channel',         'channel'],
+          ['ANTI_SPAM_ENABLED',              '🛡️ Anti-Spam',               'bool'],
+          ['ANTI_LINK_ENABLED',              '🛡️ Anti-Link',               'bool'],
+          ['MUTE_ROLE_ID',                   '🔇 Mute Role',               'role'],
+          ['AI_ALLOWED_CHANNEL_IDS',         '🤖 AI Channels',             'channels'],
+        ];
+
+        const lines = [];
+        for (const [key, label, type] of keys) {
+          const val = await getS(guild.id, key);
+          let display = '*(not set)*';
+          if (val) {
+            if (type === 'channel') display = `<#${val}>`;
+            else if (type === 'role') display = `<@&${val}>`;
+            else if (type === 'channels') display = val.split(',').filter(Boolean).map(id => `<#${id}>`).join(', ') || '*(empty)*';
+            else if (type === 'bool') display = val === '1' ? '✅ চালু' : '❌ বন্ধ';
+            else display = `\`${val.slice(0, 50)}\``;
+          }
+          lines.push(`**${label}:** ${display}`);
+        }
+
+        // Send as embed in the channel
+        const configEmbed = new EmbedBuilder()
+          .setColor(0x6366f1)
+          .setTitle('⚙️ Current Bot Configuration')
+          .setDescription(lines.join('\n'))
+          .setFooter({ text: `${guild.name} • Jarvis Config` })
+          .setTimestamp();
+
+        await message.channel.send({ embeds: [configEmbed] });
+
+        return {
+          success: true,
+          message: '⚙️ উপরে current config দেখানো হলো।',
+        };
+      }
+
       default:
         return { success: false, message: `❌ অজানা action: "${actionType}". এই কাজটি আমি এখনো করতে পারি না।` };
+
     }
   } catch (err) {
     console.error(`[aiActions] Error executing ${actionType}:`, err);
