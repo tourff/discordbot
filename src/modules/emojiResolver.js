@@ -11,12 +11,18 @@
 
 // Built-in Application Emojis cache with known working IDs
 const APP_EMOJIS_FALLBACK = [
-  { name: 'arrow_lookright', id: '1548650753990852669', animated: true },
-  { name: 'Arrowrcolor',     id: '1548650829932662795', animated: true },
-  { name: 'carydance',       id: '1548650843585388604', animated: true },
-  { name: 'arrow_lookleft',  id: '1548650845732864070', animated: true },
-  { name: 'diamond',         id: '1548651187300204605', animated: true },
-  { name: 'loading',         id: '1548651190919630858', animated: true },
+  { name: 'arrow_lookright',  id: '1548650753990852669', animated: true },
+  { name: 'Arrowrcolor',      id: '1548650829932662795', animated: true },
+  { name: 'carydance',        id: '1548650843585388604', animated: true },
+  { name: 'arrow_lookleft',   id: '1548650845732864070', animated: true },
+  { name: 'diamond',          id: '1548651187300204605', animated: true },
+  { name: 'loading',          id: '1548651190919630858', animated: true },
+  { name: 'line',             id: '1548697256679448659', animated: true },
+  { name: 'emoji_33',         id: '1548697259179511879', animated: false },
+  { name: 'arrow_l',          id: '1548697262522237108', animated: true },
+  { name: 'arrow_mixedright', id: '1548697266062098586', animated: true },
+  { name: 'arrow_mixedleft',  id: '1548697270138966026', animated: true },
+  { name: 'red',              id: '1548697346433355776', animated: false },
 ];
 
 let appEmojisCache = new Map(APP_EMOJIS_FALLBACK.map(e => [e.name.toLowerCase(), e]));
@@ -27,10 +33,8 @@ let appEmojisCache = new Map(APP_EMOJIS_FALLBACK.map(e => [e.name.toLowerCase(),
  */
 async function syncApplicationEmojis(client) {
   try {
-    if (!client.application) {
-      await client.application?.fetch();
-    }
-    const emojis = await client.application?.emojis?.fetch();
+    const app = client.application || (await client.application?.fetch().catch(() => null));
+    const emojis = await app?.emojis?.fetch().catch(() => null);
     if (emojis && emojis.size > 0) {
       emojis.forEach(e => {
         appEmojisCache.set(e.name.toLowerCase(), {
@@ -103,6 +107,19 @@ function findEmojiByName(name, guild, client) {
         tag: `<${clientEmoji.animated ? 'a' : ''}:${clientEmoji.name}:${clientEmoji.id}>`
       };
     }
+  }
+
+  // 4. Try alias mapping
+  const ALIASES = {
+    'arrow_l': 'arrow_lookleft',
+    'arrow_r': 'arrow_lookright',
+    'arrow_mixedleft': 'arrow_lookleft',
+    'arrow_mixedright': 'arrow_lookright',
+    'arrow_right': 'arrow_lookright',
+    'arrow_left': 'arrow_lookleft',
+  };
+  if (ALIASES[lower] && ALIASES[lower] !== lower) {
+    return findEmojiByName(ALIASES[lower], guild, client);
   }
 
   return null;
