@@ -9,6 +9,7 @@
 
 const { PlayableExtractorPlugin, Song, Playlist, DisTubeError } = require('distube');
 const { spawn } = require('child_process');
+const { PassThrough } = require('stream');
 const path = require('path');
 const fs = require('fs');
 const dargs = require('dargs');
@@ -199,22 +200,47 @@ class YtDlpPlugin extends PlayableExtractorPlugin {
       throw new DisTubeError('YTDLP_PLUGIN_INVALID_SONG', 'Cannot get stream url from invalid song.');
     }
 
-    // 1. Resolve direct audio stream URL directly via yt-dlp (fast, reliable, zero proxy issues)
-    try {
-      const info = await runYtDlpJson(song.url, {
-        format: 'ba/ba*',
-      });
-      const directStreamUrl = info?.url || (Array.isArray(info?.entries) && info.entries[0]?.url);
-      if (directStreamUrl) {
-        return directStreamUrl;
-      }
-    } catch (err) {
-      console.warn('[YtDlpPlugin] Direct audio URL extraction failed, trying localhost stream fallback:', err.message);
-    }
+    // Pipe audio directly from yt-dlp → PassThrough stream → FFmpeg.
+    // This avoids short-lived YouTube CDN URLs that expire and cause "code 251" errors
+    // on datacenter IPs (Render, Railway, etc.) where direct CDN access is blocked.
+    return new Promise((resolve, reject) => {
+      const proc = spawn(YTDLP_BIN, [
+        song.url,
+        '-f', 'ba/ba*',
+        '-o', '-',
+        '--no-warnings',
+        '--quiet',
+        '--no-playlist',
+        '--extractor-args', 'youtube:player_client=web',
+        '--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
-    // 2. Fallback to local streaming proxy if direct extraction fails
-    const port = process.env.PORT || 3000;
-    return `http://127.0.0.1:${port}/stream?url=${encodeURIComponent(song.url)}`;
+      const passthrough = new PassThrough();
+
+      proc.stdout.pipe(passthrough);
+
+      let stderrBuf = '';
+      proc.stderr.on('data', (chunk) => {
+        stderrBuf += chunk.toString();
+      });
+
+      // Resolve with the stream as soon as yt-dlp starts writing
+      proc.stdout.once('data', () => resolve(passthrough));
+
+      proc.on('error', (err) => {
+        console.error('[YtDlpPlugin] Stream spawn error:', err.message);
+        reject(new DisTubeError('YTDLP_STREAM_ERROR', err.message));
+      });
+
+      proc.on('close', (code) => {
+        if (code !== 0 && code !== null) {
+          const errMsg = stderrBuf.trim() || `yt-dlp exited with code ${code}`;
+          console.warn('[YtDlpPlugin] Stream process exited:', errMsg);
+          // Don't reject here — passthrough end will propagate naturally
+          passthrough.end();
+        }
+      });
+    });
   }
 
   getRelatedSongs() {

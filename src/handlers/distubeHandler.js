@@ -128,25 +128,44 @@ module.exports = (client) => {
 
     const errorMessage = String(error?.message || error || '');
     
-    // Ignore benign pipe-closure errors during track transitions, skips, or stops
-    const isTransitionError = 
-      errorMessage.includes('code 251') || 
-      errorMessage.includes('code 255') ||
+    // Detect stream-level abort codes that happen during normal track transitions / skips
+    const isStreamAbort = 
       errorMessage.includes('ERR_STREAM_PREMATURE_CLOSE') ||
       error?.code === 'ERR_STREAM_PREMATURE_CLOSE';
 
-    // If a new song is actively playing or queued, don't spam Discord with previous stream exit codes
-    if (isTransitionError && queue?.songs?.length > 0) {
-      console.log('[DisTube] Ignored benign stream abort code during track playback transition.');
+    // Code 251 = YouTube 403 / CDN block. Code 255 = yt-dlp unrecoverable error.
+    const isYtError =
+      errorMessage.includes('code 251') ||
+      errorMessage.includes('code 255') ||
+      errorMessage.includes('YTDLP_STREAM_ERROR');
+
+    // Benign pipe closure during a deliberate skip/stop — just ignore
+    if (isStreamAbort && queue?.songs?.length > 0) {
+      console.log('[DisTube] Ignored benign stream abort during track transition.');
       return;
     }
 
     const channel = queue?.textChannel || song?.metadata?.textChannel;
-    if (channel) {
-      const displayMsg = errorMessage.includes('code 251')
-        ? 'The audio stream connection was temporarily interrupted. Please try re-adding the track.'
-        : errorMessage.slice(0, 1900);
 
+    // For YouTube CDN errors, try to auto-skip to the next track silently
+    if (isYtError && queue) {
+      console.warn('[DisTube] Stream error detected, attempting auto-skip...');
+      queue.skip().catch(() => {
+        // If skip fails (no next song), stop gracefully
+        queue.stop().catch(() => null);
+      });
+      if (channel) {
+        const embed = new EmbedBuilder()
+          .setColor(0xffa500)
+          .setTitle('⚠️ Stream Issue')
+          .setDescription('The audio stream was interrupted. Skipping to the next track...');
+        channel.send({ embeds: [embed] }).catch(console.error);
+      }
+      return;
+    }
+
+    if (channel) {
+      const displayMsg = errorMessage.slice(0, 1900);
       const embed = new EmbedBuilder()
         .setColor(0xed4245)
         .setTitle('❌ Playback Error')
