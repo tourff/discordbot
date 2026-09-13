@@ -66,6 +66,15 @@ module.exports = {
       } else if (interaction.customId === 'ticket_close') {
         const { handleTicketClose } = require('../modules/ticketManager');
         return await handleTicketClose(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_reopen') {
+        const { handleTicketReopen } = require('../modules/ticketManager');
+        return await handleTicketReopen(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_claim') {
+        const { handleTicketClaim } = require('../modules/ticketManager');
+        return await handleTicketClaim(interaction).catch(console.error);
+      } else if (interaction.customId === 'ticket_transcript') {
+        const { handleTicketTranscript } = require('../modules/ticketManager');
+        return await handleTicketTranscript(interaction).catch(console.error);
       } else if (interaction.customId === 'ticket_delete') {
         const { handleTicketDelete } = require('../modules/ticketManager');
         return await handleTicketDelete(interaction).catch(console.error);
@@ -541,6 +550,14 @@ module.exports = {
           );
 
         await interaction.message.edit({ embeds: [newEmbed], components: [] });
+      }
+    }
+
+    // ── String Select Menus ─────────────────────────────────────────────────
+    if (interaction.isStringSelectMenu()) {
+      if (interaction.customId === 'ticket_type_select') {
+        const { handleTicketTypeSelect } = require('../modules/ticketManager');
+        return await handleTicketTypeSelect(interaction).catch(console.error);
       }
     }
   },
