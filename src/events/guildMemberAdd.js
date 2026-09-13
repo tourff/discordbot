@@ -56,6 +56,9 @@ module.exports = {
     const memberCount = guild.memberCount;
 
     const { resolveEmojis } = require('../modules/emojiResolver');
+    const { extractMediaFromText, buildMediaPayload } = require('../modules/mediaHelper');
+    const { getWelcomeImageUrl } = require('../modules/settings');
+
     const customMessage = await getWelcomeMessage(guild.id);
     let rawDescription = customMessage 
       ? customMessage
@@ -66,18 +69,24 @@ module.exports = {
           .replace(/{count}/gi, `${memberCount}`)
       : `Hey ${member}, glad you joined us!\n\n📋 Please read the rules before chatting.\n🎭 Head over to the roles channel to grab your roles.`;
 
-    const description = resolveEmojis(rawDescription, guild, member.client);
+    // Extract {image: URL} or {gif: URL} or {video: URL} if present inside the message text
+    const { cleanText, mediaUrl: extractedMediaUrl } = extractMediaFromText(rawDescription);
+    const configuredImageUrl = await getWelcomeImageUrl(guild.id);
+    const mediaUrl = configuredImageUrl || extractedMediaUrl;
+
+    const description = resolveEmojis(cleanText, guild, member.client);
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2) // Discord Blurple
       .setTitle(`👋 Welcome to ${guild.name}!`)
       .setDescription(description)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .setImage(guild.bannerURL({ size: 1024 }) ?? null)
       .setFooter({ text: `${guild.name} • Member joined`, iconURL: guild.iconURL() })
       .setTimestamp();
 
-    await channel.send({ embeds: [embed] }).catch((err) =>
+    const payload = buildMediaPayload(embed, mediaUrl, guild.bannerURL({ size: 1024 }));
+
+    await channel.send(payload).catch((err) =>
       console.error('[guildMemberAdd] Failed to send welcome message:', err)
     );
   },

@@ -51,6 +51,9 @@ module.exports = {
       const goodbyeChannel = member.guild.channels.cache.get(goodbyeChannelId);
       if (goodbyeChannel) {
         const { resolveEmojis } = require('../modules/emojiResolver');
+        const { extractMediaFromText, buildMediaPayload } = require('../modules/mediaHelper');
+        const { getGoodbyeImageUrl } = require('../modules/settings');
+
         const customMessage = await getGoodbyeMessage(member.guild.id);
         const rawDescription = customMessage 
           ? customMessage
@@ -59,7 +62,11 @@ module.exports = {
               .replace(/{server}/g, member.guild.name)
           : `**${member.user?.tag || 'A member'}** left the server.`;
 
-        const description = resolveEmojis(rawDescription, member.guild, member.client);
+        const { cleanText, mediaUrl: extractedMediaUrl } = extractMediaFromText(rawDescription);
+        const configuredImageUrl = await getGoodbyeImageUrl(member.guild.id);
+        const mediaUrl = configuredImageUrl || extractedMediaUrl;
+
+        const description = resolveEmojis(cleanText, member.guild, member.client);
 
         const goodbyeEmbed = new EmbedBuilder()
           .setColor(0xed4245)
@@ -69,7 +76,9 @@ module.exports = {
           .setFooter({ text: `${member.guild.name} • Member left`, iconURL: member.guild.iconURL() })
           .setTimestamp();
 
-        await goodbyeChannel.send({ embeds: [goodbyeEmbed] }).catch(console.error);
+        const payload = buildMediaPayload(goodbyeEmbed, mediaUrl, member.guild.bannerURL({ size: 1024 }));
+
+        await goodbyeChannel.send(payload).catch(console.error);
       }
     }
   },

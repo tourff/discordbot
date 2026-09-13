@@ -108,15 +108,45 @@ module.exports = {
         const messageInput = new TextInputBuilder().setCustomId('goodbye_message_input').setLabel('Goodbye Message').setPlaceholder('Use {user} and {server}').setValue(currentMessage || `{user} left the server.`).setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(2000);
         modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
         await interaction.showModal(modal);
+      } else if (interaction.customId === 'welcome_banner_btn') {
+        const { getWelcomeImageUrl } = require('../modules/settings');
+        const currentImage = await getWelcomeImageUrl(interaction.guild.id);
+        const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+        const modal = new ModalBuilder().setCustomId('welcome_banner_modal').setTitle('Welcome Media / Banner');
+        const bannerInput = new TextInputBuilder()
+          .setCustomId('welcome_banner_input')
+          .setLabel('Picture / GIF / Video URL')
+          .setPlaceholder('https://example.com/banner.gif or type "none" to remove')
+          .setValue(currentImage || '')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+        modal.addComponents(new ActionRowBuilder().addComponents(bannerInput));
+        await interaction.showModal(modal);
+      } else if (interaction.customId === 'goodbye_banner_btn') {
+        const { getGoodbyeImageUrl } = require('../modules/settings');
+        const currentImage = await getGoodbyeImageUrl(interaction.guild.id);
+        const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+        const modal = new ModalBuilder().setCustomId('goodbye_banner_modal').setTitle('Goodbye Media / Banner');
+        const bannerInput = new TextInputBuilder()
+          .setCustomId('goodbye_banner_input')
+          .setLabel('Picture / GIF / Video URL')
+          .setPlaceholder('https://example.com/banner.gif or type "none" to remove')
+          .setValue(currentImage || '')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+        modal.addComponents(new ActionRowBuilder().addComponents(bannerInput));
+        await interaction.showModal(modal);
       } else if (interaction.customId === 'welcome_disable_btn') {
         const { deleteSetting } = require('../modules/settings');
         await deleteSetting(interaction.guild.id, 'WELCOME_CHANNEL_ID');
         await deleteSetting(interaction.guild.id, 'WELCOME_MESSAGE');
+        await deleteSetting(interaction.guild.id, 'WELCOME_IMAGE_URL');
         await interaction.reply({ content: '✅ Welcome system has been completely disabled.', ephemeral: true });
       } else if (interaction.customId === 'goodbye_disable_btn') {
         const { deleteSetting } = require('../modules/settings');
         await deleteSetting(interaction.guild.id, 'GOODBYE_CHANNEL_ID');
         await deleteSetting(interaction.guild.id, 'GOODBYE_MESSAGE');
+        await deleteSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL');
         await interaction.reply({ content: '✅ Goodbye system has been completely disabled.', ephemeral: true });
       } else if (interaction.customId.startsWith('social_menu_')) {
         const platform = interaction.customId.split('_')[2];
@@ -471,6 +501,62 @@ module.exports = {
           });
         } else {
           await interaction.reply({ content: '❌ Failed to update goodbye message in database.', ephemeral: true });
+        }
+      } else if (interaction.customId === 'welcome_banner_modal') {
+        const rawInput = interaction.fields.getTextInputValue('welcome_banner_input').trim();
+        const { setSetting, deleteSetting } = require('../modules/settings');
+
+        if (!rawInput || rawInput.toLowerCase() === 'none') {
+          await deleteSetting(interaction.guild.id, 'WELCOME_IMAGE_URL');
+          return await interaction.reply({
+            content: '✅ **Welcome media banner has been removed.** The default server banner will be used if available.',
+            ephemeral: true
+          });
+        }
+
+        if (!/^https?:\/\//i.test(rawInput)) {
+          return await interaction.reply({
+            content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.',
+            ephemeral: true
+          });
+        }
+
+        const success = await setSetting(interaction.guild.id, 'WELCOME_IMAGE_URL', rawInput);
+        if (success) {
+          await interaction.reply({
+            content: `✅ **Welcome media banner updated successfully!**\n\n**Media URL:** ${rawInput}`,
+            ephemeral: true
+          });
+        } else {
+          await interaction.reply({ content: '❌ Failed to save banner URL in database.', ephemeral: true });
+        }
+      } else if (interaction.customId === 'goodbye_banner_modal') {
+        const rawInput = interaction.fields.getTextInputValue('goodbye_banner_input').trim();
+        const { setSetting, deleteSetting } = require('../modules/settings');
+
+        if (!rawInput || rawInput.toLowerCase() === 'none') {
+          await deleteSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL');
+          return await interaction.reply({
+            content: '✅ **Goodbye media banner has been removed.** The default server banner will be used if available.',
+            ephemeral: true
+          });
+        }
+
+        if (!/^https?:\/\//i.test(rawInput)) {
+          return await interaction.reply({
+            content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.',
+            ephemeral: true
+          });
+        }
+
+        const success = await setSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL', rawInput);
+        if (success) {
+          await interaction.reply({
+            content: `✅ **Goodbye media banner updated successfully!**\n\n**Media URL:** ${rawInput}`,
+            ephemeral: true
+          });
+        } else {
+          await interaction.reply({ content: '❌ Failed to save banner URL in database.', ephemeral: true });
         }
       } else if (interaction.customId.startsWith('social_urlmodal_')) {
         // customId format: social_urlmodal_PLATFORM (e.g. social_urlmodal_YOUTUBE)

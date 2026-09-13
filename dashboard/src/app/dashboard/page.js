@@ -272,7 +272,7 @@ export default function Dashboard() {
   const [captcha, setCaptcha] = useState({ CAPTCHA_VERIFIED_ROLE_ID: '' });
   const [isSavingCaptcha, setIsSavingCaptcha] = useState(false);
 
-  const [welcome, setWelcome] = useState({ WELCOME_CHANNEL_ID: '', WELCOME_MESSAGE: '', GOODBYE_CHANNEL_ID: '', GOODBYE_MESSAGE: '' });
+  const [welcome, setWelcome] = useState({ WELCOME_CHANNEL_ID: '', WELCOME_MESSAGE: '', WELCOME_IMAGE_URL: '', GOODBYE_CHANNEL_ID: '', GOODBYE_MESSAGE: '', GOODBYE_IMAGE_URL: '' });
   const [isSavingWelcome, setIsSavingWelcome] = useState(false);
 
   const [automod, setAutomod] = useState({ AUTOMOD_BAD_WORDS: '', AUTOMOD_ANTI_SPAM: 'true', AUTOMOD_BLOCK_INVITES: 'true', AUTOMOD_BLOCK_URLS: 'false' });
@@ -409,8 +409,10 @@ export default function Dashboard() {
         setWelcome({
           WELCOME_CHANNEL_ID: map.WELCOME_CHANNEL_ID || '',
           WELCOME_MESSAGE: map.WELCOME_MESSAGE || '',
+          WELCOME_IMAGE_URL: map.WELCOME_IMAGE_URL || '',
           GOODBYE_CHANNEL_ID: map.GOODBYE_CHANNEL_ID || '',
-          GOODBYE_MESSAGE: map.GOODBYE_MESSAGE || ''
+          GOODBYE_MESSAGE: map.GOODBYE_MESSAGE || '',
+          GOODBYE_IMAGE_URL: map.GOODBYE_IMAGE_URL || ''
         });
         setAutomod({
           AUTOMOD_BAD_WORDS: map.AUTOMOD_BAD_WORDS || '',
@@ -2157,6 +2159,30 @@ export default function Dashboard() {
                           }}
                         />
                       </div>
+
+                      {/* Welcome Media Banner (Image / GIF / Video) */}
+                      <div style={{ marginTop: 16 }}>
+                        <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                          <span>🖼️ Welcome Media Banner (Picture / GIF / Video URL)</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>Supports PNG, JPG, GIF, WebM, MP4 or Tenor links</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={welcome.WELCOME_IMAGE_URL || ''}
+                          onChange={e => setWelcome(p => ({ ...p, WELCOME_IMAGE_URL: e.target.value }))}
+                          placeholder="e.g. https://i.imgur.com/welcome.gif or https://cdn.discordapp.com/.../banner.png"
+                          className="luxe-input"
+                        />
+                        {welcome.WELCOME_IMAGE_URL && (
+                          <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-subtle)', maxHeight: 180, background: '#070a12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {welcome.WELCOME_IMAGE_URL.endsWith('.mp4') || welcome.WELCOME_IMAGE_URL.endsWith('.webm') ? (
+                              <video src={welcome.WELCOME_IMAGE_URL} autoPlay loop muted style={{ maxWidth: '100%', maxHeight: 180 }} />
+                            ) : (
+                              <img src={welcome.WELCOME_IMAGE_URL} alt="Banner Preview" style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* SECTION 2: GOODBYE */}
@@ -2260,6 +2286,30 @@ export default function Dashboard() {
                             fontSize: 13.5
                           }}
                         />
+                      </div>
+
+                      {/* Goodbye Media Banner (Image / GIF / Video) */}
+                      <div style={{ marginTop: 16 }}>
+                        <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600, color: 'var(--text-high)', marginBottom: 6 }}>
+                          <span>🖼️ Goodbye Media Banner (Picture / GIF / Video URL)</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 400 }}>Supports PNG, JPG, GIF, WebM, MP4 or Tenor links</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={welcome.GOODBYE_IMAGE_URL || ''}
+                          onChange={e => setWelcome(p => ({ ...p, GOODBYE_IMAGE_URL: e.target.value }))}
+                          placeholder="e.g. https://i.imgur.com/goodbye.gif or https://cdn.discordapp.com/.../banner.png"
+                          className="luxe-input"
+                        />
+                        {welcome.GOODBYE_IMAGE_URL && (
+                          <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-subtle)', maxHeight: 180, background: '#070a12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {welcome.GOODBYE_IMAGE_URL.endsWith('.mp4') || welcome.GOODBYE_IMAGE_URL.endsWith('.webm') ? (
+                              <video src={welcome.GOODBYE_IMAGE_URL} autoPlay loop muted style={{ maxWidth: '100%', maxHeight: 180 }} />
+                            ) : (
+                              <img src={welcome.GOODBYE_IMAGE_URL} alt="Banner Preview" style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

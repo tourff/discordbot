@@ -129,8 +129,10 @@ async function deleteSetting(guildId, key) {
 /** @param {string} guildId */
 const getWelcomeChannelId      = (guildId) => getSetting(guildId, 'WELCOME_CHANNEL_ID');
 const getWelcomeMessage        = (guildId) => getSetting(guildId, 'WELCOME_MESSAGE');
+const getWelcomeImageUrl       = (guildId) => getSetting(guildId, 'WELCOME_IMAGE_URL');
 const getGoodbyeChannelId      = (guildId) => getSetting(guildId, 'GOODBYE_CHANNEL_ID');
 const getGoodbyeMessage        = (guildId) => getSetting(guildId, 'GOODBYE_MESSAGE');
+const getGoodbyeImageUrl       = (guildId) => getSetting(guildId, 'GOODBYE_IMAGE_URL');
 const getModLogsChannelId      = (guildId) => getSetting(guildId, 'MOD_LOGS_CHANNEL_ID');
 const getServerLogsChannelId   = (guildId) => getSetting(guildId, 'SERVER_LOGS_CHANNEL_ID');
 const getDefaultMemberRoleId   = (guildId) => getSetting(guildId, 'DEFAULT_MEMBER_ROLE_ID');
@@ -213,8 +215,10 @@ module.exports = {
   invalidateCache,
   getWelcomeChannelId,
   getWelcomeMessage,
+  getWelcomeImageUrl,
   getGoodbyeChannelId,
   getGoodbyeMessage,
+  getGoodbyeImageUrl,
   getModLogsChannelId,
   getServerLogsChannelId,
   getDefaultMemberRoleId,
