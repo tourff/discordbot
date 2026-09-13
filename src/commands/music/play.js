@@ -14,13 +14,21 @@ module.exports = {
 
   async autocomplete(interaction) {
     const focusedValue = interaction.options.getFocused();
-    if (!focusedValue || !focusedValue.trim()) {
+    // Need at least 2 chars to search meaningfully
+    if (!focusedValue || focusedValue.trim().length < 2) {
       return await interaction.respond([]);
     }
 
     try {
       if (typeof interaction.client.distube.search === 'function') {
-        const results = await interaction.client.distube.search(focusedValue, { limit: 10 });
+        // Discord autocomplete has a hard 3-second deadline.
+        // Race the search against a 2.5s timeout so we always respond in time.
+        const searchPromise = interaction.client.distube.search(focusedValue.trim(), { limit: 6 });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('autocomplete_timeout')), 2500)
+        );
+
+        const results = await Promise.race([searchPromise, timeoutPromise]);
         const choices = (results || []).slice(0, 10).map((song) => ({
           name: `${song.name} (${song.formattedDuration || '??:??'})`.slice(0, 100),
           value: song.url || song.name,
@@ -28,8 +36,11 @@ module.exports = {
         return await interaction.respond(choices);
       }
       return await interaction.respond([]);
-    } catch {
-      // Ignore errors during fast user typing in autocomplete
+    } catch (err) {
+      if (err?.message === 'autocomplete_timeout') {
+        console.warn('[Autocomplete] Search timed out for query:', focusedValue);
+      }
+      // Always respond to avoid Discord showing an error
       return await interaction.respond([]).catch(() => null);
     }
   },

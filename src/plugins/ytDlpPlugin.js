@@ -53,10 +53,16 @@ function runYtDlpJson(target, flags = {}, options = {}) {
     preferFreeFormats: true,
     skipDownload: true,
     simulate: true,
-    ...flags,
   };
 
-  const args = [target].concat(dargs(defaultFlags, { useEquals: false })).filter(Boolean);
+  // Merge: caller flags override defaults. Then filter out falsy values so
+  // e.g. { simulate: false } won't add --simulate to the CLI args.
+  const merged = { ...defaultFlags, ...flags };
+  const activeFlags = Object.fromEntries(
+    Object.entries(merged).filter(([, v]) => v !== false && v !== null && v !== undefined)
+  );
+
+  const args = [target].concat(dargs(activeFlags, { useEquals: false })).filter(Boolean);
 
   return new Promise((resolve, reject) => {
     const proc = spawn(YTDLP_BIN, args, options);
@@ -99,8 +105,16 @@ async function searchYt(query, opts = {}) {
   const limit = Math.min(Math.max(1, opts.limit || 5), 25);
 
   try {
+    // Use only the flags needed for fast metadata-only search.
+    // --flat-playlist avoids fetching full info per entry (much faster).
+    // Skip --simulate / --prefer-free-formats as they're not needed here.
     const data = await runYtDlpJson(`ytsearch${limit}:${query.trim()}`, {
       flatPlaylist: true,
+      noWarnings: true,
+      skipDownload: true,
+      dumpSingleJson: true,       // override default to keep it set
+      preferFreeFormats: false,   // not needed for search
+      simulate: false,            // redundant alongside skipDownload, remove
     });
 
     const entries = Array.isArray(data.entries) ? data.entries.filter(Boolean) : [];
@@ -199,34 +213,25 @@ class YtDlpPlugin extends PlayableExtractorPlugin {
       throw new DisTubeError('YTDLP_PLUGIN_INVALID_SONG', 'Cannot get stream url from invalid song.');
     }
 
-    // DisTube v5 requires getStreamURL to return a STRING url.
-    // YouTube blocks datacenter IPs (Render, Railway) on the default web client.
-    // Solution: try multiple player_client options — ios/mweb/tv_embedded use different
-    // CDN endpoints that are NOT blocked on datacenter IPs.
-    const playerClients = ['ios', 'mweb', 'tv_embedded', 'web'];
-
-    for (const client of playerClients) {
-      try {
-        const info = await runYtDlpJson(song.url, {
-          format: 'ba/ba*',
-          noPlaylist: true,
-          extractorArgs: `youtube:player_client=${client}`,
-        });
-
-        const streamUrl = info?.url || (Array.isArray(info?.entries) && info.entries[0]?.url);
-        if (streamUrl) {
-          console.log(`[YtDlpPlugin] Got stream URL via player_client=${client}`);
-          return streamUrl;
-        }
-      } catch (err) {
-        console.warn(`[YtDlpPlugin] player_client=${client} failed:`, err.message);
-      }
-    }
-
-    // Last resort: local streaming proxy (yt-dlp pipes audio through localhost)
-    const port = process.env.PORT || 3000;
-    console.warn('[YtDlpPlugin] All player clients failed, using localhost proxy fallback.');
-    return `http://127.0.0.1:${port}/stream?url=${encodeURIComponent(song.url)}`;
+    // ARCHITECTURE NOTE:
+    // On datacenter hosting (Render, Railway, Fly.io), YouTube's CDN blocks all
+    // non-residential IP addresses with 403 errors (seen as FFmpeg exit code 251).
+    // No matter which player_client we try, the extracted CDN URL will be rejected
+    // when FFmpeg tries to fetch it directly.
+    //
+    // Solution: NEVER give FFmpeg a raw YouTube CDN URL.
+    // Instead, return a localhost URL that proxies through our Express server.
+    // The Express /stream endpoint runs yt-dlp and pipes the audio bytes directly —
+    // so FFmpeg always reads from 127.0.0.1 (always succeeds) and yt-dlp handles
+    // the YouTube CDN fetching with the ios player client.
+    //
+    //  Flow:  FFmpeg ──HTTP──▶ localhost:PORT/stream ──pipe──▶ yt-dlp ──CDN──▶ YouTube
+    //
+    const { getPort } = require('../config/streamPort');
+    const port = getPort();
+    const proxyUrl = `http://127.0.0.1:${port}/stream?url=${encodeURIComponent(song.url)}`;
+    console.log(`[YtDlpPlugin] Streaming via proxy: ${proxyUrl}`);
+    return proxyUrl;
   }
 
   getRelatedSongs() {

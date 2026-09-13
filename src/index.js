@@ -24,6 +24,8 @@ const loadCommands    = require('./handlers/commandHandler');
 const loadEvents      = require('./handlers/eventHandler');
 const loadDisTube     = require('./handlers/distubeHandler');
 const startSocialCron = require('./jobs/socialNotifier');
+const { setPort }     = require('./config/streamPort');
+
 
 // ── 1. Express web server ─────────────────────────────────────────────────────
 // Render's free tier requires a service to bind to a port within 60 seconds.
@@ -32,14 +34,18 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (_req, res) => res.send('✅ Discord bot is online.'));
 
-// Internal audio streaming proxy: yt-dlp pipes directly to localhost, eliminating
-// YouTube CDN connection drops, 403 Forbidden, and FFmpeg code 251 crashes on datacenter IPs.
+// Internal audio streaming proxy — yt-dlp pipes the audio directly to FFmpeg via
+// localhost HTTP, so FFmpeg NEVER touches YouTube CDN URLs directly. This is the
+// only reliable way to play YouTube audio from datacenter IPs (Render, Railway, etc.)
+// where YouTube's CDN aggressively blocks non-residential IP requests (code 251 / 403).
 app.get('/stream', (req, res) => {
   const targetUrl = req.query.url;
   if (!targetUrl) return res.status(400).send('Missing url parameter');
 
-  res.setHeader('Content-Type', 'audio/webm');
+  // Respond immediately so FFmpeg doesn't timeout waiting for headers
+  res.setHeader('Content-Type', 'application/octet-stream');
   res.setHeader('Transfer-Encoding', 'chunked');
+  res.setHeader('Cache-Control', 'no-cache');
 
   const proc = spawn(getYtDlpPath(), [
     targetUrl,
@@ -47,9 +53,17 @@ app.get('/stream', (req, res) => {
     '-o', '-',
     '--no-warnings',
     '--quiet',
+    '--no-playlist',
+    // ios client uses a different CDN path not blocked on datacenter IPs
+    '--extractor-args', 'youtube:player_client=ios',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
 
   proc.stdout.pipe(res);
+
+  proc.stderr.on('data', (chunk) => {
+    const msg = chunk.toString().trim();
+    if (msg) console.warn('[Stream Proxy]', msg);
+  });
 
   proc.on('error', (err) => {
     console.error('[Stream Proxy Error]', err.message);
@@ -57,11 +71,13 @@ app.get('/stream', (req, res) => {
   });
 
   req.on('close', () => {
-    if (!proc.killed) proc.kill();
+    if (!proc.killed) proc.kill('SIGTERM');
   });
 });
 
+
 const server = app.listen(PORT, () => {
+  setPort(PORT);
   console.log(`[Express] Listening on port ${PORT}`);
 });
 
@@ -70,12 +86,14 @@ server.on('error', (err) => {
     const fallbackPort = Number(PORT) + 1;
     console.warn(`[Express] Port ${PORT} is in use (e.g. by Next.js Dashboard). Listening on port ${fallbackPort}...`);
     app.listen(fallbackPort, () => {
+      setPort(fallbackPort);
       console.log(`[Express] Listening on port ${fallbackPort}`);
     });
   } else {
     console.error('[Express Error]', err);
   }
 });
+
 
 // ── 2. Discord client ─────────────────────────────────────────────────────────
 const client = new Client({
@@ -115,6 +133,8 @@ client.distube = new DisTube(client, {
         reconnect: 1,
         reconnect_streamed: 1,
         reconnect_delay_max: 5,
+        // Don't reuse the HTTP connection — each song gets a fresh localhost proxy request
+        http_persistent: 0,
         user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
       },
     },
