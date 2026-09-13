@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { BOT_COMMANDS } from '@/data/commands';
 
 // ─── Minimalist Luxury SVG Icons ────────────────────────────────────────────────
 const Icon = {
@@ -307,6 +308,16 @@ export default function Dashboard() {
   });
   const [isSavingSocial, setIsSavingSocial] = useState(false);
   const [activeSocialKey, setActiveSocialKey] = useState('youtube');
+  const [isResolvingFeed, setIsResolvingFeed] = useState(false);
+  const [resolvedFeedMeta, setResolvedFeedMeta] = useState(null);
+  const [testingFeedId, setTestingFeedId] = useState(null);
+
+  // Command Directory States (Overview Tab)
+  const [cmdSearch, setCmdSearch] = useState('');
+  const [cmdCategory, setCmdCategory] = useState('ALL');
+  const [cmdPermFilter, setCmdPermFilter] = useState('ALL');
+  const [cmdSortOrder, setCmdSortOrder] = useState('A-Z');
+  const [copiedCmd, setCopiedCmd] = useState(null);
 
   const [accessMode, setAccessMode] = useState('public');
   const [botAdderId, setBotAdderId] = useState('');
@@ -443,7 +454,7 @@ export default function Dashboard() {
             console.error('Error parsing SOCIAL_FEEDS:', e);
           }
         }
-        if (loadedFeeds.length === 0) {
+        if (!map.SOCIAL_FEEDS && loadedFeeds.length === 0) {
           const legacyPlatforms = [
             { key: 'YOUTUBE', label: 'YouTube', platform: 'youtube' },
             { key: 'FACEBOOK', label: 'Facebook', platform: 'facebook' },
@@ -584,6 +595,49 @@ export default function Dashboard() {
     setIsSavingEsports(false);
   };
 
+  // Command Directory Filtering & Sorting (Overview Tab)
+  const filteredCommands = useMemo(() => {
+    let list = [...(BOT_COMMANDS || [])];
+
+    if (cmdCategory !== 'ALL') {
+      list = list.filter(c => (c.category || '').toLowerCase() === cmdCategory.toLowerCase());
+    }
+
+    if (cmdPermFilter !== 'ALL') {
+      if (cmdPermFilter === 'Everyone') {
+        list = list.filter(c => c.permission === 'Everyone');
+      } else {
+        list = list.filter(c => c.permission !== 'Everyone');
+      }
+    }
+
+    if (cmdSearch.trim()) {
+      const q = cmdSearch.toLowerCase();
+      list = list.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q) ||
+        (c.categoryLabel || '').toLowerCase().includes(q) ||
+        (c.options || []).some(o => o.name.toLowerCase().includes(q) || (o.description || '').toLowerCase().includes(q))
+      );
+    }
+
+    list.sort((a, b) => {
+      if (cmdSortOrder === 'Z-A') return b.name.localeCompare(a.name);
+      return a.name.localeCompare(b.name);
+    });
+
+    return list;
+  }, [cmdSearch, cmdCategory, cmdPermFilter, cmdSortOrder]);
+
+  const copyCommand = (cmdName) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(`/${cmdName}`);
+      setCopiedCmd(cmdName);
+      setTimeout(() => setCopiedCmd(null), 2000);
+      showToast(`Copied /${cmdName} to clipboard!`);
+    }
+  };
+
   const handleOpenAddFeed = () => {
     setFeedFormData({
       id: '',
@@ -595,12 +649,72 @@ export default function Dashboard() {
       ping: 'none',
       enabled: true,
     });
+    setResolvedFeedMeta(null);
     setIsFeedModalOpen(true);
   };
 
   const handleOpenEditFeed = (feed) => {
     setFeedFormData({ ...feed });
+    setResolvedFeedMeta(null);
     setIsFeedModalOpen(true);
+  };
+
+  const handleResolveFeed = async () => {
+    if (!feedFormData.url.trim()) {
+      showToast('Please enter a YouTube channel URL or handle first', 'error');
+      return;
+    }
+    setIsResolvingFeed(true);
+    try {
+      const res = await fetch('/api/social/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: feedFormData.url, platform: feedFormData.platform }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResolvedFeedMeta(data);
+        setFeedFormData(prev => ({
+          ...prev,
+          name: prev.name.trim() && prev.name !== 'YouTube Feed' ? prev.name : data.title,
+          url: data.feedUrl,
+        }));
+        showToast(`✓ Resolved: ${data.title}`, 'success');
+      } else {
+        showToast(data.error || 'Failed to resolve feed URL', 'error');
+      }
+    } catch (err) {
+      showToast('Error connecting to feed resolver', 'error');
+    } finally {
+      setIsResolvingFeed(false);
+    }
+  };
+
+  const handleTestFeed = async (feedToTest) => {
+    const target = feedToTest || feedFormData;
+    if (!target.channelId) {
+      showToast('Please select a target Discord channel first', 'error');
+      return;
+    }
+    setTestingFeedId(target.id || 'modal');
+    try {
+      const res = await fetch('/api/social/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feed: target, guildId: selectedGuild?.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const ch = guildChannels.find(c => c.id === target.channelId);
+        showToast(`✓ Test notification sent to #${ch ? ch.name : target.channelId}! Check Discord.`, 'success');
+      } else {
+        showToast(data.error || 'Failed to send test notification', 'error');
+      }
+    } catch (err) {
+      showToast('Error sending test notification to Discord', 'error');
+    } finally {
+      setTestingFeedId(null);
+    }
   };
 
   const handleSaveFeed = async (e) => {
@@ -614,13 +728,26 @@ export default function Dashboard() {
       return;
     }
 
+    setIsSavingSocial(true);
     let cleanUrl = feedFormData.url.trim();
-    if (feedFormData.platform === 'youtube') {
-      if (cleanUrl.startsWith('UC') && cleanUrl.length >= 20 && !cleanUrl.includes('/')) {
-        cleanUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${cleanUrl}`;
-      } else if (cleanUrl.includes('youtube.com/channel/')) {
-        const match = cleanUrl.match(/channel\/(UC[a-zA-Z0-9_-]+)/);
-        if (match) cleanUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${match[1]}`;
+
+    // Auto-resolve YouTube if not already an XML feed URL
+    if (feedFormData.platform === 'youtube' && !cleanUrl.includes('feeds/videos.xml')) {
+      try {
+        const res = await fetch('/api/social/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: cleanUrl, platform: 'youtube' }),
+        });
+        const data = await res.json();
+        if (data.success && data.feedUrl) {
+          cleanUrl = data.feedUrl;
+          if (!feedFormData.name.trim() || feedFormData.name === 'YouTube Feed') {
+            feedFormData.name = data.title;
+          }
+        }
+      } catch (err) {
+        console.warn('Resolver fallback error:', err);
       }
     }
 
@@ -642,14 +769,23 @@ export default function Dashboard() {
       updatedFeeds = [...socialFeeds, newFeed];
     }
 
-    setIsSavingSocial(true);
-    const ok = await saveSettings({
+    // Save SOCIAL_FEEDS array and sync legacy keys for first YouTube feed
+    const firstYt = updatedFeeds.find(f => (f.platform || '').toLowerCase() === 'youtube');
+    const syncData = {
       SOCIAL_FEEDS: JSON.stringify(updatedFeeds),
-    });
+    };
+    if (firstYt) {
+      syncData.YOUTUBE_URL = firstYt.url;
+      syncData.YOUTUBE_CHANNEL_ID = firstYt.channelId;
+      syncData.YOUTUBE_MESSAGE = firstYt.message;
+    }
+
+    const ok = await saveSettings(syncData);
 
     if (ok) {
       setSocialFeeds(updatedFeeds);
       setIsFeedModalOpen(false);
+      setResolvedFeedMeta(null);
       showToast(feedFormData.id ? 'Social feed updated!' : 'Social feed added successfully!', 'success');
     } else {
       showToast('Failed to save feed configuration', 'error');
@@ -1213,6 +1349,306 @@ export default function Dashboard() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* ═══════════════════════════════════════════════════════════════
+                      COMMANDS DIRECTORY (A to Z)
+                      ═══════════════════════════════════════════════════════════════ */}
+                  <div className="luxe-card" style={{ padding: '26px 28px', marginTop: 8 }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ color: '#818cf8' }}>⚡</span> All Bot Slash Commands (A to Z)
+                          </h2>
+                          <span style={{
+                            background: 'rgba(99, 102, 241, 0.15)',
+                            color: '#818cf8',
+                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 20
+                          }}>
+                            {BOT_COMMANDS.length} Commands Total
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0, maxWidth: 700 }}>
+                          Explore, search, and copy all available Jarvis slash commands arranged alphabetically from A to Z with real-time parameter guides and role permission badges.
+                        </p>
+                      </div>
+
+                      {/* Sort & Quick Perm Controls */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select
+                          value={cmdPermFilter}
+                          onChange={e => setCmdPermFilter(e.target.value)}
+                          className="luxe-input"
+                          style={{ padding: '6px 12px', fontSize: 12, width: 'auto', background: '#0b0f19', cursor: 'pointer' }}
+                        >
+                          <option value="ALL">All Permissions</option>
+                          <option value="Everyone">Everyone Only</option>
+                          <option value="Admins">Staff / Admins Only</option>
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => setCmdSortOrder(prev => (prev === 'A-Z' ? 'Z-A' : 'A-Z'))}
+                          className="btn-luxe-secondary"
+                          style={{ padding: '6px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+                          title="Toggle Alphabetical Sort Order"
+                        >
+                          <span>🔤</span> Sort: <strong>{cmdSortOrder}</strong>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Search bar */}
+                    <div style={{ position: 'relative', marginBottom: 18 }}>
+                      <input
+                        type="text"
+                        value={cmdSearch}
+                        onChange={e => setCmdSearch(e.target.value)}
+                        placeholder="🔍 Search 73 commands by name, description, category, or parameter (e.g. ask, ban, play, ticket)..."
+                        className="luxe-input"
+                        style={{
+                          padding: '12px 16px',
+                          fontSize: 13.5,
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          borderColor: cmdSearch ? 'rgba(99, 102, 241, 0.5)' : 'var(--border-subtle)'
+                        }}
+                      />
+                      {cmdSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setCmdSearch('')}
+                          style={{
+                            position: 'absolute',
+                            right: 14,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: 14
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Category Filter Chips */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid var(--border-subtle)' }}>
+                      {[
+                        { key: 'ALL', label: `All Commands (${BOT_COMMANDS.length})`, icon: '🌐', color: '#6366f1' },
+                        { key: 'ai', label: `AI Intelligence (${BOT_COMMANDS.filter(c => c.category === 'ai').length})`, icon: '🧠', color: '#8b5cf6' },
+                        { key: 'moderation', label: `Moderation (${BOT_COMMANDS.filter(c => c.category === 'moderation').length})`, icon: '🛡️', color: '#ef4444' },
+                        { key: 'esports', label: `Esports (${BOT_COMMANDS.filter(c => c.category === 'esports').length})`, icon: '🏆', color: '#f59e0b' },
+                        { key: 'music', label: `Music (${BOT_COMMANDS.filter(c => c.category === 'music').length})`, icon: '🎵', color: '#ec4899' },
+                        { key: 'utility', label: `Utility (${BOT_COMMANDS.filter(c => c.category === 'utility').length})`, icon: '⚙️', color: '#3b82f6' },
+                        { key: 'economy', label: `Economy (${BOT_COMMANDS.filter(c => c.category === 'economy').length})`, icon: '🪙', color: '#10b981' },
+                        { key: 'tickets', label: `Tickets (${BOT_COMMANDS.filter(c => c.category === 'tickets').length})`, icon: '🎟️', color: '#6366f1' },
+                        { key: 'leveling', label: `Leveling (${BOT_COMMANDS.filter(c => c.category === 'leveling').length})`, icon: '⭐', color: '#eab308' },
+                        { key: 'welcome', label: `Welcome (${BOT_COMMANDS.filter(c => c.category === 'welcome').length})`, icon: '👋', color: '#14b8a6' },
+                        { key: 'general', label: `General (${BOT_COMMANDS.filter(c => c.category === 'general').length})`, icon: '🌐', color: '#64748b' },
+                        { key: 'birthdays', label: `Birthdays (${BOT_COMMANDS.filter(c => c.category === 'birthdays').length})`, icon: '🎂', color: '#f43f5e' },
+                        { key: 'voice', label: `Voice (${BOT_COMMANDS.filter(c => c.category === 'voice').length})`, icon: '🔊', color: '#06b6d4' },
+                        { key: 'giveaways', label: `Giveaways (${BOT_COMMANDS.filter(c => c.category === 'giveaways').length})`, icon: '🎁', color: '#a855f7' },
+                      ].map(cat => {
+                        const isSelected = cmdCategory.toLowerCase() === cat.key.toLowerCase();
+                        return (
+                          <button
+                            key={cat.key}
+                            type="button"
+                            onClick={() => setCmdCategory(cat.key)}
+                            className="btn-luxe-secondary"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: 12,
+                              borderColor: isSelected ? cat.color : 'var(--border-subtle)',
+                              background: isSelected ? `${cat.color}22` : 'transparent',
+                              color: isSelected ? '#fff' : 'var(--text-medium)',
+                              fontWeight: isSelected ? 700 : 500,
+                            }}
+                          >
+                            <span style={{ color: cat.color }}>{cat.icon}</span> {cat.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Result count & status */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+                        Showing <strong>{filteredCommands.length}</strong> of {BOT_COMMANDS.length} Commands • Sorted {cmdSortOrder}
+                      </span>
+                      {cmdSearch && (
+                        <button
+                          type="button"
+                          onClick={() => { setCmdSearch(''); setCmdCategory('ALL'); setCmdPermFilter('ALL'); }}
+                          style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Reset Filters
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Commands Grid */}
+                    {filteredCommands.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: 12 }}>
+                        <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                        <h4 style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 4 }}>No Commands Found</h4>
+                        <p style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Try adjusting your search keywords or switching category filters.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>
+                        {filteredCommands.map(cmd => {
+                          const isCopied = copiedCmd === cmd.name;
+                          return (
+                            <div
+                              key={cmd.name}
+                              style={{
+                                background: 'rgba(15, 23, 42, 0.5)',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255, 255, 255, 0.07)',
+                                padding: '16px 18px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                position: 'relative',
+                                overflow: 'hidden',
+                                transition: 'transform 0.15s ease, border-color 0.15s ease'
+                              }}
+                            >
+                              {/* Accent top bar */}
+                              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2.5, background: cmd.color }} />
+
+                              <div>
+                                {/* Top Row: Command name & badges */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{
+                                      fontFamily: 'monospace',
+                                      fontSize: 14.5,
+                                      fontWeight: 800,
+                                      color: '#fff',
+                                      background: 'rgba(99, 102, 241, 0.15)',
+                                      border: '1px solid rgba(99, 102, 241, 0.35)',
+                                      padding: '2px 8px',
+                                      borderRadius: 6,
+                                      letterSpacing: '0.02em'
+                                    }}>
+                                      /{cmd.name}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      padding: '2px 7px',
+                                      borderRadius: 6,
+                                      background: `${cmd.color}18`,
+                                      color: cmd.color,
+                                      border: `1px solid ${cmd.color}35`,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4
+                                    }}>
+                                      <span>{cmd.emoji}</span> {cmd.categoryLabel}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Description */}
+                                <p style={{ fontSize: 12.5, color: '#cbd5e1', margin: '0 0 10px 0', lineHeight: 1.45 }}>
+                                  {cmd.description}
+                                </p>
+
+                                {/* Options & Parameters */}
+                                <div style={{ marginBottom: 6 }}>
+                                  {cmd.options && cmd.options.length > 0 ? (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                      {cmd.options.map(opt => (
+                                        <span
+                                          key={opt.name}
+                                          title={opt.description}
+                                          style={{
+                                            fontSize: 11,
+                                            fontFamily: 'monospace',
+                                            padding: '2px 6px',
+                                            borderRadius: 4,
+                                            background: opt.required ? 'rgba(99, 102, 241, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                                            color: opt.required ? '#a5b4fc' : 'var(--text-muted)',
+                                            border: `1px solid ${opt.required ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
+                                          }}
+                                        >
+                                          {opt.required ? `<${opt.name}>` : `[${opt.name}]`}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                                      No parameters required
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Card Footer: Permission & Action Buttons */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                <span style={{
+                                  fontSize: 11,
+                                  color: cmd.permission === 'Everyone' ? '#34d399' : '#fbbf24',
+                                  fontWeight: 600,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}>
+                                  <span>{cmd.permission === 'Everyone' ? '👥' : '🛡️'}</span> {cmd.permission}
+                                </span>
+
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  {cmd.dashboardTab && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveTab(cmd.dashboardTab)}
+                                      className="btn-luxe-secondary"
+                                      style={{ padding: '4px 8px', fontSize: 11.5, color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+                                      title={`Configure in ${cmd.categoryLabel} tab`}
+                                    >
+                                      Settings ➔
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => copyCommand(cmd.name)}
+                                    className="btn-luxe-secondary"
+                                    style={{
+                                      padding: '4px 10px',
+                                      fontSize: 11.5,
+                                      color: isCopied ? '#34d399' : '#fff',
+                                      borderColor: isCopied ? '#34d399' : 'var(--border-subtle)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4
+                                    }}
+                                    title="Copy slash command"
+                                  >
+                                    <Icon.Copy /> {isCopied ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2493,6 +2929,16 @@ export default function Dashboard() {
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
                                   <button
                                     type="button"
+                                    onClick={() => handleTestFeed(feed)}
+                                    disabled={testingFeedId === feed.id}
+                                    className="btn-luxe-secondary"
+                                    style={{ padding: '5px 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+                                    title="Send a real test announcement embed to Discord"
+                                  >
+                                    <span>⚡</span> {testingFeedId === feed.id ? 'Sending...' : 'Test'}
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => handleOpenEditFeed(feed)}
                                     className="btn-luxe-secondary"
                                     style={{ padding: '5px 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
@@ -2615,18 +3061,38 @@ export default function Dashboard() {
                                 Feed / RSS URL
                               </label>
                               {feedFormData.platform === 'youtube' && (
-                                <span style={{ fontSize: 11, color: '#818cf8' }}>
-                                  💡 Enter Channel ID (UC...) or full RSS URL
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={handleResolveFeed}
+                                  disabled={isResolvingFeed || !feedFormData.url.trim()}
+                                  style={{
+                                    background: 'rgba(99, 102, 241, 0.15)',
+                                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                                    color: '#818cf8',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    padding: '3px 8px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                >
+                                  {isResolvingFeed ? '🔍 Resolving...' : '⚡ Auto-Detect & Verify'}
+                                </button>
                               )}
                             </div>
                             <input
                               type="text"
                               value={feedFormData.url}
-                              onChange={e => setFeedFormData(prev => ({ ...prev, url: e.target.value }))}
+                              onChange={e => {
+                                setFeedFormData(prev => ({ ...prev, url: e.target.value }));
+                                setResolvedFeedMeta(null);
+                              }}
                               placeholder={
                                 feedFormData.platform === 'youtube'
-                                  ? 'https://www.youtube.com/feeds/videos.xml?channel_id=UC... or Channel ID'
+                                  ? 'e.g. @TRJ7EDITS or https://www.youtube.com/@TRJ7EDITS'
                                   : feedFormData.platform === 'instagram'
                                   ? 'https://rsshub.app/instagram/user/USERNAME'
                                   : feedFormData.platform === 'tiktok'
@@ -2636,9 +3102,35 @@ export default function Dashboard() {
                               className="luxe-input"
                               required
                             />
+                            {resolvedFeedMeta && (
+                              <div style={{
+                                marginTop: 6,
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                background: 'rgba(16, 185, 129, 0.12)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                fontSize: 12,
+                                color: '#34d399'
+                              }}>
+                                <div>
+                                  <span style={{ fontWeight: 700 }}>✓ Verified Channel:</span> {resolvedFeedMeta.title}
+                                  {resolvedFeedMeta.latestPost?.title && (
+                                    <div style={{ fontSize: 11, color: '#a7f3d0', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 460 }}>
+                                      Latest: {resolvedFeedMeta.latestPost.title}
+                                    </div>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: 10, background: 'rgba(16, 185, 129, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                                  XML Ready
+                                </span>
+                              </div>
+                            )}
                             <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4, marginBottom: 0 }}>
                               {feedFormData.platform === 'youtube'
-                                ? 'Tip: You can paste your channel ID (starts with UC) or standard YouTube channel URL.'
+                                ? 'Tip: You can paste your channel handle (e.g. @TRJ7EDITS), channel link, or channel ID.'
                                 : 'Must be a valid, reachable RSS or Atom feed XML URL.'}
                             </p>
                           </div>
@@ -2798,23 +3290,40 @@ export default function Dashboard() {
                           </div>
 
                           {/* Modal Actions */}
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
-                            <button
-                              type="button"
-                              onClick={() => setIsFeedModalOpen(false)}
-                              className="btn-luxe-secondary"
-                              style={{ padding: '10px 18px', fontSize: 13 }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={isSavingSocial}
-                              className="btn-luxe-primary"
-                              style={{ padding: '10px 22px', fontSize: 13 }}
-                            >
-                              {isSavingSocial ? 'Saving...' : feedFormData.id ? 'Save Changes' : 'Add Feed'}
-                            </button>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
+                            <div>
+                              {feedFormData.channelId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleTestFeed()}
+                                  disabled={testingFeedId === 'modal'}
+                                  className="btn-luxe-secondary"
+                                  style={{ padding: '9px 16px', fontSize: 12.5, color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.35)', display: 'flex', alignItems: 'center', gap: 6 }}
+                                  title="Send a real test announcement embed to the selected Discord channel"
+                                >
+                                  <span>⚡</span> {testingFeedId === 'modal' ? 'Sending Test...' : 'Send Test Notification'}
+                                </button>
+                              )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => setIsFeedModalOpen(false)}
+                                className="btn-luxe-secondary"
+                                style={{ padding: '10px 18px', fontSize: 13 }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isSavingSocial}
+                                className="btn-luxe-primary"
+                                style={{ padding: '10px 22px', fontSize: 13 }}
+                              >
+                                {isSavingSocial ? 'Saving...' : feedFormData.id ? 'Save Changes' : 'Add Feed'}
+                              </button>
+                            </div>
                           </div>
                         </form>
                       </div>

@@ -164,6 +164,73 @@ async function sendNotification(client, feed, platform, item) {
   await channel.send({ content: textMsg, embeds: [embed] }).catch(console.error);
 }
 
+const feedUrlCache = new Map();
+
+/**
+ * Resolves any YouTube URL (handle, custom link, channel ID) to the verified XML RSS feed URL.
+ * @param {string} rawUrl
+ * @param {string} platform
+ * @returns {Promise<string|null>}
+ */
+async function ensureXmlFeedUrl(rawUrl, platform) {
+  if (!rawUrl) return null;
+  const trimmed = rawUrl.trim();
+  const plat = (platform || '').toLowerCase();
+
+  if (plat === 'youtube' || trimmed.includes('youtube.com') || trimmed.includes('youtu.be') || trimmed.startsWith('@')) {
+    if (trimmed.includes('feeds/videos.xml?channel_id=')) {
+      return trimmed;
+    }
+    if (feedUrlCache.has(trimmed)) {
+      return feedUrlCache.get(trimmed);
+    }
+
+    if (trimmed.startsWith('UC') && trimmed.length >= 20 && !trimmed.includes('/') && !trimmed.includes('.')) {
+      const resolved = `https://www.youtube.com/feeds/videos.xml?channel_id=${trimmed}`;
+      feedUrlCache.set(trimmed, resolved);
+      return resolved;
+    }
+
+    const cMatch = trimmed.match(/channel\/(UC[a-zA-Z0-9_-]+)/);
+    if (cMatch) {
+      const resolved = `https://www.youtube.com/feeds/videos.xml?channel_id=${cMatch[1]}`;
+      feedUrlCache.set(trimmed, resolved);
+      return resolved;
+    }
+
+    try {
+      let fetchUrl = trimmed;
+      if (fetchUrl.startsWith('@')) fetchUrl = `https://www.youtube.com/${fetchUrl}`;
+      else if (!fetchUrl.startsWith('http')) fetchUrl = `https://www.youtube.com/@${fetchUrl}`;
+
+      const res = await fetch(fetchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        }
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const mRss = html.match(/feeds\/videos\.xml\?channel_id=([a-zA-Z0-9_-]+)/);
+        const mMeta = html.match(/<meta itemprop="identifier" content="([a-zA-Z0-9_-]+)"/);
+        const mJson = html.match(/"channelId":"(UC[a-zA-Z0-9_-]+)"/);
+        const mExt = html.match(/"externalId":"(UC[a-zA-Z0-9_-]+)"/);
+        const channelId = mRss?.[1] || mMeta?.[1] || mJson?.[1] || mExt?.[1];
+
+        if (channelId) {
+          const resolved = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+          feedUrlCache.set(trimmed, resolved);
+          return resolved;
+        }
+      }
+    } catch (err) {
+      console.warn(`[socialNotifier] Could not resolve YouTube handle "${trimmed}":`, err.message);
+    }
+  }
+
+  return trimmed;
+}
+
 // ── Main poll function ────────────────────────────────────────────────────────
 
 /**
@@ -191,7 +258,9 @@ async function pollFeeds(client) {
         };
 
         try {
-          const parsedFeed = await parser.parseURL(feed.url);
+          const xmlUrl = await ensureXmlFeedUrl(feed.url, feed.platform);
+          if (!xmlUrl) continue;
+          const parsedFeed = await parser.parseURL(xmlUrl);
           const items = parsedFeed.items;
           if (!items || items.length === 0) continue;
 
