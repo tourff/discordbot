@@ -136,6 +136,7 @@ function resolvePermToKey(permName) {
 
 /**
  * Finds a channel in the guild by ID, mention, or name.
+ * Supports emojis, prefixes, and partial matches.
  * @param {import('discord.js').Guild} guild
  * @param {string} query
  * @returns {import('discord.js').GuildBasedChannel|null}
@@ -149,25 +150,41 @@ function findChannel(guild, query) {
   if (byId) return byId;
 
   // Try case-insensitive exact name match
-  const cleanName = query.replace(/^#/, '').toLowerCase().trim();
+  const cleanName = query.replace(/^#+/, '').toLowerCase().trim();
   const exactMatch = guild.channels.cache.find(c => c.name.toLowerCase() === cleanName);
   if (exactMatch) return exactMatch;
 
-  // Match stripped alphanumeric to avoid emoji discrepancies
-  const searchRaw = cleanName.replace(/[^a-z0-9\u0980-\u09FF-]/g, '');
+  // Match stripped alphanumeric to avoid emoji/symbol discrepancies
+  const searchRaw = cleanName.replace(/[^a-z0-9\u0980-\u09FF]/g, '');
   if (searchRaw) {
+    // 1. Exact stripped match
     const strippedMatch = guild.channels.cache.find(c => {
-      const raw = c.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF-]/g, '');
+      const raw = c.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
       return raw === searchRaw;
     });
     if (strippedMatch) return strippedMatch;
+
+    // 2. Substring stripped match (e.g. "live" matches "🔴・live" or "🔊 🔴・live")
+    const substringMatch = guild.channels.cache.find(c => {
+      const raw = c.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+      return raw.includes(searchRaw) || searchRaw.includes(raw);
+    });
+    if (substringMatch) return substringMatch;
   }
+
+  // 3. Name inclusion match
+  const nameInclude = guild.channels.cache.find(c => {
+    const cLower = c.name.toLowerCase();
+    return cLower.includes(cleanName) || cleanName.includes(cLower);
+  });
+  if (nameInclude) return nameInclude;
 
   return null;
 }
 
 /**
  * Finds a role in the guild by ID, mention, or name.
+ * Cleans leading '@' and handles emojis/formatting.
  * @param {import('discord.js').Guild} guild
  * @param {string} query
  * @returns {import('discord.js').Role|null}
@@ -176,11 +193,77 @@ function findRole(guild, query) {
   if (!query) return null;
   const cleanId = query.replace(/[<@&>]/g, '').trim();
 
+  // Try direct ID
   const byId = guild.roles.cache.get(cleanId);
   if (byId) return byId;
 
-  const cleanName = query.toLowerCase().trim();
-  return guild.roles.cache.find(r => r.name.toLowerCase() === cleanName) || null;
+  const cleanName = query.replace(/^@+/, '').toLowerCase().trim();
+  if (cleanName === 'everyone' || cleanName === 'সবাই') {
+    return guild.roles.everyone;
+  }
+
+  // 1. Exact case-insensitive match
+  const exactMatch = guild.roles.cache.find(r => r.name.toLowerCase() === cleanName);
+  if (exactMatch) return exactMatch;
+
+  // 2. Stripped alphanumeric match (removes emojis, badges, slashes, brackets)
+  const searchRaw = cleanName.replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+  if (searchRaw) {
+    const strippedExact = guild.roles.cache.find(r => {
+      const raw = r.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+      return raw === searchRaw;
+    });
+    if (strippedExact) return strippedExact;
+
+    // 3. Substring match on stripped alphanumeric
+    const strippedInclude = guild.roles.cache.find(r => {
+      const raw = r.name.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+      return raw.includes(searchRaw) || searchRaw.includes(raw);
+    });
+    if (strippedInclude) return strippedInclude;
+  }
+
+  // 4. Substring match on lowercased name
+  const nameInclude = guild.roles.cache.find(r => {
+    const rLower = r.name.toLowerCase();
+    return rLower.includes(cleanName) || cleanName.includes(rLower);
+  });
+  if (nameInclude) return nameInclude;
+
+  return null;
+}
+
+/**
+ * Finds a guild member by ID, mention, username, or displayName.
+ * @param {import('discord.js').Guild} guild
+ * @param {string} query
+ * @returns {import('discord.js').GuildMember|null}
+ */
+function findMember(guild, query) {
+  if (!query) return null;
+  const cleanId = query.replace(/[<@!>]/g, '').trim();
+
+  const byId = guild.members.cache.get(cleanId);
+  if (byId) return byId;
+
+  const cleanName = query.replace(/^@+/, '').toLowerCase().trim();
+
+  // Exact match by username, displayName, or tag
+  const exactMatch = guild.members.cache.find(m =>
+    m.user?.username.toLowerCase() === cleanName ||
+    m.displayName.toLowerCase() === cleanName ||
+    (m.user?.tag && m.user.tag.toLowerCase() === cleanName)
+  );
+  if (exactMatch) return exactMatch;
+
+  // Partial match
+  const partialMatch = guild.members.cache.find(m =>
+    m.displayName.toLowerCase().includes(cleanName) ||
+    m.user?.username.toLowerCase().includes(cleanName)
+  );
+  if (partialMatch) return partialMatch;
+
+  return null;
 }
 
 /**
@@ -213,6 +296,173 @@ function findCategory(guild, query) {
   }
 
   return null;
+}
+
+/**
+ * Resolves multiple channels or categories from flexible parameters.
+ * Supports arrays, comma-separated strings, single strings, and category inheritance.
+ * @param {import('discord.js').Guild} guild
+ * @param {object} params
+ * @returns {{ targetChannels: import('discord.js').GuildBasedChannel[], unresolvedQueries: string[], queries: string[] }}
+ */
+function resolveChannels(guild, params = {}) {
+  const channelQueries = [];
+
+  function addQueries(val) {
+    if (!val) return;
+    if (Array.isArray(val)) {
+      val.forEach(item => addQueries(item));
+    } else if (typeof val === 'string') {
+      if (val.includes(',')) {
+        val.split(',').map(s => s.trim()).filter(Boolean).forEach(s => channelQueries.push(s));
+      } else if (val.trim()) {
+        channelQueries.push(val.trim());
+      }
+    }
+  }
+
+  addQueries(params.channels);
+  addQueries(params.channel);
+  if (channelQueries.length === 0) {
+    addQueries(params.name);
+  }
+
+  const targetChannels = [];
+  const seenIds = new Set();
+  const unresolvedQueries = [];
+
+  // If a category is specified
+  if (params.category) {
+    const cat = findCategory(guild, params.category);
+    if (cat) {
+      // If no channels explicitly given, target all channels in that category
+      if (channelQueries.length === 0) {
+        const typeFilter = (params.channel_type || '').toLowerCase();
+        const children = guild.channels.cache.filter(c => {
+          if (c.parentId !== cat.id) return false;
+          if (typeFilter === 'voice') return c.type === ChannelType.GuildVoice;
+          if (typeFilter === 'text') return c.type === ChannelType.GuildText;
+          return true;
+        });
+
+        children.forEach(c => {
+          if (!seenIds.has(c.id)) {
+            seenIds.add(c.id);
+            targetChannels.push(c);
+          }
+        });
+
+        if (params.include_category !== false && !seenIds.has(cat.id)) {
+          seenIds.add(cat.id);
+          targetChannels.push(cat);
+        }
+      }
+    } else if (channelQueries.length === 0) {
+      unresolvedQueries.push(params.category);
+    }
+  }
+
+  // Resolve explicit queries
+  for (const q of channelQueries) {
+    const cat = findCategory(guild, q);
+    if (cat && !guild.channels.cache.some(c => c.type !== ChannelType.GuildCategory && c.name.toLowerCase() === q.toLowerCase())) {
+      if (!seenIds.has(cat.id)) {
+        seenIds.add(cat.id);
+        targetChannels.push(cat);
+      }
+      const children = guild.channels.cache.filter(c => c.parentId === cat.id);
+      children.forEach(c => {
+        if (!seenIds.has(c.id)) {
+          seenIds.add(c.id);
+          targetChannels.push(c);
+        }
+      });
+      continue;
+    }
+
+    const ch = findChannel(guild, q);
+    if (ch) {
+      if (!seenIds.has(ch.id)) {
+        seenIds.add(ch.id);
+        targetChannels.push(ch);
+      }
+    } else {
+      unresolvedQueries.push(q);
+    }
+  }
+
+  return { targetChannels, unresolvedQueries, queries: channelQueries };
+}
+
+/**
+ * Resolves multiple roles or users from flexible parameters.
+ * Supports arrays, comma-separated strings, single strings, and @everyone.
+ * @param {import('discord.js').Guild} guild
+ * @param {object} params
+ * @returns {{ resolvedTargets: Array<{ target: import('discord.js').Role|import('discord.js').GuildMember, name: string, type: 'role'|'user'|'everyone' }>, notFound: string[], queries: string[] }}
+ */
+function resolveTargets(guild, params = {}) {
+  const targetQueries = [];
+
+  function addQueries(val) {
+    if (!val) return;
+    if (Array.isArray(val)) {
+      val.forEach(item => addQueries(item));
+    } else if (typeof val === 'string') {
+      if (val.includes(',')) {
+        val.split(',').map(s => s.trim()).filter(Boolean).forEach(s => targetQueries.push(s));
+      } else if (val.trim()) {
+        targetQueries.push(val.trim());
+      }
+    }
+  }
+
+  addQueries(params.roles);
+  addQueries(params.role);
+  addQueries(params.targets);
+  addQueries(params.target);
+  addQueries(params.users);
+  addQueries(params.user);
+
+  const resolvedTargets = [];
+  const seenIds = new Set();
+  const notFound = [];
+
+  for (const q of targetQueries) {
+    const trimmed = q.trim();
+    if (!trimmed) continue;
+    const lower = trimmed.toLowerCase();
+
+    if (lower === '@everyone' || lower === 'everyone' || lower === 'সবাই') {
+      if (!seenIds.has(guild.roles.everyone.id)) {
+        seenIds.add(guild.roles.everyone.id);
+        resolvedTargets.push({ target: guild.roles.everyone, name: '@everyone', type: 'everyone' });
+      }
+      continue;
+    }
+
+    const role = findRole(guild, trimmed);
+    if (role) {
+      if (!seenIds.has(role.id)) {
+        seenIds.add(role.id);
+        resolvedTargets.push({ target: role, name: role.name, type: 'role' });
+      }
+      continue;
+    }
+
+    const member = findMember(guild, trimmed);
+    if (member) {
+      if (!seenIds.has(member.id)) {
+        seenIds.add(member.id);
+        resolvedTargets.push({ target: member, name: member.displayName, type: 'user' });
+      }
+      continue;
+    }
+
+    notFound.push(trimmed);
+  }
+
+  return { resolvedTargets, notFound, queries: targetQueries };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -417,25 +667,37 @@ function formatActionPreview(guild, actionType, params = {}) {
 
     case 'create_role': {
       title = '🎭 Proposed Role Creation';
-      lines.push(`**Role Name:** \`${params.name || 'New Role'}\``);
-      if (params.color) lines.push(`**Color:** \`${params.color}\``);
-      if (params.hoist) lines.push(`**Show Separately:** ✅ Yes (hoisted)`);
-      if (params.mentionable) lines.push(`**Mentionable:** ✅ Yes`);
-      if (Array.isArray(params.permissions) && params.permissions.length > 0) {
-        lines.push(`**Permissions:** ${params.permissions.map(p => `\`${p}\``).join(', ')}`);
+      const rolesList = Array.isArray(params.roles) ? params.roles : [params];
+      if (rolesList.length > 1) {
+        lines.push(`Creating **${rolesList.length}** roles:`);
+        rolesList.forEach((r, idx) => {
+          const rName = typeof r === 'string' ? r : (r.name || `Role ${idx + 1}`);
+          const rColor = typeof r === 'object' && r.color ? ` (Color: \`${r.color}\`)` : '';
+          const rPerms = typeof r === 'object' && Array.isArray(r.permissions) && r.permissions.length > 0 ? ` [${r.permissions.join(', ')}]` : '';
+          lines.push(`• \`${rName}\`${rColor}${rPerms}`);
+        });
+        summary = `Create ${rolesList.length} Roles`;
+      } else {
+        lines.push(`**Role Name:** \`${params.name || 'New Role'}\``);
+        if (params.color) lines.push(`**Color:** \`${params.color}\``);
+        if (params.hoist) lines.push(`**Show Separately:** ✅ Yes (hoisted)`);
+        if (params.mentionable) lines.push(`**Mentionable:** ✅ Yes`);
+        if (Array.isArray(params.permissions) && params.permissions.length > 0) {
+          lines.push(`**Permissions:** ${params.permissions.map(p => `\`${p}\``).join(', ')}`);
+        }
+        summary = `Create Role ${params.name || ''}`;
       }
-      summary = `Create Role ${params.name || ''}`;
       break;
     }
 
     case 'set_role_permissions': {
       title = '🔐 Proposed Role Permission Update';
-      const roleQuery = params.role || params.name || 'unknown';
-      const targetRole = findRole(guild, roleQuery);
-      if (targetRole) {
-        lines.push(`**Role:** <@&${targetRole.id}> (\`${targetRole.name}\`)`);
+      const { resolvedTargets, queries: roleQueries } = resolveTargets(guild, { roles: params.roles || params.role || params.name });
+      const rolesFound = resolvedTargets.filter(t => t.type === 'role');
+      if (rolesFound.length > 0) {
+        lines.push(`**Roles (${rolesFound.length}):** ${rolesFound.map(r => `<@&${r.target.id}> (\`${r.name}\`)`).join(', ')}`);
       } else {
-        lines.push(`**Role:** \`${roleQuery}\``);
+        lines.push(`**Role(s):** \`${roleQueries.join(', ') || params.role || params.name || 'unknown'}\``);
       }
       if (Array.isArray(params.permissions) && params.permissions.length > 0) {
         lines.push(`**New Permissions:** ${params.permissions.map(p => `\`${p}\``).join(', ')}`);
@@ -443,7 +705,29 @@ function formatActionPreview(guild, actionType, params = {}) {
       if (params.hoist !== undefined) lines.push(`**Show Separately:** ${params.hoist ? '✅ Yes' : '❌ No'}`);
       if (params.mentionable !== undefined) lines.push(`**Mentionable:** ${params.mentionable ? '✅ Yes' : '❌ No'}`);
       if (params.color) lines.push(`**Color:** \`${params.color}\``);
-      summary = `Update permissions for ${targetRole?.name || roleQuery}`;
+      summary = `Update permissions for ${rolesFound.length || 1} role(s)`;
+      break;
+    }
+
+    case 'manage_member_roles':
+    case 'assign_role':
+    case 'add_role':
+    case 'remove_role': {
+      title = '👤 Proposed Member Role Update';
+      const userQuery = params.user || params.member || params.username || 'unknown';
+      const mode = (params.mode || (actionType === 'remove_role' ? 'remove' : 'add')).toLowerCase();
+      const targetMember = findMember(guild, userQuery);
+      const { resolvedTargets, queries: roleQueries } = resolveTargets(guild, { roles: params.roles || params.role });
+      const rolesFound = resolvedTargets.filter(t => t.type === 'role');
+
+      lines.push(`**Member:** ${targetMember ? `<@${targetMember.id}> (\`${targetMember.displayName}\`)` : `\`${userQuery}\``}`);
+      lines.push(`**Action:** ${mode === 'remove' ? '❌ Remove' : '➕ Add'}`);
+      if (rolesFound.length > 0) {
+        lines.push(`**Roles (${rolesFound.length}):** ${rolesFound.map(r => `<@&${r.target.id}> (\`${r.name}\`)`).join(', ')}`);
+      } else {
+        lines.push(`**Roles:** \`${roleQueries.join(', ') || params.roles || params.role || 'unknown'}\``);
+      }
+      summary = `${mode === 'remove' ? 'Remove' : 'Add'} ${rolesFound.length || 1} role(s) to ${targetMember?.displayName || userQuery}`;
       break;
     }
 
@@ -497,20 +781,33 @@ function formatActionPreview(guild, actionType, params = {}) {
 
     case 'set_channel_permissions': {
       title = '🔐 Proposed Channel Permission Update';
-      const chQuery = params.channel || params.name || 'unknown';
-      const targetQuery = params.role || params.user || params.target || 'unknown';
-      const targetCh = findChannel(guild, chQuery);
-      const targetRole = findRole(guild, targetQuery);
-      if (targetCh) {
-        lines.push(`**Channel:** <#${targetCh.id}> (\`#${targetCh.name}\`)`);
+      const { targetChannels, queries: chQueries } = resolveChannels(guild, params);
+      const { resolvedTargets, queries: targetQueries } = resolveTargets(guild, params);
+
+      // Display channels
+      if (targetChannels.length > 0) {
+        if (targetChannels.length <= 6) {
+          lines.push(`**Channels (${targetChannels.length}):** ${targetChannels.map(c => `<#${c.id}> (\`#${c.name}\`)`).join(', ')}`);
+        } else {
+          lines.push(`**Channels (${targetChannels.length}):** ${targetChannels.slice(0, 5).map(c => `<#${c.id}> (\`#${c.name}\`)`).join(', ')} *(+${targetChannels.length - 5} more)*`);
+        }
+      } else if (params.category) {
+        lines.push(`**Category:** \`${params.category}\``);
       } else {
-        lines.push(`**Channel:** \`${chQuery}\``);
+        lines.push(`**Channel(s):** \`${chQueries.join(', ') || params.channel || 'unknown'}\``);
       }
-      if (targetRole) {
-        lines.push(`**Role:** <@&${targetRole.id}> (\`${targetRole.name}\`)`);
+
+      // Display roles/users
+      if (resolvedTargets.length > 0) {
+        if (resolvedTargets.length <= 8) {
+          lines.push(`**Roles/Users (${resolvedTargets.length}):** ${resolvedTargets.map(t => t.type === 'role' ? `<@&${t.target.id}> (\`${t.name}\`)` : t.type === 'everyone' ? `\`@everyone\`` : `\`${t.name}\``).join(', ')}`);
+        } else {
+          lines.push(`**Roles/Users (${resolvedTargets.length}):** ${resolvedTargets.slice(0, 7).map(t => t.type === 'role' ? `<@&${t.target.id}>` : `\`${t.name}\``).join(', ')} *(+${resolvedTargets.length - 7} more)*`);
+        }
       } else {
-        lines.push(`**Role/User:** \`${targetQuery}\``);
+        lines.push(`**Role/User(s):** \`${targetQueries.join(', ') || params.role || params.target || 'unknown'}\``);
       }
+
       if (Array.isArray(params.allow) && params.allow.length > 0) {
         lines.push(`**✅ Allow:** ${params.allow.map(p => `\`${p}\``).join(', ')}`);
       }
@@ -520,7 +817,7 @@ function formatActionPreview(guild, actionType, params = {}) {
       if (Array.isArray(params.neutral) && params.neutral.length > 0) {
         lines.push(`**⬜ Neutral (Reset):** ${params.neutral.map(p => `\`${p}\``).join(', ')}`);
       }
-      summary = `Channel permissions for #${targetCh?.name || chQuery} → ${targetRole?.name || targetQuery}`;
+      summary = `Permissions for ${targetChannels.length || 1} channel(s) → ${resolvedTargets.length || 1} role/target(s)`;
       break;
     }
 
@@ -994,55 +1291,65 @@ async function executeServerAction(message, actionType, params = {}) {
       }
 
       // ───────────────────────────────────────────────────────────────────────
-      // CREATE ROLE (with full permission support)
+      // CREATE ROLE (with full permission support & multi-role support)
       // ───────────────────────────────────────────────────────────────────────
       case 'create_role': {
-        const roleName = params.name || 'New Role';
-        const color = params.color || null;
-        const hoist = Boolean(params.hoist);
-        const mentionable = Boolean(params.mentionable);
+        const rolesList = Array.isArray(params.roles) ? params.roles : [params];
+        const createdRoles = [];
 
-        // Resolve permissions from human-readable names
-        const permBits = resolvePermissions(params.permissions || []);
+        for (const r of rolesList) {
+          const roleName = typeof r === 'string' ? r : (r.name || 'New Role');
+          const color = typeof r === 'object' ? r.color : null;
+          const hoist = typeof r === 'object' ? Boolean(r.hoist) : false;
+          const mentionable = typeof r === 'object' ? Boolean(r.mentionable) : false;
+          const perms = typeof r === 'object' ? (r.permissions || []) : [];
 
-        const roleOptions = {
-          name: roleName,
-          hoist,
-          mentionable,
-          reason: `Created via Jarvis AI command by ${userTag}`,
-        };
-        if (color) roleOptions.color = color;
-        if (permBits !== 0n) roleOptions.permissions = new PermissionsBitField(permBits);
+          // Resolve permissions from human-readable names
+          const permBits = resolvePermissions(perms);
 
-        const newRole = await guild.roles.create(roleOptions);
+          const roleOptions = {
+            name: roleName,
+            hoist,
+            mentionable,
+            reason: `Created via Jarvis AI command by ${userTag}`,
+          };
+          if (color) roleOptions.color = color;
+          if (permBits !== 0n) roleOptions.permissions = new PermissionsBitField(permBits);
 
-        const permSummary = Array.isArray(params.permissions) && params.permissions.length > 0
-          ? `\n🔐 **Permissions:** ${params.permissions.join(', ')}`
-          : '';
+          const newRole = await guild.roles.create(roleOptions);
+          createdRoles.push(newRole);
+          await new Promise(res => setTimeout(res, 200));
+        }
+
+        if (createdRoles.length === 1) {
+          const newRole = createdRoles[0];
+          const permSummary = Array.isArray(params.permissions) && params.permissions.length > 0
+            ? `\n🔐 **Permissions:** ${params.permissions.join(', ')}`
+            : '';
+          return {
+            success: true,
+            message: `🎭 Role <@&${newRole.id}> (\`${newRole.name}\`) সফলভাবে তৈরি হয়েছে!${permSummary}${params.hoist ? '\n📌 Members list-এ আলাদা দেখা যাবে।' : ''}${params.mentionable ? '\n🔔 Role mentionable।' : ''}`,
+            details: `Role ID: ${newRole.id}`,
+          };
+        }
 
         return {
           success: true,
-          message: `🎭 Role <@&${newRole.id}> (\`${newRole.name}\`) সফলভাবে তৈরি হয়েছে!${permSummary}${hoist ? '\n📌 Members list-এ আলাদা দেখা যাবে।' : ''}${mentionable ? '\n🔔 Role mentionable।' : ''}`,
-          details: `Role ID: ${newRole.id}`,
+          message: `🎭 **${createdRoles.length} টি Role সফলভাবে তৈরি হয়েছে!**\n\n` +
+            createdRoles.map(r => `• <@&${r.id}> (\`${r.name}\`)`).join('\n'),
+          details: `Created: ${createdRoles.length}`,
         };
       }
 
       // ───────────────────────────────────────────────────────────────────────
-      // SET ROLE PERMISSIONS (update existing role — new action)
+      // SET ROLE PERMISSIONS (update existing role — supports multiple roles)
       // ───────────────────────────────────────────────────────────────────────
       case 'set_role_permissions': {
-        const roleQuery = params.role || params.name;
-        if (!roleQuery) {
-          return { success: false, message: '❌ কোন role-এর permission পরিবর্তন করতে চান সেটা বলুন।' };
-        }
+        const { resolvedTargets, notFound } = resolveTargets(guild, { roles: params.roles || params.role || params.name });
+        const rolesToUpdate = resolvedTargets.filter(t => t.type === 'role').map(t => t.target);
 
-        const targetRole = findRole(guild, roleQuery);
-        if (!targetRole) {
-          return { success: false, message: `❌ \`${roleQuery}\` নামের কোনো role খুঁজে পাওয়া যায়নি।` };
-        }
-
-        if (targetRole.managed) {
-          return { success: false, message: `❌ \`${targetRole.name}\` একটি managed role (bot/integration role), এটা পরিবর্তন করা যাবে না।` };
+        if (rolesToUpdate.length === 0) {
+          return { success: false, message: `❌ কোনো valid role খুঁজে পাওয়া যায়নি${notFound.length > 0 ? ` (\`${notFound.join(', ')}\`)` : ''}।` };
         }
 
         const updates = {};
@@ -1053,25 +1360,104 @@ async function executeServerAction(message, actionType, params = {}) {
         if (params.hoist !== undefined) updates.hoist = Boolean(params.hoist);
         if (params.mentionable !== undefined) updates.mentionable = Boolean(params.mentionable);
         if (params.color) updates.color = params.color;
-        if (params.new_name || params.newName) updates.name = params.new_name || params.newName;
+        if ((params.new_name || params.newName) && rolesToUpdate.length === 1) updates.name = params.new_name || params.newName;
 
         if (Object.keys(updates).length === 0) {
           return { success: false, message: '❌ কোনো update parameter দেওয়া হয়নি।' };
         }
 
-        await targetRole.edit({
-          ...updates,
-          reason: `Permissions updated via Jarvis AI by ${userTag}`,
-        });
+        const updated = [];
+        for (const r of rolesToUpdate) {
+          if (r.managed) continue;
+          await r.edit({
+            ...updates,
+            reason: `Permissions updated via Jarvis AI by ${userTag}`,
+          });
+          updated.push(r);
+          await new Promise(res => setTimeout(res, 150));
+        }
 
         const permSummary = Array.isArray(params.permissions) && params.permissions.length > 0
           ? `\n🔐 **নতুন Permissions:** ${params.permissions.join(', ')}`
           : '';
 
+        if (updated.length === 1) {
+          return {
+            success: true,
+            message: `✅ <@&${updated[0].id}> (\`${updated[0].name}\`) role সফলভাবে আপডেট হয়েছে!${permSummary}`,
+            details: `Role ID: ${updated[0].id}`,
+          };
+        }
+
+        return {
+          success: updated.length > 0,
+          message: `✅ **${updated.length} টি Role-এর settings সফলভাবে আপডেট হয়েছে!**\n\n` +
+            updated.map(r => `• <@&${r.id}> (\`${r.name}\`)`).join('\n') +
+            permSummary,
+          details: `Updated roles: ${updated.length}`,
+        };
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
+      // MANAGE MEMBER ROLES (add / remove multiple roles to/from a member)
+      // ───────────────────────────────────────────────────────────────────────
+      case 'manage_member_roles':
+      case 'assign_role':
+      case 'add_role':
+      case 'remove_role': {
+        const userQuery = params.user || params.member || params.username;
+        const mode = (params.mode || (actionType === 'remove_role' ? 'remove' : 'add')).toLowerCase();
+        if (!userQuery) {
+          return { success: false, message: '❌ কোন member-কে role দিতে বা সরাতে চান সেটা বলুন।' };
+        }
+
+        const targetMember = findMember(guild, userQuery);
+        if (!targetMember) {
+          return { success: false, message: `❌ \`${userQuery}\` নামের কোনো member খুঁজে পাওয়া যায়নি।` };
+        }
+
+        const { resolvedTargets, notFound } = resolveTargets(guild, { roles: params.roles || params.role });
+        const rolesToProcess = resolvedTargets.filter(t => t.type === 'role').map(t => t.target);
+
+        if (rolesToProcess.length === 0) {
+          return {
+            success: false,
+            message: `❌ কোনো valid role খুঁজে পাওয়া যায়নি${notFound.length > 0 ? ` (\`${notFound.join(', ')}\`)` : ''}।`
+          };
+        }
+
+        // Check bot hierarchy
+        const botMember = guild.members.me;
+        const higherRoles = rolesToProcess.filter(r => r.position >= botMember.roles.highest.position);
+        if (higherRoles.length > 0) {
+          return {
+            success: false,
+            message: `❌ বট-এর চেয়ে উপরে থাকা role (${higherRoles.map(r => `\`${r.name}\``).join(', ')}) দেওয়া বা সরানো সম্ভব নয়। সার্ভার সেটিংসে বটের রোল উপরে তুলুন।`
+          };
+        }
+
+        const modifiedRoles = [];
+        for (const role of rolesToProcess) {
+          if (mode === 'remove') {
+            if (targetMember.roles.cache.has(role.id)) {
+              await targetMember.roles.remove(role, `Updated via Jarvis AI by ${userTag}`);
+              modifiedRoles.push(role.name);
+            }
+          } else {
+            if (!targetMember.roles.cache.has(role.id)) {
+              await targetMember.roles.add(role, `Updated via Jarvis AI by ${userTag}`);
+              modifiedRoles.push(role.name);
+            }
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        const modeText = mode === 'remove' ? 'সরানো' : 'যোগ করা';
         return {
           success: true,
-          message: `✅ <@&${targetRole.id}> (\`${targetRole.name}\`) role সফলভাবে আপডেট হয়েছে!${permSummary}`,
-          details: `Role ID: ${targetRole.id}`,
+          message: `👤 **<@${targetMember.id}>-এর জন্য role ${modeText} হয়েছে!**\n\n` +
+            `🎭 **Roles (${modifiedRoles.length}):** ${modifiedRoles.map(r => `\`${r}\``).join(', ')}`,
+          details: `User: ${targetMember.id} | Mode: ${mode} | Count: ${modifiedRoles.length}`,
         };
       }
 
@@ -1189,55 +1575,29 @@ async function executeServerAction(message, actionType, params = {}) {
       }
 
       // ───────────────────────────────────────────────────────────────────────
-      // SET CHANNEL PERMISSIONS — add/deny/reset role or user permissions
+      // SET CHANNEL PERMISSIONS — add/deny/reset multiple roles or users in multiple channels
       // ───────────────────────────────────────────────────────────────────────
       case 'set_channel_permissions': {
-        const chQuery = params.channel || params.name;
-        const targetQuery = params.role || params.user || params.target;
-        const allowPerms  = Array.isArray(params.allow)   ? params.allow   : [];
-        const denyPerms   = Array.isArray(params.deny)    ? params.deny    : [];
+        const { targetChannels, unresolvedQueries: unresCh } = resolveChannels(guild, params);
+        const { resolvedTargets, notFound: notFoundTargets } = resolveTargets(guild, params);
+        const allowPerms   = Array.isArray(params.allow)   ? params.allow   : [];
+        const denyPerms    = Array.isArray(params.deny)    ? params.deny    : [];
         const neutralPerms = Array.isArray(params.neutral) ? params.neutral : [];
 
-        if (!chQuery) {
-          return { success: false, message: '❌ কোন channel-এর permission পরিবর্তন করতে চান সেটা বলুন।' };
+        if (targetChannels.length === 0) {
+          return {
+            success: false,
+            message: `❌ কোনো valid channel খুঁজে পাওয়া যায়নি${unresCh.length > 0 ? ` (\`${unresCh.join(', ')}\`)` : ''}। Channel নাম সঠিকভাবে উল্লেখ করুন।`
+          };
         }
-        if (!targetQuery) {
-          return { success: false, message: '❌ কোন role বা user-এর জন্য permission দিতে চান সেটা বলুন।' };
+        if (resolvedTargets.length === 0) {
+          return {
+            success: false,
+            message: `❌ কোনো valid role বা user খুঁজে পাওয়া যায়নি${notFoundTargets.length > 0 ? ` (\`${notFoundTargets.join(', ')}\`)` : ''}। Role নাম সঠিকভাবে উল্লেখ করুন।`
+          };
         }
         if (allowPerms.length === 0 && denyPerms.length === 0 && neutralPerms.length === 0) {
           return { success: false, message: '❌ কী permission allow বা deny করতে চান সেটা বলুন।' };
-        }
-
-        const targetChannel = findChannel(guild, chQuery);
-        if (!targetChannel) {
-          return { success: false, message: `❌ \`${chQuery}\` নামের কোনো channel খুঁজে পাওয়া যায়নি।` };
-        }
-
-        // Resolve target: @everyone, role, or user
-        let permTarget = null;
-        let targetName = targetQuery;
-        const lowerQuery = targetQuery.toLowerCase().trim();
-
-        if (lowerQuery === '@everyone' || lowerQuery === 'everyone' || lowerQuery === 'সবাই') {
-          permTarget = guild.roles.everyone;
-          targetName = '@everyone';
-        } else {
-          permTarget = findRole(guild, targetQuery);
-          if (permTarget) {
-            targetName = permTarget.name;
-          } else {
-            // Try by user ID/mention
-            const cleanId = targetQuery.replace(/[<@!>]/g, '').trim();
-            const member = guild.members.cache.get(cleanId);
-            if (member) {
-              permTarget = member;
-              targetName = member.displayName;
-            }
-          }
-        }
-
-        if (!permTarget) {
-          return { success: false, message: `❌ \`${targetQuery}\` নামের কোনো role বা user খুঁজে পাওয়া যায়নি।` };
         }
 
         // Build Discord.js permissionOverwrites object
@@ -1259,18 +1619,47 @@ async function executeServerAction(message, actionType, params = {}) {
           return { success: false, message: '❌ কোনো valid permission দেওয়া হয়নি। সঠিক permission নাম ব্যবহার করুন।' };
         }
 
-        await targetChannel.permissionOverwrites.edit(permTarget, permOverwrites, {
-          reason: `Channel permissions updated via Jarvis AI by ${userTag}`,
-        });
+        let updatedCount = 0;
+        let failCount = 0;
+
+        for (const ch of targetChannels) {
+          for (const item of resolvedTargets) {
+            try {
+              await ch.permissionOverwrites.edit(item.target, permOverwrites, {
+                reason: `Channel permissions updated via Jarvis AI by ${userTag}`,
+              });
+              updatedCount++;
+              await new Promise(r => setTimeout(r, 100));
+            } catch (err) {
+              console.error(`[aiActions] Failed to set perms on ${ch.name} for ${item.name}:`, err);
+              failCount++;
+            }
+          }
+        }
 
         const allowList   = allowPerms.length   > 0 ? `✅ Allow: ${allowPerms.join(', ')}`   : '';
         const denyList    = denyPerms.length    > 0 ? `❌ Deny: ${denyPerms.join(', ')}`    : '';
         const neutralList = neutralPerms.length > 0 ? `⬜ Reset: ${neutralPerms.join(', ')}` : '';
 
+        const chSummary = targetChannels.map(c => `\`#${c.name}\``).join(', ');
+        const roleSummary = resolvedTargets.map(t => t.type === 'everyone' ? '`@everyone`' : `\`${t.name}\``).join(', ');
+
+        if (targetChannels.length === 1 && resolvedTargets.length === 1) {
+          return {
+            success: updatedCount > 0,
+            message: `🔐 \`#${targetChannels[0].name}\` channel-এ \`${resolvedTargets[0].name}\`-এর permission সফলভাবে আপডেট হয়েছে!\n${[allowList, denyList, neutralList].filter(Boolean).join('\n')}`,
+            details: `Channel: ${targetChannels[0].id} | Target: ${resolvedTargets[0].target.id}`,
+          };
+        }
+
         return {
-          success: true,
-          message: `🔐 \`#${targetChannel.name}\` channel-এ \`${targetName}\`-এর permission সফলভাবে আপডেট হয়েছে!\n${[allowList, denyList, neutralList].filter(Boolean).join('\n')}`,
-          details: `Channel: ${targetChannel.id} | Target: ${permTarget.id || permTarget.user?.id}`,
+          success: updatedCount > 0,
+          message: `🔐 **Channel Permissions সফলভাবে আপডেট হয়েছে!**\n\n` +
+            `📁 **Channels (${targetChannels.length}):** ${chSummary}\n` +
+            `👑 **Roles/Users (${resolvedTargets.length}):** ${roleSummary}\n\n` +
+            `${[allowList, denyList, neutralList].filter(Boolean).join('\n')}` +
+            `${failCount > 0 ? `\n⚠️ (${failCount} টি permission overwrite ব্যর্থ হয়েছে, বট-এর রোলের পজিশন চেক করুন)` : ''}`,
+          details: `Channels: ${targetChannels.length} | Roles/Targets: ${resolvedTargets.length} | Total Updates: ${updatedCount}`,
         };
       }
 
@@ -1369,6 +1758,9 @@ module.exports = {
   findChannel,
   findCategory,
   findRole,
+  findMember,
+  resolveChannels,
+  resolveTargets,
   resolvePermissions,
   resolvePermToKey,
 };

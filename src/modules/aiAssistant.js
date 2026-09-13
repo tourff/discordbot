@@ -248,28 +248,64 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 // Works for both regular channels AND categories.
 
 ────────────────────────────────────────
-20. set_channel_permissions — Add a role to a channel / set permissions for a role or user in a channel:
+20. set_channel_permissions — Add one or MULTIPLE roles/users to one or MULTIPLE channels/categories:
 {
   "action": "set_channel_permissions",
   "parameters": {
-    "channel": "general-chat",
-    "role": "Member",
-    "allow": ["send messages", "view channels"],
-    "deny": ["manage messages"],
+    "channels": ["live", "discussion", "editing-zone", "website-manage"],
+    "roles": ["VIP / Partner", "Moderator", "Tournament Director", "Registration Auditor", "ALL VOICE CHANNEL", "Social Media Manager", "Financial Manager", "ALL ADMIN"],
+    "allow": ["view channels", "connect", "speak"],
+    "deny": ["stream"],
     "neutral": []
   }
 }
-// channel: channel name or #channel-name
-// role: exact role name, @everyone, or user ID mention
-// allow: permissions to ALLOW (green checkmark ✅)
-// deny: permissions to DENY (red X ❌)
-// neutral: permissions to RESET/inherit from category (empty ⬜)
+// ⚡ POWERFUL MULTI-ROLE & MULTI-CHANNEL SUPPORT (CRITICAL):
+// • channels: Array of channel names/mentions (e.g. ["ch1", "ch2"]) OR single channel string ("general-chat")
+// • roles: Array of role names/mentions (e.g. ["VIP", "Mod", "Admin"]) OR comma-separated string OR single role string ("Member")
+// • category: (optional) Category name — if specified, applies to channels inside that category!
+// • channel_type: (optional) "voice" | "text" (filter when targeting a category)
+// • target / user: user ID or mention if setting for a specific user
+// • allow: permissions to ALLOW (green checkmark ✅)
+// • deny: permissions to DENY (red X ❌)
+// • neutral: permissions to RESET/inherit from category (empty ⬜)
+// ⚠️ CRITICAL MULTI-ROLE RULE: If the user provides a list of multiple roles (e.g. @VIP, @Moderator, @Admin, etc.), ALWAYS include ALL requested roles inside the "roles" array! NEVER pick only one role!
 // Use permission name strings from the PERMISSION NAMES guide.
+
+────────────────────────────────────────
+21. manage_ai_channels — Configure which channels Jarvis responds in (whitelist):
+{
+  "action": "manage_ai_channels",
+  "parameters": {
+    "mode": "add",
+    "channels": ["general-chat", "bot-commands"]
+  }
+}
+// mode: "add" (যোগ) | "remove" (সরানো) | "set" (পুরো list replace) | "clear" (whitelist বন্ধ)
+// channels: channel name(s) or #channel-mention(s) — not needed for "clear" mode
+// When whitelist is active: bot ONLY responds in those channels (no @mention needed there)
+// @mention still works everywhere for admins
+
+────────────────────────────────────────
+22. manage_member_roles — Assign or remove one or MULTIPLE roles to/from a server member:
+{
+  "action": "manage_member_roles",
+  "parameters": {
+    "user": "username or @mention or user ID",
+    "mode": "add",
+    "roles": ["VIP / Partner", "Moderator"]
+  }
+}
+// mode: "add" (যোগ করা) | "remove" (সরানো)
+// roles: array of role names, or single role name
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 EXAMPLES OF BANGLISH → ACTION MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+• "ADMIN & MANAGEMENT VC category er shob voice channel e VIP, Moderator, Admin role add koro" → set_channel_permissions with channels: [...] and roles: ["VIP / Partner", "Moderator", "ALL ADMIN"]
+• "ekshathe onek gula role add koro channel e" → set_channel_permissions with roles: ["Role1", "Role2", ...]
+• "oi 4 ta channel e ei 5 ta role ke permission dao" → set_channel_permissions with channels: [4 channels] and roles: [5 roles]
+• "Falcon ke VIP ar Mod role add kore dao" → manage_member_roles user: "Falcon", mode: "add", roles: ["VIP", "Moderator"]
 • "Admin role banao shob permission diye" → create_role with permissions: ["administrator"]
 • "Mod role banao, ban ar kick korte parbe" → create_role with permissions: ["ban members", "kick members"]
 • "Mod role er permission change koro" → set_role_permissions
@@ -293,20 +329,6 @@ Output the JSON block at the VERY END of your message ONLY when you have a concr
 • "shudhu general ar bot-commands e respond korbe" → manage_ai_channels mode: "set" with both channels
 • "ai channel whitelist clear koro" / "sob channel e respond korbe" → manage_ai_channels mode: "clear"
 • "ai channel list dekhao" / "kono kono channel e respond kore" → (list current setting, no action needed)
-
-────────────────────────────────────────
-21. manage_ai_channels — Configure which channels Jarvis responds in (whitelist):
-{
-  "action": "manage_ai_channels",
-  "parameters": {
-    "mode": "add",
-    "channels": ["general-chat", "bot-commands"]
-  }
-}
-// mode: "add" (যোগ) | "remove" (সরানো) | "set" (পুরো list replace) | "clear" (whitelist বন্ধ)
-// channels: channel name(s) or #channel-mention(s) — not needed for "clear" mode
-// When whitelist is active: bot ONLY responds in those channels (no @mention needed there)
-// @mention still works everywhere for admins
 
 If the user is chatting, asking questions, or not ready for a concrete plan, DO NOT output any JSON. Just respond naturally in Bengali.
 `;
@@ -685,6 +707,8 @@ Users communicate in Banglish (Bengali written phonetically in English letters).
   • "mention korte parbe" / "mentionable" → Role can be @mentioned
   • "role er permission change koro" / "permission update koro" → set_role_permissions action
   • "role er naam bodlao" → rename_role action
+  • "channel e role add koro" / "voice channel e role permission dao" / "shob channel e ei role gulo access dao" → set_channel_permissions action (supports multiple roles & channels)
+  • "member ke role add koro" / "user ke role dao" / "role assign koro" → manage_member_roles action
 
 📌 CHANNEL & CATEGORY BANGLISH:
   • "channel ta oi category te nao" / "category change koro" / "move koro" → move_channel_to_category action
