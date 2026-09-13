@@ -203,44 +203,84 @@ async function pollFeeds(client) {
           const items = parsedFeed.items;
           if (!items || items.length === 0) continue;
 
+/**
+ * Normalizes post IDs from RSS feed items (especially YouTube video IDs).
+ * @param {object} item
+ * @returns {string|null}
+ */
+function extractPostId(item) {
+  if (!item) return null;
+  if (typeof item.id === 'string' && item.id.startsWith('yt:video:')) {
+    return item.id.replace('yt:video:', '');
+  }
+  if (typeof item.link === 'string') {
+    const vMatch = item.link.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+    if (vMatch) return vMatch[1];
+    const sMatch = item.link.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+    if (sMatch) return sMatch[1];
+  }
+  return item.guid || item.link || item.id || null;
+}
+
           const latestItem = items[0];
-          const latestId = latestItem.guid ?? latestItem.link ?? latestItem.id;
+          const latestId = extractPostId(latestItem);
           if (!latestId) continue;
 
-          // Unique key for tracking last seen post for this feed
-          const feedTrackingKey = feed.id ? `feed_${feed.id}` : `${platform.key}_${guild.id}`;
+          // Always scope tracking key by guild.id to prevent cross-server collision
+          const safeFeedId = feed.id || (feed.url ? feed.url.replace(/[^a-zA-Z0-9]/g, '_').slice(-30) : platform.key);
+          const feedTrackingKey = `feed_${guild.id}_${safeFeedId}`;
+
           let lastId = await getLastId(feedTrackingKey);
 
-          // If not found by feed id, check legacy key as fallback
-          if (!lastId && feed.platform) {
-            const legacyKey = `${feed.platform.toLowerCase()}_${guild.id}`;
-            lastId = await getLastId(legacyKey);
+          // Check fallback legacy keys if this guild-scoped key is not yet recorded
+          if (!lastId) {
+            lastId = await getLastId(`${platform.key}_${guild.id}`);
           }
 
-          if (lastId === latestId) continue; // No new posts
-
-          // First-run bootstrap: just store the current ID without sending
-          if (lastId === null) {
+          // First-run bootstrap: store current latest ID quietly without blasting old past videos
+          if (!lastId) {
             await saveLastId(feedTrackingKey, latestId);
-            console.log(`[socialNotifier] Bootstrapped ${feed.name || platform.label} for ${guild.name} with ID: ${latestId}`);
+            console.log(`[socialNotifier] Bootstrapped ${feed.name || platform.label} for ${guild.name} with latest ID: ${latestId}`);
             continue;
           }
 
-          // Collect all items newer than the last seen ID
-          const newItems = [];
-          for (const item of items) {
-            const itemId = item.guid ?? item.link ?? item.id;
-            if (itemId === lastId) break;
-            newItems.push(item);
+          // If already up-to-date, nothing to send
+          if (lastId === latestId) {
+            continue;
           }
 
-          // Send newest-first but in reverse so Discord shows them chronologically
-          for (const item of newItems.reverse()) {
-            await sendNotification(client, feed, platform, item);
+          // Check if lastId is anywhere in the current RSS feed items
+          const foundIndex = items.findIndex(item => extractPostId(item) === lastId);
+          if (foundIndex === -1) {
+            // The previously stored ID is from a different channel or too far in the past.
+            // Quietly re-synchronize without spamming old posts!
+            console.warn(`[socialNotifier] Last ID (${lastId}) not found in ${feed.name || platform.label} for ${guild.name}. Re-syncing to latest (${latestId}) without spam.`);
+            await saveLastId(feedTrackingKey, latestId);
+            continue;
           }
 
+          // Collect items newer than lastId
+          const newItems = items.slice(0, foundIndex);
+
+          // Freshness check: only notify for posts published in the last 24 hours
+          const freshItems = newItems.filter(item => {
+            if (!item.pubDate) return true;
+            const ageMs = Date.now() - new Date(item.pubDate).getTime();
+            return ageMs < (24 * 60 * 60 * 1000); // 24 hours maximum age
+          });
+
+          // Save the latest post ID immediately to prevent duplicate runs
           await saveLastId(feedTrackingKey, latestId);
-          console.log(`[socialNotifier] ${feed.name || platform.label} (${guild.name}): sent ${newItems.length} notification(s).`);
+
+          if (freshItems.length > 0) {
+            // Send in chronological order (oldest of the fresh new items first)
+            for (const item of freshItems.reverse().slice(-2)) {
+              await sendNotification(client, feed, platform, item);
+            }
+            console.log(`[socialNotifier] ${feed.name || platform.label} (${guild.name}): sent ${freshItems.length} fresh notification(s).`);
+          } else {
+            console.log(`[socialNotifier] ${feed.name || platform.label} (${guild.name}): ${newItems.length} post(s) found but skipped because they are older than 24h.`);
+          }
         } catch (feedErr) {
           console.error(`[socialNotifier] Error polling feed "${feed.name || feed.url}" for ${guild.name}:`, feedErr.message);
         }
