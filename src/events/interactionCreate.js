@@ -97,7 +97,15 @@ module.exports = {
         const currentMessage = await getWelcomeMessage(interaction.guild.id);
         const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
         const modal = new ModalBuilder().setCustomId('welcome_message_modal').setTitle('Setup Welcome Message');
-        const messageInput = new TextInputBuilder().setCustomId('welcome_message_input').setLabel('Welcome Message').setPlaceholder('Use {user} and {server}').setValue(currentMessage || `Hey {user}, glad you joined us!\n\n📋 Please read the rules before chatting.\n🎭 Head over to the roles channel to grab your roles.`).setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(2000);
+        const initialVal = (currentMessage || `Hey {user}, glad you joined us!\n\n📋 Please read the rules before chatting.\n🎭 Head over to the roles channel to grab your roles.`).substring(0, 4000);
+        const messageInput = new TextInputBuilder()
+          .setCustomId('welcome_message_input')
+          .setLabel('Welcome Message')
+          .setPlaceholder('Use {user} and {server}')
+          .setValue(initialVal)
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMaxLength(4000);
         modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
         await interaction.showModal(modal);
       } else if (interaction.customId === 'goodbye_msg_btn') {
@@ -105,7 +113,15 @@ module.exports = {
         const currentMessage = await getGoodbyeMessage(interaction.guild.id);
         const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
         const modal = new ModalBuilder().setCustomId('goodbye_message_modal').setTitle('Setup Goodbye Message');
-        const messageInput = new TextInputBuilder().setCustomId('goodbye_message_input').setLabel('Goodbye Message').setPlaceholder('Use {user} and {server}').setValue(currentMessage || `{user} left the server.`).setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(2000);
+        const initialVal = (currentMessage || `{user} left the server.`).substring(0, 4000);
+        const messageInput = new TextInputBuilder()
+          .setCustomId('goodbye_message_input')
+          .setLabel('Goodbye Message')
+          .setPlaceholder('Use {user} and {server}')
+          .setValue(initialVal)
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMaxLength(4000);
         modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
         await interaction.showModal(modal);
       } else if (interaction.customId === 'welcome_banner_btn') {
@@ -423,15 +439,17 @@ module.exports = {
 
     if (interaction.isChannelSelectMenu()) {
       if (interaction.customId === 'welcome_channel_select') {
+        await interaction.deferReply({ ephemeral: true }).catch(() => null);
         const channelId = interaction.values[0];
         const { setSetting } = require('../modules/settings');
         await setSetting(interaction.guild.id, 'WELCOME_CHANNEL_ID', channelId);
-        await interaction.reply({ content: `✅ Welcome channel has been set to <#${channelId}>.`, ephemeral: true });
+        await interaction.editReply({ content: `✅ Welcome channel has been set to <#${channelId}>.` });
       } else if (interaction.customId === 'goodbye_channel_select') {
+        await interaction.deferReply({ ephemeral: true }).catch(() => null);
         const channelId = interaction.values[0];
         const { setSetting } = require('../modules/settings');
         await setSetting(interaction.guild.id, 'GOODBYE_CHANNEL_ID', channelId);
-        await interaction.reply({ content: `✅ Goodbye channel has been set to <#${channelId}>.`, ephemeral: true });
+        await interaction.editReply({ content: `✅ Goodbye channel has been set to <#${channelId}>.` });
       } else if (interaction.customId.startsWith('social_channel_')) {
         const platform = interaction.customId.split('_')[2];
         const channelId = interaction.values[0];
@@ -471,220 +489,306 @@ module.exports = {
     // ── Modal Submits ───────────────────────────────────────────────────────
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'welcome_message_modal') {
-        const newMessage = interaction.fields.getTextInputValue('welcome_message_input');
-        const { setSetting } = require('../modules/settings');
-        const { resolveEmojis } = require('../modules/emojiResolver');
-        const success = await setSetting(interaction.guild.id, 'WELCOME_MESSAGE', newMessage);
-        if (success) {
-          const preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
-            .replace(/{user}/g, `${interaction.member}`)
-            .replace(/{server}/g, interaction.guild.name);
-          await interaction.reply({
-            content: `✅ **Custom welcome message updated successfully!**\n\n**Preview with Animated Emojis:**\n${preview}`,
-            ephemeral: true
-          });
-        } else {
-          await interaction.reply({ content: '❌ Failed to update welcome message in database.', ephemeral: true });
-        }
-      } else if (interaction.customId === 'goodbye_message_modal') {
-        const newMessage = interaction.fields.getTextInputValue('goodbye_message_input');
-        const { setSetting } = require('../modules/settings');
-        const { resolveEmojis } = require('../modules/emojiResolver');
-        const success = await setSetting(interaction.guild.id, 'GOODBYE_MESSAGE', newMessage);
-        if (success) {
-          const preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
-            .replace(/{user}/g, `**${interaction.user.tag}**`)
-            .replace(/{server}/g, interaction.guild.name);
-          await interaction.reply({
-            content: `✅ **Custom goodbye message updated successfully!**\n\n**Preview with Animated Emojis:**\n${preview}`,
-            ephemeral: true
-          });
-        } else {
-          await interaction.reply({ content: '❌ Failed to update goodbye message in database.', ephemeral: true });
-        }
-      } else if (interaction.customId === 'welcome_banner_modal') {
-        const rawInput = interaction.fields.getTextInputValue('welcome_banner_input').trim();
-        const { setSetting, deleteSetting } = require('../modules/settings');
-
-        if (!rawInput || rawInput.toLowerCase() === 'none') {
-          await deleteSetting(interaction.guild.id, 'WELCOME_IMAGE_URL');
-          return await interaction.reply({
-            content: '✅ **Welcome media banner has been removed.** The default server banner will be used if available.',
-            ephemeral: true
-          });
-        }
-
-        if (!/^https?:\/\//i.test(rawInput)) {
-          return await interaction.reply({
-            content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.',
-            ephemeral: true
-          });
-        }
-
-        const success = await setSetting(interaction.guild.id, 'WELCOME_IMAGE_URL', rawInput);
-        if (success) {
-          await interaction.reply({
-            content: `✅ **Welcome media banner updated successfully!**\n\n**Media URL:** ${rawInput}`,
-            ephemeral: true
-          });
-        } else {
-          await interaction.reply({ content: '❌ Failed to save banner URL in database.', ephemeral: true });
-        }
-      } else if (interaction.customId === 'goodbye_banner_modal') {
-        const rawInput = interaction.fields.getTextInputValue('goodbye_banner_input').trim();
-        const { setSetting, deleteSetting } = require('../modules/settings');
-
-        if (!rawInput || rawInput.toLowerCase() === 'none') {
-          await deleteSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL');
-          return await interaction.reply({
-            content: '✅ **Goodbye media banner has been removed.** The default server banner will be used if available.',
-            ephemeral: true
-          });
-        }
-
-        if (!/^https?:\/\//i.test(rawInput)) {
-          return await interaction.reply({
-            content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.',
-            ephemeral: true
-          });
-        }
-
-        const success = await setSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL', rawInput);
-        if (success) {
-          await interaction.reply({
-            content: `✅ **Goodbye media banner updated successfully!**\n\n**Media URL:** ${rawInput}`,
-            ephemeral: true
-          });
-        } else {
-          await interaction.reply({ content: '❌ Failed to save banner URL in database.', ephemeral: true });
-        }
-      } else if (interaction.customId.startsWith('social_urlmodal_')) {
-        // customId format: social_urlmodal_PLATFORM (e.g. social_urlmodal_YOUTUBE)
-        const platform = interaction.customId.replace('social_urlmodal_', '');
-        const rawInput = interaction.fields.getTextInputValue('social_url_input').trim();
-        const { setSetting, getSocialFeeds, saveSocialFeeds, getSetting } = require('../modules/settings');
-        const { resolveSocialFeed } = require('../modules/socialResolver');
-
-        let resolved = null;
-        let feedOk = false;
-        let finalUrl = rawInput;
-        let channelTitle = `${platform.charAt(0) + platform.slice(1).toLowerCase()} Feed`;
-
         try {
-          resolved = await resolveSocialFeed(rawInput, platform);
-          if (resolved && resolved.feedUrl) {
-            finalUrl = resolved.feedUrl;
-            channelTitle = resolved.title || channelTitle;
-            feedOk = true;
+          await interaction.deferReply({ ephemeral: true });
+          const newMessage = interaction.fields.getTextInputValue('welcome_message_input');
+          const { setSetting } = require('../modules/settings');
+          const { resolveEmojis } = require('../modules/emojiResolver');
+          const { EmbedBuilder } = require('discord.js');
+
+          const success = await setSetting(interaction.guild.id, 'WELCOME_MESSAGE', newMessage);
+          if (success) {
+            let preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
+              .replace(/{user}/g, `${interaction.member}`)
+              .replace(/{username}/g, interaction.user.username)
+              .replace(/{server}/g, interaction.guild.name)
+              .replace(/{membercount}/gi, `${interaction.guild.memberCount}`)
+              .replace(/{count}/gi, `${interaction.guild.memberCount}`);
+
+            if (preview.length > 4000) {
+              preview = preview.slice(0, 3950) + '\n\n*(Preview truncated due to Discord length limits, but your full message was saved!)*';
+            }
+
+            const previewEmbed = new EmbedBuilder()
+              .setColor(0x5865f2)
+              .setTitle('✅ Custom Welcome Message Updated!')
+              .setDescription(preview)
+              .setFooter({ text: 'This is a preview of how new members will see your message' })
+              .setTimestamp();
+
+            await interaction.editReply({
+              embeds: [previewEmbed]
+            });
+          } else {
+            await interaction.editReply({ content: '❌ Failed to update welcome message in database. Please try again.' });
           }
         } catch (err) {
-          console.warn(`[setupsocial] Resolve warning for ${rawInput}:`, err.message);
-        }
-
-        // Save to single key
-        await setSetting(interaction.guild.id, `${platform}_URL`, finalUrl);
-
-        // Sync with multi-feed SOCIAL_FEEDS table in Supabase
-        try {
-          const feeds = await getSocialFeeds(interaction.guild.id);
-          const platKey = platform.toLowerCase();
-          const targetChannelId = (await getSetting(interaction.guild.id, `${platform}_CHANNEL_ID`)) || '';
-
-          const existingIndex = feeds.findIndex(f => (f.platform || '').toLowerCase() === platKey);
-          const feedObj = {
-            id: existingIndex >= 0 ? feeds[existingIndex].id : `feed_${platKey}_${Date.now()}`,
-            platform: platKey,
-            name: channelTitle,
-            url: finalUrl,
-            channelId: existingIndex >= 0 && feeds[existingIndex].channelId ? feeds[existingIndex].channelId : targetChannelId,
-            message: existingIndex >= 0 && feeds[existingIndex].message ? feeds[existingIndex].message : '',
-            ping: 'none',
-            enabled: true,
-          };
-
-          if (existingIndex >= 0) {
-            feeds[existingIndex] = feedObj;
+          console.error('[interactionCreate] Error in welcome_message_modal:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
           } else {
-            feeds.push(feedObj);
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
+        }
+      } else if (interaction.customId === 'goodbye_message_modal') {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          const newMessage = interaction.fields.getTextInputValue('goodbye_message_input');
+          const { setSetting } = require('../modules/settings');
+          const { resolveEmojis } = require('../modules/emojiResolver');
+          const { EmbedBuilder } = require('discord.js');
+
+          const success = await setSetting(interaction.guild.id, 'GOODBYE_MESSAGE', newMessage);
+          if (success) {
+            let preview = resolveEmojis(newMessage, interaction.guild, interaction.client)
+              .replace(/{user}/g, `**${interaction.user.tag}**`)
+              .replace(/{username}/g, interaction.user.username)
+              .replace(/{server}/g, interaction.guild.name);
+
+            if (preview.length > 4000) {
+              preview = preview.slice(0, 3950) + '\n\n*(Preview truncated due to Discord length limits, but your full message was saved!)*';
+            }
+
+            const previewEmbed = new EmbedBuilder()
+              .setColor(0xed4245)
+              .setTitle('✅ Custom Goodbye Message Updated!')
+              .setDescription(preview)
+              .setFooter({ text: 'This is a preview of how members will see the departure message' })
+              .setTimestamp();
+
+            await interaction.editReply({
+              embeds: [previewEmbed]
+            });
+          } else {
+            await interaction.editReply({ content: '❌ Failed to update goodbye message in database. Please try again.' });
+          }
+        } catch (err) {
+          console.error('[interactionCreate] Error in goodbye_message_modal:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
+        }
+      } else if (interaction.customId === 'welcome_banner_modal') {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          const rawInput = interaction.fields.getTextInputValue('welcome_banner_input').trim();
+          const { setSetting, deleteSetting } = require('../modules/settings');
+
+          if (!rawInput || rawInput.toLowerCase() === 'none') {
+            await deleteSetting(interaction.guild.id, 'WELCOME_IMAGE_URL');
+            return await interaction.editReply({
+              content: '✅ **Welcome media banner has been removed.** The default server banner will be used if available.'
+            });
           }
 
-          await saveSocialFeeds(interaction.guild.id, feeds);
-        } catch (syncErr) {
-          console.error('[setupsocial] Error syncing to SOCIAL_FEEDS:', syncErr.message);
-        }
+          if (!/^https?:\/\//i.test(rawInput)) {
+            return await interaction.editReply({
+              content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.'
+            });
+          }
 
-        // Reply to user with clean status
-        if (feedOk) {
-          await interaction.reply({
-            content: [
-              `✅ **${channelTitle}** (${platform}) feed connected successfully!`,
-              `📡 **Feed XML:** \`${finalUrl}\``,
-              resolved?.latestPost?.title ? `🎬 **Latest Content:** *${resolved.latestPost.title}*` : null,
-              `⚡ Automated notifications are active and will post within 5 minutes when new content is uploaded!`,
-            ].filter(Boolean).join('\n'),
-            ephemeral: true,
-          });
-        } else {
-          await interaction.reply({
-            content: [
-              `⚠️ Link saved as \`${finalUrl}\`, but could **not** be reached or parsed as a valid XML feed.`,
-              `Please double-check the URL.`,
-              platform === 'YOUTUBE'
-                ? '\n💡 **Tip:** You can paste your channel handle (e.g. `@TRJ7EDITS`) or channel link, or manage it from the [Web Dashboard](https://discordbot-ten-dusky.vercel.app/dashboard).'
-                : '',
-            ].join('\n'),
-            ephemeral: true,
-          });
+          const success = await setSetting(interaction.guild.id, 'WELCOME_IMAGE_URL', rawInput);
+          if (success) {
+            await interaction.editReply({
+              content: `✅ **Welcome media banner updated successfully!**\n\n**Media URL:** ${rawInput}`
+            });
+          } else {
+            await interaction.editReply({ content: '❌ Failed to save banner URL in database.' });
+          }
+        } catch (err) {
+          console.error('[interactionCreate] Error in welcome_banner_modal:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
+        }
+      } else if (interaction.customId === 'goodbye_banner_modal') {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          const rawInput = interaction.fields.getTextInputValue('goodbye_banner_input').trim();
+          const { setSetting, deleteSetting } = require('../modules/settings');
+
+          if (!rawInput || rawInput.toLowerCase() === 'none') {
+            await deleteSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL');
+            return await interaction.editReply({
+              content: '✅ **Goodbye media banner has been removed.** The default server banner will be used if available.'
+            });
+          }
+
+          if (!/^https?:\/\//i.test(rawInput)) {
+            return await interaction.editReply({
+              content: '❌ Invalid URL. Please provide a full link starting with `http://` or `https://`.'
+            });
+          }
+
+          const success = await setSetting(interaction.guild.id, 'GOODBYE_IMAGE_URL', rawInput);
+          if (success) {
+            await interaction.editReply({
+              content: `✅ **Goodbye media banner updated successfully!**\n\n**Media URL:** ${rawInput}`
+            });
+          } else {
+            await interaction.editReply({ content: '❌ Failed to save banner URL in database.' });
+          }
+        } catch (err) {
+          console.error('[interactionCreate] Error in goodbye_banner_modal:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
+        }
+      } else if (interaction.customId.startsWith('social_urlmodal_')) {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          // customId format: social_urlmodal_PLATFORM (e.g. social_urlmodal_YOUTUBE)
+          const platform = interaction.customId.replace('social_urlmodal_', '');
+          const rawInput = interaction.fields.getTextInputValue('social_url_input').trim();
+          const { setSetting, getSocialFeeds, saveSocialFeeds, getSetting } = require('../modules/settings');
+          const { resolveSocialFeed } = require('../modules/socialResolver');
+
+          let resolved = null;
+          let feedOk = false;
+          let finalUrl = rawInput;
+          let channelTitle = `${platform.charAt(0) + platform.slice(1).toLowerCase()} Feed`;
+
+          try {
+            resolved = await resolveSocialFeed(rawInput, platform);
+            if (resolved && resolved.feedUrl) {
+              finalUrl = resolved.feedUrl;
+              channelTitle = resolved.title || channelTitle;
+              feedOk = true;
+            }
+          } catch (err) {
+            console.warn(`[setupsocial] Resolve warning for ${rawInput}:`, err.message);
+          }
+
+          // Save to single key
+          await setSetting(interaction.guild.id, `${platform}_URL`, finalUrl);
+
+          // Sync with multi-feed SOCIAL_FEEDS table in Supabase
+          try {
+            const feeds = await getSocialFeeds(interaction.guild.id);
+            const platKey = platform.toLowerCase();
+            const targetChannelId = (await getSetting(interaction.guild.id, `${platform}_CHANNEL_ID`)) || '';
+
+            const existingIndex = feeds.findIndex(f => (f.platform || '').toLowerCase() === platKey);
+            const feedObj = {
+              id: existingIndex >= 0 ? feeds[existingIndex].id : `feed_${platKey}_${Date.now()}`,
+              platform: platKey,
+              name: channelTitle,
+              url: finalUrl,
+              channelId: existingIndex >= 0 && feeds[existingIndex].channelId ? feeds[existingIndex].channelId : targetChannelId,
+              message: existingIndex >= 0 && feeds[existingIndex].message ? feeds[existingIndex].message : '',
+              ping: 'none',
+              enabled: true,
+            };
+
+            if (existingIndex >= 0) {
+              feeds[existingIndex] = feedObj;
+            } else {
+              feeds.push(feedObj);
+            }
+
+            await saveSocialFeeds(interaction.guild.id, feeds);
+          } catch (syncErr) {
+            console.error('[setupsocial] Error syncing to SOCIAL_FEEDS:', syncErr.message);
+          }
+
+          // Reply to user with clean status
+          if (feedOk) {
+            await interaction.editReply({
+              content: [
+                `✅ **${channelTitle}** (${platform}) feed connected successfully!`,
+                `📡 **Feed XML:** \`${finalUrl}\``,
+                resolved?.latestPost?.title ? `🎬 **Latest Content:** *${resolved.latestPost.title}*` : null,
+                `⚡ Automated notifications are active and will post within 5 minutes when new content is uploaded!`,
+              ].filter(Boolean).join('\n'),
+            });
+          } else {
+            await interaction.editReply({
+              content: [
+                `⚠️ Link saved as \`${finalUrl}\`, but could **not** be reached or parsed as a valid XML feed.`,
+                `Please double-check the URL.`,
+                platform === 'YOUTUBE'
+                  ? '\n💡 **Tip:** You can paste your channel handle (e.g. `@TRJ7EDITS`) or channel link, or manage it from the [Web Dashboard](https://discordbot-ten-dusky.vercel.app/dashboard).'
+                  : '',
+              ].join('\n'),
+            });
+          }
+        } catch (err) {
+          console.error('[interactionCreate] Error in social_urlmodal_:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
         }
       } else if (interaction.customId.startsWith('social_msgmodal_')) {
-        // customId format: social_msgmodal_PLATFORM
-        const platform = interaction.customId.replace('social_msgmodal_', '');
-        const newMessage = interaction.fields.getTextInputValue('social_msg_input');
-        const { setSetting } = require('../modules/settings');
-        await setSetting(interaction.guild.id, `${platform}_MESSAGE`, newMessage);
-
-        // Modals must use reply(), NOT update()
-        await interaction.reply({ content: `✅ Custom message for **${platform}** saved!`, ephemeral: true });
-      } else if (interaction.customId.startsWith('embed_builder_')) {
-        const channelId = interaction.customId.replace('embed_builder_', '');
-        const channel = interaction.guild.channels.cache.get(channelId);
-        
-        if (!channel) return interaction.reply({ content: '❌ Channel not found.', ephemeral: true });
-
-        const title = interaction.fields.getTextInputValue('embed_title') || null;
-        const desc = interaction.fields.getTextInputValue('embed_desc');
-        const colorInput = interaction.fields.getTextInputValue('embed_color') || '#5865F2';
-        const thumbnail = interaction.fields.getTextInputValue('embed_thumbnail') || null;
-        const image = interaction.fields.getTextInputValue('embed_image') || null;
-
-        let color;
         try {
-          color = parseInt(colorInput.replace('#', ''), 16);
-          if (isNaN(color)) color = 0x5865F2;
-        } catch {
-          color = 0x5865F2;
+          await interaction.deferReply({ ephemeral: true });
+          // customId format: social_msgmodal_PLATFORM
+          const platform = interaction.customId.replace('social_msgmodal_', '');
+          const newMessage = interaction.fields.getTextInputValue('social_msg_input');
+          const { setSetting } = require('../modules/settings');
+          await setSetting(interaction.guild.id, `${platform}_MESSAGE`, newMessage);
+
+          await interaction.editReply({ content: `✅ Custom message for **${platform}** saved!` });
+        } catch (err) {
+          console.error('[interactionCreate] Error in social_msgmodal_:', err);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ An error occurred: ${err.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ An error occurred: ${err.message}`, ephemeral: true }).catch(() => null);
+          }
         }
-
-        const { EmbedBuilder } = require('discord.js');
-        const { resolveEmojis } = require('../modules/emojiResolver');
-
-        const resolvedDesc = resolveEmojis(desc, interaction.guild, interaction.client);
-        const resolvedTitle = title ? resolveEmojis(title, interaction.guild, interaction.client) : null;
-
-        const embed = new EmbedBuilder()
-          .setColor(color)
-          .setDescription(resolvedDesc);
-
-        if (resolvedTitle) embed.setTitle(resolvedTitle);
-        if (thumbnail && thumbnail.startsWith('http')) embed.setThumbnail(thumbnail);
-        if (image && image.startsWith('http')) embed.setImage(image);
-
+      } else if (interaction.customId.startsWith('embed_builder_')) {
         try {
+          await interaction.deferReply({ ephemeral: true });
+          const channelId = interaction.customId.replace('embed_builder_', '');
+          const channel = interaction.guild.channels.cache.get(channelId);
+          
+          if (!channel) return interaction.editReply({ content: '❌ Channel not found.' });
+
+          const title = interaction.fields.getTextInputValue('embed_title') || null;
+          const desc = interaction.fields.getTextInputValue('embed_desc');
+          const colorInput = interaction.fields.getTextInputValue('embed_color') || '#5865F2';
+          const thumbnail = interaction.fields.getTextInputValue('embed_thumbnail') || null;
+          const image = interaction.fields.getTextInputValue('embed_image') || null;
+
+          let color;
+          try {
+            color = parseInt(colorInput.replace('#', ''), 16);
+            if (isNaN(color)) color = 0x5865F2;
+          } catch {
+            color = 0x5865F2;
+          }
+
+          const { EmbedBuilder } = require('discord.js');
+          const { resolveEmojis } = require('../modules/emojiResolver');
+
+          const resolvedDesc = resolveEmojis(desc, interaction.guild, interaction.client);
+          const resolvedTitle = title ? resolveEmojis(title, interaction.guild, interaction.client) : null;
+
+          const embed = new EmbedBuilder()
+            .setColor(color)
+            .setDescription(resolvedDesc);
+
+          if (resolvedTitle) embed.setTitle(resolvedTitle);
+          if (thumbnail && thumbnail.startsWith('http')) embed.setThumbnail(thumbnail);
+          if (image && image.startsWith('http')) embed.setImage(image);
+
           await channel.send({ embeds: [embed] });
-          await interaction.reply({ content: `✅ Embed sent to ${channel}!`, ephemeral: true });
+          await interaction.editReply({ content: `✅ Embed sent to ${channel}!` });
         } catch (e) {
           console.error('[embed builder]', e);
-          await interaction.reply({ content: `❌ Failed to send embed: ${e.message}`, ephemeral: true });
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: `❌ Failed to send embed: ${e.message}` }).catch(() => null);
+          } else {
+            await interaction.reply({ content: `❌ Failed to send embed: ${e.message}`, ephemeral: true }).catch(() => null);
+          }
         }
       } else if (interaction.customId === 'smanager_create_modal') {
         const { handleSManagerModals } = require('../modules/smanagerUI');

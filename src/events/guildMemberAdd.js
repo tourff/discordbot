@@ -75,11 +75,12 @@ module.exports = {
     const mediaUrl = configuredImageUrl || extractedMediaUrl;
 
     const description = resolveEmojis(cleanText, guild, member.client);
+    const safeDescription = description && description.length > 4096 ? description.slice(0, 4090) + '...' : description;
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2) // Discord Blurple
       .setTitle(`👋 Welcome to ${guild.name}!`)
-      .setDescription(description)
+      .setDescription(safeDescription)
       .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setFooter({ text: `${guild.name} • Member joined`, iconURL: guild.iconURL() })
       .setTimestamp();
