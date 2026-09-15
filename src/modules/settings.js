@@ -11,8 +11,8 @@ const supabase = require('../config/supabase');
 // In-memory cache: Map<guildId, Map<key, value>>
 const cache = new Map();
 
-// Cache TTL in milliseconds (5 minutes)
-const CACHE_TTL = 5 * 60 * 1000;
+// Cache TTL in milliseconds (5 seconds for near-instant reactivity with dashboard & slash commands)
+const CACHE_TTL = 5 * 1000;
 const cacheTimestamps = new Map();
 
 /**
