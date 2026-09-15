@@ -7,6 +7,18 @@
 'use strict';
 
 /**
+ * Strips whitespace, quotes, and brackets from raw URL inputs.
+ * @param {string|null} raw
+ * @returns {string|null}
+ */
+function cleanMediaUrl(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  let url = raw.trim().replace(/^["'`<\s]+|["'`>\s]+$/g, '');
+  if (!url || url.toLowerCase() === 'none') return null;
+  return url;
+}
+
+/**
  * Extracts custom media tags from a message string.
  * Supports {image: URL}, {gif: URL}, {video: URL}, {banner: URL}, {media: URL}.
  * @param {string} text
@@ -15,9 +27,9 @@
 function extractMediaFromText(text) {
   if (!text || typeof text !== 'string') return { cleanText: text, mediaUrl: null };
 
-  const match = text.match(/{(?:image|gif|video|banner|media):\s*(https?:\/\/[^\s}]+)\s*}/i);
+  const match = text.match(/{(?:image|gif|video|banner|media):\s*([^}]+)\s*}/i);
   if (match) {
-    const mediaUrl = match[1].trim();
+    const mediaUrl = cleanMediaUrl(match[1]);
     const cleanText = text.replace(match[0], '').trim();
     return { cleanText, mediaUrl };
   }
@@ -27,11 +39,12 @@ function extractMediaFromText(text) {
 
 /**
  * Determines whether a URL is an image or animated GIF suitable for EmbedBuilder.setImage(url).
- * @param {string} url
+ * @param {string} rawUrl
  * @returns {boolean}
  */
-function isEmbeddableImage(url) {
-  if (!url || typeof url !== 'string') return false;
+function isEmbeddableImage(rawUrl) {
+  const url = cleanMediaUrl(rawUrl);
+  if (!url) return false;
   const clean = url.split('?')[0].toLowerCase();
   return (
     clean.endsWith('.gif') ||
@@ -42,17 +55,19 @@ function isEmbeddableImage(url) {
     url.includes('cdn.discordapp.com/attachments/') ||
     url.includes('media.tenor.com') ||
     url.includes('c.tenor.com') ||
-    url.includes('i.imgur.com')
+    url.includes('i.imgur.com') ||
+    url.includes('giphy.com/media')
   );
 }
 
 /**
  * Checks if a URL is a video stream/file.
- * @param {string} url
+ * @param {string} rawUrl
  * @returns {boolean}
  */
-function isVideoUrl(url) {
-  if (!url || typeof url !== 'string') return false;
+function isVideoUrl(rawUrl) {
+  const url = cleanMediaUrl(rawUrl);
+  if (!url) return false;
   const clean = url.split('?')[0].toLowerCase();
   return clean.endsWith('.mp4') || clean.endsWith('.mov') || clean.endsWith('.webm') || clean.endsWith('.mkv');
 }
@@ -69,7 +84,7 @@ function isVideoUrl(url) {
  */
 function buildMediaPayload(embed, mediaUrl, fallbackBannerUrl = null) {
   const payload = { embeds: [embed] };
-  const targetUrl = mediaUrl || fallbackBannerUrl;
+  const targetUrl = cleanMediaUrl(mediaUrl) || cleanMediaUrl(fallbackBannerUrl);
 
   if (!targetUrl) return payload;
 
@@ -90,6 +105,7 @@ function buildMediaPayload(embed, mediaUrl, fallbackBannerUrl = null) {
 }
 
 module.exports = {
+  cleanMediaUrl,
   extractMediaFromText,
   isEmbeddableImage,
   isVideoUrl,
